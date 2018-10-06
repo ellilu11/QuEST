@@ -82,35 +82,35 @@ int main(int argc, char *argv[]) {
     double centerY = (ymin+ymax)/2;
     std::complex<double> center = centerX+I*centerY;
 
-    node2D* masterNode = new node2D(sources, Maxparts, isources, 0, 1, size, center ); // construct tree structure
-    masterNode->evalInode(0); // assign inodes;
-    masterNode->evalCoeffMpole(sources, charges, p); // calculate and merge multipole coefficients
-    std::vector<std::vector<std::complex<double> > >
-        coeffMpoles = masterNode->coeffMpoleAll(); // construct array of multipole coefficients
-    // masterNode->evalIList(masterNode);
+    node2D* treefmm2D = new node2D(sources, Maxparts, isources, 0, 1, size, center ); // construct tree structure
+    treefmm2D->evalInode(0); // assign inodes;
+    treefmm2D->evalCoeffMpole(sources, charges, p); // calculate and merge multipole coefficients
+    treefmm2D->evalMasterList();
+    treefmm2D->evalIList(treefmm2D);
+    // treefmm2D->evalCoeffLocalExp(treefmm2D, p);
 
     // write results to file
     npartsFile.open("out/nparts.csv");    
     ZFile.open("out/Z.bin", std::ios::binary);
-    masterNode->fprintZ(sources);
+    treefmm2D->fprintZ(sources);
     npartsFile.close();
     ZFile.close();
 
     std::ofstream mpoleFile; 
     mpoleFile.open("out/mpole.csv");
-    for ( int i=0; i<coeffMpoles.size(); i++ ){
+    for ( int i=0; i<treefmm2D->coeffMpoleList.size(); i++ ){
         for ( int j=0; j<p+1; j++ )
-            mpoleFile << coeffMpoles[i][j] << ",";
+            mpoleFile << treefmm2D->coeffMpoleList[i][j] << ",";
         mpoleFile << endl;
     }    
     mpoleFile.close();
 
     time(&endTime);
     cout << "p: " << p << endl;
-    cout << "Number of boxes: " << masterNode->numNodes() << endl;
+    cout << "Number of boxes: " << treefmm2D->numNodes() << endl;
     cout << "Time elapsed: " << endTime - startTime << "s" << endl;
 
-    delete masterNode;
+    delete treefmm2D;
 
     return 0;
 }
