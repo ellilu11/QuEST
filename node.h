@@ -14,17 +14,17 @@ private:
     std::complex<double> center; // coordinates of center of this node relative to origin 
 
     std::vector<int> iz; // index of all particles in Z living in this node
-    std::vector<int> ilist; // indices to other nodes which comprise various i-lists
     std::vector<std::complex<double> > coeffMpole; // multipole coefficients due to all particles in this node
     std::vector<std::complex<double> > coeffLocalExp; // local expansion coefficients due to all particles in i-list
-
+    std::vector<node2D*> ilist; // pointers to other nodes which comprise various i-lists
+ 
     node2D* parent; 
     std::vector<node2D*> child;
 
 public:
     // master node only
-    std::vector<std::vector<std::complex<double> > > coeffMpoleList;
-    std::vector<std::complex<double> > centerList;
+    // std::vector<std::vector<std::complex<double> > > coeffMpoleList;
+    // std::vector<std::complex<double> > centerList;
 
     node2D(std::vector<std::complex<double> > Z, int maxparts,
         std::vector<int> iz, int lvl, int order, double size, std::complex<double> center);
@@ -33,22 +33,23 @@ public:
 
     int numNodes();
 
-    node2D* findNode(int i);
+    int isNeighbour(node2D* other);
+
+    // node2D* findNode(int i);
+
+    void fprintZ(std::vector<std::complex<double> > Z);
+
+    void fprintMpole();
 
     void evalInode(int i);
 
     void evalCoeffMpole(std::vector<std::complex<double> > Z, std::vector<double> Q, int p);
 
-    void evalMasterList();
+    void evalIList();
 
-    int isNeighbour(node2D* other);
-
-    void evalIList(node2D* master);
-
-    void evalCoeffLocalExp(node2D* master, int p);
+    void evalCoeffLocalExp(int p);
 
     /*void node2D::evalCoeffLocalExpSum(); 
     */    
 
-    void fprintZ(std::vector<std::complex<double> > Z);
 };

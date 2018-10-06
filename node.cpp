@@ -1,12 +1,10 @@
 #include <iostream>
-#include <fstream>
 #include <vector>
 #include <complex>
 #include <cmath>
 
 #include "node.h"
 #include "mathfunc.h"
-#include "fstream.h"
 
 using namespace std;
 
@@ -56,27 +54,6 @@ node2D::node2D(std::vector<std::complex<double> > Z, int maxparts,
         // ~iz();
     } else // stop subdiving
         isLeaf = 1;   
-}
-
-// counts the number of subnodes of a node (including self);
-int node2D::numNodes(){
-    if ( isLeaf ) return 1;
-    else return 1 + child[0]->numNodes() + child[1]->numNodes() +
-           child[2]->numNodes() + child[3]->numNodes();
-}
-
-// returns pointer to ith subnode of a given node
-node2D* node2D::findNode(int i){
-    if (this->inode == i) 
-        return this;
-    else if (i < child[1]->inode)
-        return child[0]->findNode(i);
-    else if (i < child[2]->inode)
-        return child[1]->findNode(i);
-    else if (i < child[3]->inode)
-        return child[2]->findNode(i);
-    else 
-        return child[3]->findNode(i);
 }
 
 // assigns inodes for a node and all its subnodes
@@ -148,51 +125,44 @@ void node2D::evalCoeffMpole(std::vector<std::complex<double> > Z, std::vector<do
     this->coeffMpole = B;
 }
 
+/*
 void node2D::evalMasterList(){
 
     for ( int i=0; i < numNodes(); i++ ){
         coeffMpoleList[i] = findNode(i)->coeffMpole; 
         centerList[i] = findNode(i)->center;
     }
-}
-
-int node2D::isNeighbour(node2D* other){
-    double dist = abs(center - other->center);
-    return (lvl == other->lvl && dist <= size*sqrt(2));
-}
+}*/
 
 // Assigns a node's interaction list as indices to other nodes
-void node2D::evalIList(node2D* master){
+void node2D::evalIList(){
 
     if (lvl > 2){
         // find parent's neighbours
         node2D* gparent = this->parent->parent;
         node2D* ggparent = gparent->parent;
-        std::vector<int> nList;
+        std::vector<node2D*> nList;
     
         for ( int j=0; j<4; j++ ){
             // find the 3 neighbours which are the parent's siblings
             if ( parent->order != j )
-                nList.push_back(gparent->child[j]->inode); 
+                nList.push_back(gparent->child[j]); 
 
             // find the 5 neighbours which are not the parent's siblings
             if ( gparent->order != j && !ggparent->child[j]->isLeaf ){
                 for ( int k=0; k<4; k++ ) {
                     if (parent->isNeighbour(ggparent->child[j]->child[k]))
-                        // cout << "ok" << endl;
-                        nList.push_back(ggparent->child[j]->child[k]->inode);
+                        nList.push_back(ggparent->child[j]->child[k]);
                 }
             }
         }
     
         // extract interaction list from parent's neighbours;
-        node2D* cousin; 
         for ( int j=0; j<nList.size(); j++){
-            if ( !master->findNode(nList[j])->isLeaf ){
+            if ( !nList[j]->isLeaf ){
                 for ( int k=0; k<4; k++){
-                    cousin = master->findNode(nList[j])->child[k];
-                    if (!isNeighbour(cousin))
-                        ilist.push_back(cousin->inode);
+                    if (!isNeighbour(nList[j]->child[k]))
+                        ilist.push_back(nList[j]->child[k]);
                 }
             }
         }
@@ -200,37 +170,40 @@ void node2D::evalIList(node2D* master){
 
     if ( !isLeaf ) 
         for ( int j=0; j<4; j++ )
-            child[j]->evalIList(master);
+            child[j]->evalIList();
 }
 
 // Finds the local expansion coefficients due to all particles in a node's interaction list
-void node2D::evalCoeffLocalExp( node2D* master, int p ){
+void node2D::evalCoeffLocalExp( int p ){
     
     std::vector<std::vector<int> > binomCoeffs(p, std::vector<int>(p));
     for ( int l=1; l<=(2*p-1); l++ )
         for ( int k=1; k<=l; k++ )
             binomCoeffs[l-1][k-1] = binomCoeff(l-1,k-1);
   
-    std::vector<std::vector<std::complex<double> > > Bs = master->coeffMpoleList;
-    std::vector<std::complex<double> > centers = master->centerList;
+    std::vector<std::vector<std::complex<double> > > Bs;
+
     std::vector<std::complex<double> > B(p+1);
     std::complex<double> z0;
     for ( int i=0; i<ilist.size(); i++ ){
-        z0 = centers[ilist[i]] - center;
-        B[0] = Bs[ilist[i]][0]*log(-z0);
+        z0 = ilist[i]->center - center;
+        Bs[i] = ilist[i]->coeffMpole;
+
+        B[0] = Bs[i][0]*log(-z0);
         for ( int k=1; k<=p; k++ )
-            B[0] += Bs[ilist[i]][k]*pow(-1,k)/pow(z0,k);
+            B[0] += Bs[i][k]*pow(-1,k)/pow(z0,k);
+
         for ( int l=1; l<=p; l++ ){
-            B[l] = -Bs[ilist[i]][0]/((double)l*pow(z0,l));
+            B[l] = -Bs[i][0]/((double)l*pow(z0,l));
             for ( int k=1; k<=p; k++ )
-                B[l] += Bs[ilist[i]][k]*pow(-1,k)/pow(z0,l+k)*(double)binomCoeffs[l+k-1][k-1];
+                B[l] += Bs[i][k]*pow(-1,k)/pow(z0,l+k)*(double)binomCoeffs[l+k-1][k-1];
         }
     } 
     this->coeffLocalExp = B;
 
     if ( !isLeaf )
         for ( int j=0; j<4; j++ )
-            child[j]->evalCoeffLocalExp(master, p);
+            child[j]->evalCoeffLocalExp(p);
 }
 
 /*
@@ -258,20 +231,4 @@ void node2D::evalCoeffLocalExpSum(int p){
         child[3]->evalCoeffLocalExpSum(p);
     }
 }*/
-
-
-void node2D::fprintZ(std::vector<std::complex<double> > Z){
-    if (this != NULL) {
-        // cout << "NEW NODE w/ " << iz.size() << " particles centered at " << center << endl;
-
-        ::npartsFile << iz.size() << endl;
-        for ( int i=0; i<iz.size(); i++ ){
-            ::ZFile.write((char*)&real(Z[iz[i]]), sizeof(double));
-            ::ZFile.write((char*)&imag(Z[iz[i]]), sizeof(double));
-            // ::ZFile << real(Z[iz[i]]) << "," << imag(Z[iz[i]]) << endl;
-        }
-
-        for ( int j=0; j<4; j++ ) child[j]->fprintZ(Z);
-    }
-}
 

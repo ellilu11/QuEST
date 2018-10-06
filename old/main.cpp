@@ -14,7 +14,6 @@ using namespace std;
 
 std::ofstream npartsFile;
 std::ofstream ZFile;
-std::ofstream mpoleFile;
 
 int main(int argc, char *argv[]) {
 
@@ -86,8 +85,9 @@ int main(int argc, char *argv[]) {
     node2D* treefmm2D = new node2D(sources, Maxparts, isources, 0, 1, size, center ); // construct tree structure
     treefmm2D->evalInode(0); // assign inodes;
     treefmm2D->evalCoeffMpole(sources, charges, p); // calculate and merge multipole coefficients
-    treefmm2D->evalIList();
-    // treefmm2D->evalCoeffLocalExp(p);
+    treefmm2D->evalMasterList();
+    treefmm2D->evalIList(treefmm2D);
+    // treefmm2D->evalCoeffLocalExp(treefmm2D, p);
 
     // write results to file
     npartsFile.open("out/nparts.csv");    
@@ -96,8 +96,13 @@ int main(int argc, char *argv[]) {
     npartsFile.close();
     ZFile.close();
 
+    std::ofstream mpoleFile; 
     mpoleFile.open("out/mpole.csv");
-    treefmm2D->fprintMpole(); 
+    for ( int i=0; i<treefmm2D->coeffMpoleList.size(); i++ ){
+        for ( int j=0; j<p+1; j++ )
+            mpoleFile << treefmm2D->coeffMpoleList[i][j] << ",";
+        mpoleFile << endl;
+    }    
     mpoleFile.close();
 
     time(&endTime);
