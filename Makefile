@@ -1,7 +1,7 @@
 CC = g++
 FLAGS = 
 
-CPPS = node.cpp nodesupp.cpp mathfunc.cpp main.cpp
+CPPS = node.cpp nodefunc.cpp mathfunc.cpp main.cpp
 
 EXENAME = fmm2d
 

@@ -15,35 +15,45 @@ using namespace std;
 std::ofstream npartsFile;
 std::ofstream ZFile;
 std::ofstream mpoleFile;
+std::ofstream potFile;
+std::ofstream fldFile;
 
 int main(int argc, char *argv[]) {
 
     // Initialize parameters; eventually these will be read from file
-    int Nparts = 100000; // total number of particles
+    int Nparts = 100000; // Number of particles
     int Ntargs = 100; // Number of targets (field points)
     int Maxparts = 1000; // maximum number of particles allowed in any box
     int Iprec = 0;  // error tolerance flag
-    int distFlag = 1;   // 0 - uniform, 1 - Gaussian
-    
+    int srcDist = 1; // 0 - uniform; 1 - Gaussian
+    int trgDist = 1; // 0 - uniform 2-D
+                     // 1 - uniform along x-axis
+                     // 2 - uniform along y-axis 
+    int evalPotSrc = 0; 
+    int evalPotTrg = 1;
+    int evalFldSrc = 0;
+    int evalFldTrg = 1;  
+
     time_t startTime, endTime;
     time(&startTime);
 
-    // Initialize particle distribution
+    double u1, u2, x, y;
+    
+    // Initialize source distribution
     std::vector<std::complex<double> > sources(Nparts);
     std::vector<double> charges(Nparts);
 
-    double u1, u2, xsources, ysources;
-    for (int i=0;i<Nparts;i++){
+   for ( int i=0; i<Nparts; i++ ) {
         u1 = rand()/(double)RAND_MAX;
         u2 = rand()/(double)RAND_MAX;
-        if (distFlag == 0) {
-            xsources = u1*10-5;
-            ysources = u2*10-5;
-        } else if (distFlag == 1) {
-            xsources = sqrt(-2*log(u2))*cos(2*M_PI*u1);
-            ysources = sqrt(-2*log(u2))*sin(2*M_PI*u1);
+        if (srcDist == 0) {
+            x = u1*10-5;
+            y = u2*10-5;
+        } else if (srcDist == 1) {
+            x = sqrt(-2*log(u2))*cos(2*M_PI*u1);
+            y = sqrt(-2*log(u2))*sin(2*M_PI*u1);
         }
-        sources[i] = xsources+I*ysources;
+        sources[i] = x+I*y;
         charges[i] = 1.0;
     }
 
@@ -83,12 +93,28 @@ int main(int argc, char *argv[]) {
     double centerY = (ymin+ymax)/2;
     std::complex<double> center = centerX+I*centerY;
 
-    node2D* treefmm2D = new node2D(sources, Maxparts, isources, 0, 1, size, center ); // construct tree structure
-    treefmm2D->evalInode(0); // assign inodes;
+    // Initialize target distribution
+    std::vector<std::complex<double> > targets(Ntargs);
+
+    if ( evalPotTrg || evalFldTrg ) {
+        if ( trgDist == 1 || trgDist == 2 ) {
+            double delta = size/(double)Ntargs;
+
+            for ( int i=0; i<Ntargs; i++ ) {
+                x = xmin + i*delta;
+                y = 0;
+                targets[i] = x+I*y;    
+            }
+        }  
+    }
+
+    node2D* treefmm2D = new node2D(sources, targets, Maxparts, isources, 0, 1, size, center );
+    // treefmm2D->evalInode(0); // assign inodes;
     treefmm2D->evalCoeffMpole(sources, charges, p); // calculate and merge multipole coefficients
     treefmm2D->evalIList();
-    // treefmm2D->evalCoeffLocalExp(p);
-
+    treefmm2D->evalCoeffLocalExp(p);
+    treefmm2D->evalCoeffLocalExpSum(p);
+    
     // write results to file
     npartsFile.open("out/nparts.csv");    
     ZFile.open("out/Z.bin", std::ios::binary);
