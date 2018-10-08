@@ -9,21 +9,20 @@
 using namespace std;
 
 node2D::node2D(std::vector<std::complex<double> > Z, std::vector<std::complex<double> > Ztrg, int maxparts,
-    std::vector<int> iz, int lvl, int order, double size, std::complex<double> center){
+    std::vector<int> iz, std::vector<int> iztrg, int lvl, int order, double size, std::complex<double> center){
 
     this->iz = iz;
+    this->iztrg = iztrg;
     this->lvl = lvl;
     this->order = order;
     this->size = size;
     this->center = center;
     for ( int j=0; j<4; j++ ) child.push_back(NULL); // allocate memory for the 4 child nodes
 
-    int nparts = iz.size();
-    if ( nparts > maxparts ){ // more particles than allowed in this box; continue to subdivide
+    if ( iz.size() > maxparts ){ // more particles than allowed in this box; continue to subdivide
 
         isLeaf = 0;
         std::vector<std::vector<int> > izChild(4);
-
         for ( int i=0; i<iz.size(); i++ ){
             if ((real(Z[iz[i]]) <= real(center)) && (imag(Z[iz[i]]) <= imag(center))){
                 izChild[0].push_back(iz[i]);
@@ -33,6 +32,20 @@ node2D::node2D(std::vector<std::complex<double> > Z, std::vector<std::complex<do
                 izChild[2].push_back(iz[i]);
             } else if (real(Z[iz[i]]) > real(center) && imag(Z[iz[i]]) > imag(center)){
                 izChild[3].push_back(iz[i]);
+            } 
+        }
+
+        // cout << iztrg.size() << endl;
+        std::vector<std::vector<int> > iztrgChild(4);
+        for ( int i=0; i<iztrg.size(); i++ ){
+            if ((real(Ztrg[iztrg[i]]) <= real(center)) && (imag(Ztrg[iztrg[i]]) <= imag(center))){
+                iztrgChild[0].push_back(iztrg[i]);
+            } else if (real(Ztrg[iztrg[i]]) > real(center) && imag(Ztrg[iztrg[i]]) <= imag(center)){
+                iztrgChild[1].push_back(iztrg[i]);
+            } else if (real(Ztrg[iztrg[i]]) <= real(center) && imag(Ztrg[iztrg[i]]) > imag(center)){
+                iztrgChild[2].push_back(iztrg[i]);
+            } else if (real(Ztrg[iztrg[i]]) > real(center) && imag(Ztrg[iztrg[i]]) > imag(center)){
+                iztrgChild[3].push_back(iztrg[i]);
             } 
         }
 
@@ -48,7 +61,7 @@ node2D::node2D(std::vector<std::complex<double> > Z, std::vector<std::complex<do
         centerChild[3] = centerXright+I*centerYup;
 
         for ( int j=0; j<4; j++ ){
-            child[j] = new node2D( Z, Ztrg, maxparts, izChild[j], lvl+1, j, size/2, centerChild[j]);
+            child[j] = new node2D( Z, Ztrg, maxparts, izChild[j], iztrgChild[j], lvl+1, j, size/2, centerChild[j]);
             child[j]->parent = this;
         }
         // ~iz();
@@ -196,7 +209,7 @@ void node2D::evalCoeffLocalExpSum(int p){
     std::vector<std::complex<double> > z0(4);
 
     if ( isLeaf ) {
-        // throw exception
+        return;
     } else {
         for ( int j=0; j<4; j++ ){
             z0[j] = -(child[j]->center - center);

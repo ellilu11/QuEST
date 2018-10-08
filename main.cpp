@@ -12,27 +12,20 @@
 
 using namespace std;
 
-std::ofstream npartsFile;
-std::ofstream ZFile;
-std::ofstream mpoleFile;
-std::ofstream potFile;
-std::ofstream fldFile;
+std::ofstream nsrcFile, ntrgFile, ZFile, ZtrgFile, mpoleFile;
+std::ofstream potFile, fldFile;
 
 int main(int argc, char *argv[]) {
 
     // Initialize parameters; eventually these will be read from file
     int Nparts = 100000; // Number of particles
-    int Ntargs = 100; // Number of targets (field points)
+    int Ntargs = 10000; // Number of targets (field points)
     int Maxparts = 1000; // maximum number of particles allowed in any box
     int Iprec = 0;  // error tolerance flag
-    int srcDist = 1; // 0 - uniform; 1 - Gaussian
-    int trgDist = 1; // 0 - uniform 2-D
-                     // 1 - uniform along x-axis
-                     // 2 - uniform along y-axis 
-    int evalPotSrc = 0; 
-    int evalPotTrg = 1;
-    int evalFldSrc = 0;
-    int evalFldTrg = 1;  
+    int srcDist = 1; // 0 - uniform; 1 - Gaussian; etc...
+    int trgDist = 1; // 0 - uniform 2-D; 1 - uniform along x-axis; 2 - uniform along y-axis 
+    int potFlag = 2; // 0 - don't eval pot; 1 - eval pot at srcs; 2 - eval pot at trgs
+    int fldFlag = 0; 
 
     time_t startTime, endTime;
     time(&startTime);
@@ -95,20 +88,19 @@ int main(int argc, char *argv[]) {
 
     // Initialize target distribution
     std::vector<std::complex<double> > targets(Ntargs);
+    std::vector<int> itargets(Ntargs);
+ 
+    //if ( potFlag == 2 ) {
+    double delta = size/(double)Ntargs;
 
-    if ( evalPotTrg || evalFldTrg ) {
-        if ( trgDist == 1 || trgDist == 2 ) {
-            double delta = size/(double)Ntargs;
+    for ( int i=0; i<Ntargs; i++ ) {
+        x = trgDist == 1 ? xmin + i*delta : 0;
+        y = trgDist == 2 ? ymin + i*delta : 0;
+        targets[i] = x+I*y;
+        itargets[i] = i;
+    }  
 
-            for ( int i=0; i<Ntargs; i++ ) {
-                x = xmin + i*delta;
-                y = 0;
-                targets[i] = x+I*y;    
-            }
-        }  
-    }
-
-    node2D* treefmm2D = new node2D(sources, targets, Maxparts, isources, 0, 1, size, center );
+    node2D* treefmm2D = new node2D( sources, targets, Maxparts, isources, itargets, 0, 0, size, center );
     // treefmm2D->evalInode(0); // assign inodes;
     treefmm2D->evalCoeffMpole(sources, charges, p); // calculate and merge multipole coefficients
     treefmm2D->evalIList();
@@ -116,15 +108,25 @@ int main(int argc, char *argv[]) {
     treefmm2D->evalCoeffLocalExpSum(p);
     
     // write results to file
-    npartsFile.open("out/nparts.csv");    
+    nsrcFile.open("out/nsrc.csv");    
     ZFile.open("out/Z.bin", std::ios::binary);
     treefmm2D->fprintZ(sources);
-    npartsFile.close();
+    nsrcFile.close();
     ZFile.close();
 
-    mpoleFile.open("out/mpole.csv");
+    ntrgFile.open("out/ntrg.csv");    
+    ZtrgFile.open("out/Ztrg.bin", std::ios::binary);
+    treefmm2D->fprintZtrg(targets);
+    ntrgFile.close();
+    ZtrgFile.close();
+
+    /*mpoleFile.open("out/mpole.csv");
     treefmm2D->fprintMpole(); 
-    mpoleFile.close();
+    mpoleFile.close();*/
+
+    potFile.open("out/pot.bin");
+    treefmm2D->fprintPot( sources, targets, charges, potFlag );
+    potFile.close();
 
     time(&endTime);
     cout << "p: " << p << endl;

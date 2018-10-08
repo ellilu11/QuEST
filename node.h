@@ -27,8 +27,8 @@ public:
     // std::vector<std::vector<std::complex<double> > > coeffMpoleList;
     // std::vector<std::complex<double> > centerList;
 
-    node2D(std::vector<std::complex<double> > Z, std::vector<std::complex<double> > Ztarg, int maxparts,
-        std::vector<int> iz, int lvl, int order, double size, std::complex<double> center);
+    node2D(std::vector<std::complex<double> > Z, std::vector<std::complex<double> > Ztrg, int maxparts,
+        std::vector<int> iz, std::vector<int> iztrg, int lvl, int order, double size, std::complex<double> center);
 
     ~node2D() {}
 
@@ -52,15 +52,18 @@ public:
  
     void evalCoeffLocalExpSum(int p);  
    
-    std::vector<std::complex<double> > evalPotSrcLeaf(std::vector<std::complex<double> > Z, std::vector<double> Q);
+    std::vector<std::complex<double> > evalPotSrc(std::vector<std::complex<double> > Z, std::vector<double> Q);
 
-    std::vector<std::complex<double> > evalPotTrgLeaf(std::vector<std::complex<double> > Z, std::vector<double> Q);
+    std::vector<std::complex<double> > evalPotTrg(
+        std::vector<std::complex<double> > Z, std::vector<std::complex<double> > Ztrg, std::vector<double> Q);
 
     void fprintZ(std::vector<std::complex<double> > Z);
 
+    void fprintZtrg(std::vector<std::complex<double> > Ztrg);
+
     void fprintMpole();
 
-    void fprintPot( std::vector<std::complex<double> > Z, std::vector<double> Q, int srcFlag, int trgFlag );
-
+    void fprintPot( std::vector<std::complex<double> > Z, std::vector<std::complex<double> > Ztrg, 
+        std::vector<double> Q, int flag );
 
 };

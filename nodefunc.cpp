@@ -72,8 +72,36 @@ node2D* node2D::findNode(int i){
         return child[3]->findNode(i);
 }*/
 
+// for a leaf node, evaluates the potential at all source points within
+std::vector<std::complex<double> > node2D::evalPotSrc(std::vector<std::complex<double> > Z,  std::vector<double> Q){
+
+    std::vector<std::complex<double> > phi(iz.size());
+    int p = coeffLocalExp.size()-1;
+    std::vector<node2D*> nList = findNeighbours();
+    double r;
+    int ii;
+
+    for ( int i=0; i<iz.size(); i++ ) {
+
+        // evaluate multipole (far field) contributions
+        for ( int l=0; l<p; l++ )
+            phi[i] += coeffLocalExp[l]*pow(Z[iz[i]]-center,l);
+
+        // evaluate direct (near field) contributions
+        for ( int j=0; j<nList.size(); j++ ){
+            for ( int k=0; k<nList[j]->iz.size(); k++ ){
+                ii = nList[j]->iz[k];
+                r = abs(Z[iz[i]] - Z[ii]);
+                phi[i] += Q[ii]/r;
+            }
+        }
+    }
+
+    return phi;
+}
+
 // for a leaf node, evaluates the potential at all target points within
-std::vector<std::complex<double> > node2D::evalPotTrgLeaf(
+std::vector<std::complex<double> > node2D::evalPotTrg(
     std::vector<std::complex<double> > Z, std::vector<std::complex<double> > Ztrg, std::vector<double> Q){
 
     std::vector<std::complex<double> > phi(iztrg.size());
@@ -92,7 +120,7 @@ std::vector<std::complex<double> > node2D::evalPotTrgLeaf(
         for ( int j=0; j<nList.size(); j++ ){
             for ( int k=0; k<nList[j]->iz.size(); k++ ){
                 ii = nList[j]->iz[k];
-                r = abs(Z[iztrg[i]] - Z[ii]);
+                r = abs(Ztrg[iztrg[i]] - Z[ii]);
                 phi[i] += Q[ii]/r;
             }
         }
@@ -103,9 +131,8 @@ std::vector<std::complex<double> > node2D::evalPotTrgLeaf(
 
 void node2D::fprintZ(std::vector<std::complex<double> > Z){
     if (this != NULL) {
-        // cout << "NEW NODE w/ " << iz.size() << " particles centered at " << center << endl;
 
-        ::npartsFile << iz.size() << endl;
+        ::nsrcFile << iz.size() << endl;
         for ( int i=0; i<iz.size(); i++ ){
             ::ZFile.write((char*)&real(Z[iz[i]]), sizeof(double));
             ::ZFile.write((char*)&imag(Z[iz[i]]), sizeof(double));
@@ -113,6 +140,19 @@ void node2D::fprintZ(std::vector<std::complex<double> > Z){
         }
 
         for ( int j=0; j<4; j++ ) child[j]->fprintZ(Z);
+    }
+}
+
+void node2D::fprintZtrg(std::vector<std::complex<double> > Ztrg){
+    if (this != NULL) {
+
+        ::ntrgFile << iztrg.size() << endl;
+        for ( int i=0; i<iztrg.size(); i++ ){
+            ::ZtrgFile.write((char*)&real(Ztrg[iztrg[i]]), sizeof(double));
+            ::ZtrgFile.write((char*)&imag(Ztrg[iztrg[i]]), sizeof(double));
+        }
+
+        for ( int j=0; j<4; j++ ) child[j]->fprintZtrg(Ztrg);
     }
 }
 
@@ -128,17 +168,29 @@ void node2D::fprintMpole(){
     }
 }
 
-void node2D::fprintPot( std::vector<std::complex<double> > Z, std::vector<double> Q, int srcFlag, int trgFlag ){
+void node2D::fprintPot( std::vector<std::complex<double> > Z, std::vector<std::complex<double> > Ztrg, 
+    std::vector<double> Q, int flag ){
     if ( isLeaf ) {
-        if ( trgFlag ) {
-            std::vector<std::complex<double> > pot = evalPotTrgLeaf( Z, Q ); 
+        if ( flag == 1 ) {
+            std::vector<std::complex<double> > pot = evalPotSrc( Z, Q ); 
+            for ( int i=0; i<iz.size(); i++ ){
+                ::potFile.write((char*)&real(Z[iz[i]]), sizeof(double));
+                ::potFile.write((char*)&imag(Z[iz[i]]), sizeof(double));
+                ::potFile.write((char*)&real(pot[i]), sizeof(double));
+                // ::potFile << Re(Z[iz[i]]) << "," << Im(Z << "," << pot[i] << endl;
+            } 
+        } else if ( flag == 2 ) {
+            std::vector<std::complex<double> > pot = evalPotTrg( Z, Ztrg, Q ); 
             for ( int i=0; i<iztrg.size(); i++ ){
-                ::potFile << Ztrg[iztrg[i]] << "," << pot[i] << endl;
+                ::potFile.write((char*)&real(Ztrg[iztrg[i]]), sizeof(double));
+                ::potFile.write((char*)&imag(Ztrg[iztrg[i]]), sizeof(double));
+                ::potFile.write((char*)&real(pot[i]), sizeof(double));
+                // ::potFile << Ztrg[iztrg[i]] << "," << pot[i] << endl;
             } 
         }
     } else 
         for ( int j=0; j<4; j++ )
-            child[j]->fprintPot( Z, Q, srcFlag, trgFlag );
+            child[j]->fprintPot( Z, Ztrg, Q, flag );
     
 
 }
