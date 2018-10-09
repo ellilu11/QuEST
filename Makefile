@@ -1,5 +1,5 @@
 CC = g++
-FLAGS = 
+FLAGS = -fopenmp
 
 CPPS = node.cpp nodefunc.cpp mathfunc.cpp main.cpp
 

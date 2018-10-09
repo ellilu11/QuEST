@@ -52,10 +52,11 @@ public:
  
     void evalCoeffLocalExpSum(int p);  
    
-    std::vector<std::complex<double> > evalPotSrc(std::vector<std::complex<double> > Z, std::vector<double> Q);
+    std::vector<std::complex<double> > evalPotSrc(
+        std::vector<std::complex<double> > Z, std::vector<double> Q, double mind);
 
     std::vector<std::complex<double> > evalPotTrg(
-        std::vector<std::complex<double> > Z, std::vector<std::complex<double> > Ztrg, std::vector<double> Q);
+        std::vector<std::complex<double> > Z, std::vector<std::complex<double> > Ztrg, std::vector<double> Q, double mind);
 
     void fprintZ(std::vector<std::complex<double> > Z);
 
@@ -64,6 +65,8 @@ public:
     void fprintMpole();
 
     void fprintPot( std::vector<std::complex<double> > Z, std::vector<std::complex<double> > Ztrg, 
-        std::vector<double> Q, int flag );
+        std::vector<double> Q, int flag, double mind);
+
+    void fprintList(std::vector<std::complex<double> > Z);
 
 };

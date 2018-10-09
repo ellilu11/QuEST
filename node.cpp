@@ -191,7 +191,7 @@ void node2D::evalCoeffLocalExp( int p ){
 
         for ( int l=1; l<=p; l++ ){
             B[l] = -Bs[i][0]/((double)l*pow(z0,l));
-            for ( int k=1; k<=l; k++ )
+            for ( int k=1; k<=p; k++ )
                 B[l] += Bs[i][k]*pow(-1,k)/pow(z0,l+k)*(double)binomCoeffs[l+k-1][k-1];
         }
     }
@@ -208,11 +208,10 @@ void node2D::evalCoeffLocalExpSum(int p){
     std::vector<std::vector<std::complex<double> > > B(4, std::vector<std::complex<double> >(p+1)); 
     std::vector<std::complex<double> > z0(4);
 
-    if ( isLeaf ) {
-        return;
-    } else {
+    if ( isLeaf ) return;
+    else {
         for ( int j=0; j<4; j++ ){
-            z0[j] = -(child[j]->center - center);
+            z0[j] = (child[j]->center - center);
             B[j] = shiftLocalExp(z0[j]);
             for ( int k=0; k<p; k++ )
                 child[j]->coeffLocalExp[k] += B[j][k];

@@ -18,25 +18,42 @@ int node2D::numNodes(){
 
 int node2D::isNeighbour(node2D* other){
     double dist = abs(center - other->center);
-    return (lvl == other->lvl && dist <= size*sqrt(2));
+    return (lvl == other->lvl && dist <= size*sqrt(2.0));
 }
 
 // returns array of pointers to neighbour nodes
 std::vector<node2D*> node2D::findNeighbours(){
 
     std::vector<node2D*> nList;
-    node2D* gparent = this->parent->parent;
+    node2D* gparent;
+    node2D* ggparent;
+
+    if ( lvl > 1 ) gparent = this->parent->parent;
+    if ( lvl > 2 ) ggparent = this->parent->parent->parent;
 
     for ( int j=0; j<4; j++ ){
+
         // find the 3 sibling neighbours
-        if ( order != j )
+        if ( lvl > 0 && order != j )
             nList.push_back(parent->child[j]);
 
         // find the 5 non-sibling neighbours
-        if ( parent->order != j && !gparent->child[j]->isLeaf ){
+        if ( lvl > 1 && parent->order != j && !gparent->child[j]->isLeaf ){
             for ( int k=0; k<4; k++ ) {
                 if (isNeighbour(gparent->child[j]->child[k]))
                     nList.push_back(gparent->child[j]->child[k]);
+            }
+        }
+        // if the node is not an "interior" node of its gparent, have to look at ggparent
+        if ( lvl > 2 && abs(center - gparent->center) > size*sqrt(2.0)/2.0 &&
+             gparent->order != j && !ggparent->child[j]->isLeaf ){
+            for ( int k=0; k<4; k++ ){
+                if ( !ggparent->child[j]->child[k]->isLeaf ){
+                    for ( int l=0; l<4; l++ ){
+                        if (isNeighbour(ggparent->child[j]->child[k]->child[l]))
+                            nList.push_back(ggparent->child[j]->child[k]->child[l]);
+                    }
+                }
             }
         }
     }
@@ -49,6 +66,7 @@ std::vector<std::complex<double> >
     
     int p = coeffLocalExp.size()-1;
     std::vector<std::complex<double> > B = coeffLocalExp;
+    // for ( int i=0; i<=p; i++ ) B[i] = coeffLocalExp[i];
 
     for ( int j=0; j<p; j++ )
         for ( int k=p-j-1; k<p; k++ )
@@ -73,12 +91,12 @@ node2D* node2D::findNode(int i){
 }*/
 
 // for a leaf node, evaluates the potential at all source points within
-std::vector<std::complex<double> > node2D::evalPotSrc(std::vector<std::complex<double> > Z,  std::vector<double> Q){
+std::vector<std::complex<double> > node2D::evalPotSrc(std::vector<std::complex<double> > Z,  std::vector<double> Q, double mind){
 
     std::vector<std::complex<double> > phi(iz.size());
     int p = coeffLocalExp.size()-1;
     std::vector<node2D*> nList = findNeighbours();
-    double r;
+    double d;
     int ii;
 
     for ( int i=0; i<iz.size(); i++ ) {
@@ -91,8 +109,8 @@ std::vector<std::complex<double> > node2D::evalPotSrc(std::vector<std::complex<d
         for ( int j=0; j<nList.size(); j++ ){
             for ( int k=0; k<nList[j]->iz.size(); k++ ){
                 ii = nList[j]->iz[k];
-                r = abs(Z[iz[i]] - Z[ii]);
-                phi[i] += Q[ii]/r;
+                d = abs(Z[iz[i]] - Z[ii]);
+                if (d > mind) phi[i] += Q[ii]/d;
             }
         }
     }
@@ -102,12 +120,12 @@ std::vector<std::complex<double> > node2D::evalPotSrc(std::vector<std::complex<d
 
 // for a leaf node, evaluates the potential at all target points within
 std::vector<std::complex<double> > node2D::evalPotTrg(
-    std::vector<std::complex<double> > Z, std::vector<std::complex<double> > Ztrg, std::vector<double> Q){
+    std::vector<std::complex<double> > Z, std::vector<std::complex<double> > Ztrg, std::vector<double> Q, double mind){
 
     std::vector<std::complex<double> > phi(iztrg.size());
     int p = coeffLocalExp.size()-1;
     std::vector<node2D*> nList = findNeighbours();
-    double r;
+    double d;
     int ii;
 
     for ( int i=0; i<iztrg.size(); i++ ) {
@@ -120,8 +138,8 @@ std::vector<std::complex<double> > node2D::evalPotTrg(
         for ( int j=0; j<nList.size(); j++ ){
             for ( int k=0; k<nList[j]->iz.size(); k++ ){
                 ii = nList[j]->iz[k];
-                r = abs(Ztrg[iztrg[i]] - Z[ii]);
-                phi[i] += Q[ii]/r;
+                d = abs(Ztrg[iztrg[i]] - Z[ii]);
+                if (d > mind) phi[i] += Q[ii]/d;
             }
         }
     }
@@ -169,10 +187,10 @@ void node2D::fprintMpole(){
 }
 
 void node2D::fprintPot( std::vector<std::complex<double> > Z, std::vector<std::complex<double> > Ztrg, 
-    std::vector<double> Q, int flag ){
+    std::vector<double> Q, int flag, double mind ){
     if ( isLeaf ) {
         if ( flag == 1 ) {
-            std::vector<std::complex<double> > pot = evalPotSrc( Z, Q ); 
+            std::vector<std::complex<double> > pot = evalPotSrc( Z, Q, mind ); 
             for ( int i=0; i<iz.size(); i++ ){
                 ::potFile.write((char*)&real(Z[iz[i]]), sizeof(double));
                 ::potFile.write((char*)&imag(Z[iz[i]]), sizeof(double));
@@ -180,7 +198,7 @@ void node2D::fprintPot( std::vector<std::complex<double> > Z, std::vector<std::c
                 // ::potFile << Re(Z[iz[i]]) << "," << Im(Z << "," << pot[i] << endl;
             } 
         } else if ( flag == 2 ) {
-            std::vector<std::complex<double> > pot = evalPotTrg( Z, Ztrg, Q ); 
+            std::vector<std::complex<double> > pot = evalPotTrg( Z, Ztrg, Q, mind ); 
             for ( int i=0; i<iztrg.size(); i++ ){
                 ::potFile.write((char*)&real(Ztrg[iztrg[i]]), sizeof(double));
                 ::potFile.write((char*)&imag(Ztrg[iztrg[i]]), sizeof(double));
@@ -190,7 +208,31 @@ void node2D::fprintPot( std::vector<std::complex<double> > Z, std::vector<std::c
         }
     } else 
         for ( int j=0; j<4; j++ )
-            child[j]->fprintPot( Z, Ztrg, Q, flag );
+            child[j]->fprintPot( Z, Ztrg, Q, flag, mind );
     
 
+}
+
+void node2D::fprintList( std::vector<std::complex<double> > Z ){
+
+    int s = 0;
+    std::vector<int> iiz;
+
+    if ( lvl > 2 ) {
+    std::vector<node2D*> list = findNeighbours();
+
+    for ( int i=0; i<list.size(); i++ ){
+        iiz = list[i]->iz;
+        s += iiz.size();
+        // cout << i << "," << s << endl;
+        for ( int j=0; j<iiz.size(); j++ ){
+            ::ZFile.write((char*)&real(Z[iiz[j]]), sizeof(double));
+            ::ZFile.write((char*)&imag(Z[iiz[j]]), sizeof(double));
+        }
+    }
+    ::nsrcFile << s << endl;
+    }
+
+    if ( !isLeaf ) for ( int j=0; j<4; j++ ) child[j]->fprintList(Z);
+    
 }
