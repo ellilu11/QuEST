@@ -6,6 +6,7 @@
 
 #include "node.h"
 #include "fstream.h"
+#include "mathfunc.h"
 
 using namespace std;
 
@@ -18,7 +19,8 @@ int node2D::numNodes(){
 
 int node2D::isNeighbour(node2D* other){
     double dist = abs(center - other->center);
-    return (lvl == other->lvl && dist <= size*sqrt(2.0));
+    return (dist <= (1+pow(2,other->lvl-lvl))*size*sqrt(2.0)/2.0);
+    // return (lvl == other->lvl && dist <= size*sqrt(2.0));
 }
 
 // returns array of pointers to neighbour nodes
@@ -38,25 +40,37 @@ std::vector<node2D*> node2D::findNeighbours(){
             nList.push_back(parent->child[j]);
 
         // find the 5 non-sibling neighbours
-        if ( lvl > 1 && parent->order != j && !gparent->child[j]->isLeaf ){
+        if ( lvl > 1 && parent->order != j ) { 
+            if (!gparent->child[j]->isLeaf ) {
             for ( int k=0; k<4; k++ ) {
                 if (isNeighbour(gparent->child[j]->child[k]))
                     nList.push_back(gparent->child[j]->child[k]);
             }
+            } else {
+                if (isNeighbour(gparent->child[j]))
+                    nList.push_back(gparent->child[j]);
+            }
         }
         // if the node is not an "interior" node of its gparent, have to look at ggparent
-        if ( lvl > 2 && abs(center - gparent->center) > size*sqrt(2.0)/2.0 &&
-             gparent->order != j && !ggparent->child[j]->isLeaf ){
-            for ( int k=0; k<4; k++ ){
-                if ( !ggparent->child[j]->child[k]->isLeaf ){
+        if ( lvl > 2 && abs(center - gparent->center) > size*sqrt(2.0)/2.0 && gparent->order != j ){
+           if ( !ggparent->child[j]->isLeaf ){
+           for ( int k=0; k<4; k++ ){
+               if ( !ggparent->child[j]->child[k]->isLeaf ){
                     for ( int l=0; l<4; l++ ){
                         if (isNeighbour(ggparent->child[j]->child[k]->child[l]))
                             nList.push_back(ggparent->child[j]->child[k]->child[l]);
                     }
-                }
-            }
+               } else {
+                    if (isNeighbour(ggparent->child[j]->child[k]))
+                            nList.push_back(ggparent->child[j]->child[k]);
+               }
+           } 
+           } else {
+                if (isNeighbour(ggparent->child[j]))
+                    nList.push_back(ggparent->child[j]);
+           }
         }
-    }
+    }         
 
     return nList;
 }
@@ -189,20 +203,26 @@ void node2D::fprintMpole(){
 void node2D::fprintPot( std::vector<std::complex<double> > Z, std::vector<std::complex<double> > Ztrg, 
     std::vector<double> Q, int flag, double mind ){
     if ( isLeaf ) {
+        double potAbs;
         if ( flag == 1 ) {
             std::vector<std::complex<double> > pot = evalPotSrc( Z, Q, mind ); 
             for ( int i=0; i<iz.size(); i++ ){
+                // potAbs = abs(pot[i]); 
                 ::potFile.write((char*)&real(Z[iz[i]]), sizeof(double));
                 ::potFile.write((char*)&imag(Z[iz[i]]), sizeof(double));
                 ::potFile.write((char*)&real(pot[i]), sizeof(double));
+                ::potFile.write((char*)&imag(pot[i]), sizeof(double));
                 // ::potFile << Re(Z[iz[i]]) << "," << Im(Z << "," << pot[i] << endl;
             } 
         } else if ( flag == 2 ) {
-            std::vector<std::complex<double> > pot = evalPotTrg( Z, Ztrg, Q, mind ); 
+            std::vector<std::complex<double> > pot = evalPotTrg( Z, Ztrg, Q, mind );
             for ( int i=0; i<iztrg.size(); i++ ){
+                potAbs = abs(pot[i]);
                 ::potFile.write((char*)&real(Ztrg[iztrg[i]]), sizeof(double));
                 ::potFile.write((char*)&imag(Ztrg[iztrg[i]]), sizeof(double));
                 ::potFile.write((char*)&real(pot[i]), sizeof(double));
+                ::potFile.write((char*)&imag(pot[i]), sizeof(double));
+                ::potFile.write((char*)&potAbs, sizeof(double));
                 // ::potFile << Ztrg[iztrg[i]] << "," << pot[i] << endl;
             } 
         }

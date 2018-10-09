@@ -10,4 +10,6 @@ const std::complex<double> I(0.0,1.0);
 
 int binomCoeff(int n, int k);
 
+double absCmplx(std::complex<double> z);
+
 #endif

@@ -211,7 +211,7 @@ void node2D::evalCoeffLocalExpSum(int p){
     if ( isLeaf ) return;
     else {
         for ( int j=0; j<4; j++ ){
-            z0[j] = (child[j]->center - center);
+            z0[j] = -(child[j]->center - center);
             B[j] = shiftLocalExp(z0[j]);
             for ( int k=0; k<p; k++ )
                 child[j]->coeffLocalExp[k] += B[j][k];
