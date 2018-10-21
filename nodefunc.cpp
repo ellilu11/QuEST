@@ -23,6 +23,29 @@ int node2D::isNeighbour(node2D* other){
     // return (lvl == other->lvl && dist <= size*sqrt(2.0));
 }
 
+/*
+std::vector<node2D*> node2D::findNeighboursSlow(){
+
+    std::vector<node2D*> nList;
+    node2D* gparent;
+    node2DD* ggparent;
+
+    if ( lvl > 1 ) gparent = this->parent->parent;
+    if ( lvl > 2 ) ggparent = this->parent->parent->parent;
+
+    if ( lvl > 2 ){
+        for ( int j=0; j<4; j++ ){
+            if ( ggparent->
+
+            for ( int k=0; k<4; k++ ){
+
+    }
+
+
+    return nList;
+
+}*/
+
 // returns array of pointers to neighbour nodes
 std::vector<node2D*> node2D::findNeighbours(){
 
@@ -80,18 +103,16 @@ std::vector<std::complex<double> >
     
     int p = coeffLocalExp.size()-1;
     std::vector<std::complex<double> > B = coeffLocalExp;
-    // for ( int i=0; i<=p; i++ ) B[i] = coeffLocalExp[i];
 
-    for ( int j=0; j<p; j++ )
-        for ( int k=p-j-1; k<p; k++ )
+    for ( int j=0; j<=p-1; j++ )
+        for ( int k=p-j-1; k<=p-1; k++ )
             B[k] = B[k] - z0*B[k+1];
 
     return B;
 }
 
-/*
 // returns pointer to ith subnode of a given node
-node2D* node2D::findNode(int i){
+/*node2D* node2D::findNode(int i){
     if (this->inode == i)
         return this;
     else if (i < child[1]->inode)
@@ -147,14 +168,22 @@ std::vector<std::complex<double> > node2D::evalPotTrg(
         // evaluate multipole (far field) contributions
         for ( int l=0; l<p; l++ )
             phi[i] += coeffLocalExp[l]*pow(Ztrg[iztrg[i]]-center,l);
-
-        // evaluate direct (near field) contributions
+        
+        // evaluate direct (near field) contributions, excluding interactions in node proper
         for ( int j=0; j<nList.size(); j++ ){
             for ( int k=0; k<nList[j]->iz.size(); k++ ){
                 ii = nList[j]->iz[k];
                 d = abs(Ztrg[iztrg[i]] - Z[ii]);
-                if (d > mind) phi[i] += Q[ii]/d;
+                // if (d > mind)
+                phi[i] += Q[ii]/d;
             }
+        }
+
+        // finally, evaluate interactions in the node proper
+        for ( int k=0; k<iz.size(); k++ ){
+            d = abs(Ztrg[iztrg[i]] - Z[iz[k]]);
+            // if (d > mind) 
+            phi[i] += Q[iz[k]]/d;
         }
     }
 
@@ -165,9 +194,13 @@ void node2D::fprintZ(std::vector<std::complex<double> > Z){
     if (this != NULL) {
 
         ::nsrcFile << iz.size() << endl;
+        
+        double Zreal, Zimag;
         for ( int i=0; i<iz.size(); i++ ){
-            ::ZFile.write((char*)&real(Z[iz[i]]), sizeof(double));
-            ::ZFile.write((char*)&imag(Z[iz[i]]), sizeof(double));
+            Zreal = real(Z[iz[i]]);
+            Zimag = imag(Z[iz[i]]);    
+            ::ZFile.write((char*)&Zreal, sizeof(double));
+            ::ZFile.write((char*)&Zimag, sizeof(double));
             // ::ZFile << real(Z[iz[i]]) << "," << imag(Z[iz[i]]) << endl;
         }
 
@@ -179,9 +212,13 @@ void node2D::fprintZtrg(std::vector<std::complex<double> > Ztrg){
     if (this != NULL) {
 
         ::ntrgFile << iztrg.size() << endl;
+
+        double Zreal, Zimag;
         for ( int i=0; i<iztrg.size(); i++ ){
-            ::ZtrgFile.write((char*)&real(Ztrg[iztrg[i]]), sizeof(double));
-            ::ZtrgFile.write((char*)&imag(Ztrg[iztrg[i]]), sizeof(double));
+            Zreal = real(Ztrg[iztrg[i]]);
+            Zimag = imag(Ztrg[iztrg[i]]);
+            ::ZtrgFile.write((char*)&Zreal, sizeof(double));
+            ::ZtrgFile.write((char*)&Zimag, sizeof(double));
         }
 
         for ( int j=0; j<4; j++ ) child[j]->fprintZtrg(Ztrg);
@@ -203,26 +240,34 @@ void node2D::fprintMpole(){
 void node2D::fprintPot( std::vector<std::complex<double> > Z, std::vector<std::complex<double> > Ztrg, 
     std::vector<double> Q, int flag, double mind ){
     if ( isLeaf ) {
-        double potAbs;
+        double Zreal, Zimag, potreal, potimag, potabs;
         if ( flag == 1 ) {
             std::vector<std::complex<double> > pot = evalPotSrc( Z, Q, mind ); 
             for ( int i=0; i<iz.size(); i++ ){
-                // potAbs = abs(pot[i]); 
-                ::potFile.write((char*)&real(Z[iz[i]]), sizeof(double));
-                ::potFile.write((char*)&imag(Z[iz[i]]), sizeof(double));
-                ::potFile.write((char*)&real(pot[i]), sizeof(double));
-                ::potFile.write((char*)&imag(pot[i]), sizeof(double));
+                // potAbs = abs(pot[i]);
+                Zreal = real(Z[iz[i]]);
+                Zimag = imag(Z[iz[i]]);
+                potreal = real(pot[i]);
+                potimag = imag(pot[i]);
+                ::potFile.write((char*)&Zreal, sizeof(double));
+                ::potFile.write((char*)&Zimag, sizeof(double));
+                ::potFile.write((char*)&potreal, sizeof(double));
+                ::potFile.write((char*)&potimag, sizeof(double));
                 // ::potFile << Re(Z[iz[i]]) << "," << Im(Z << "," << pot[i] << endl;
             } 
         } else if ( flag == 2 ) {
             std::vector<std::complex<double> > pot = evalPotTrg( Z, Ztrg, Q, mind );
             for ( int i=0; i<iztrg.size(); i++ ){
-                potAbs = abs(pot[i]);
-                ::potFile.write((char*)&real(Ztrg[iztrg[i]]), sizeof(double));
-                ::potFile.write((char*)&imag(Ztrg[iztrg[i]]), sizeof(double));
-                ::potFile.write((char*)&real(pot[i]), sizeof(double));
-                ::potFile.write((char*)&imag(pot[i]), sizeof(double));
-                ::potFile.write((char*)&potAbs, sizeof(double));
+                Zreal = real(Ztrg[iztrg[i]]);
+                Zimag = imag(Ztrg[iztrg[i]]);
+                potreal = real(pot[i]);
+                potimag = imag(pot[i]);
+                potabs = abs(pot[i]);
+                ::potFile.write((char*)&Zreal, sizeof(double));
+                ::potFile.write((char*)&Zimag, sizeof(double));
+                ::potFile.write((char*)&potreal, sizeof(double));
+                ::potFile.write((char*)&potimag, sizeof(double));
+                ::potFile.write((char*)&potabs, sizeof(double));
                 // ::potFile << Ztrg[iztrg[i]] << "," << pot[i] << endl;
             } 
         }
@@ -241,13 +286,16 @@ void node2D::fprintList( std::vector<std::complex<double> > Z ){
     if ( lvl > 2 ) {
     std::vector<node2D*> list = findNeighbours();
 
+    double Zreal, Zimag;
     for ( int i=0; i<list.size(); i++ ){
         iiz = list[i]->iz;
         s += iiz.size();
         // cout << i << "," << s << endl;
         for ( int j=0; j<iiz.size(); j++ ){
-            ::ZFile.write((char*)&real(Z[iiz[j]]), sizeof(double));
-            ::ZFile.write((char*)&imag(Z[iiz[j]]), sizeof(double));
+            Zreal = real(Z[iiz[j]]);
+            Zimag = imag(Z[iiz[j]]);
+            ::ZFile.write((char*)&Zreal, sizeof(double));
+            ::ZFile.write((char*)&Zimag, sizeof(double));
         }
     }
     ::nsrcFile << s << endl;

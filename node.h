@@ -6,7 +6,7 @@
 class node2D {
 private:
     int lvl; // level of subdivision of this node
-    // int inode; // index of this node among all nodes in the tree
+    int inode; // index of this node among all nodes in the tree
     int order; // index of this node among its siblings
     int isLeaf;
 
@@ -38,11 +38,13 @@ public:
 
     std::vector<node2D*> findNeighbours();
 
+    std::vector<node2D*> findNeighboursSlow();
+
     std::vector<std::complex<double> > shiftLocalExp(std::complex<double> z0);
 
-    // node2D* findNode(inti i);
+    // node2D* findNode(int i);
 
-    void evalInode(int i);
+    // void evalInode(int i);
 
     void evalCoeffMpole(std::vector<std::complex<double> > Z, std::vector<double> Q, int p);
 

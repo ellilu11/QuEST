@@ -130,7 +130,7 @@ int main(int argc, char *argv[]) {
  
     nsrcFile.open("out/nsrc.csv");    
     ZFile.open("out/Z.bin", std::ios::binary);
-    treefmm2D->fprintList(sources);
+    treefmm2D->fprintList(targets);
     nsrcFile.close();
     ZFile.close();
 

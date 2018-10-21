@@ -47,7 +47,7 @@ node2D::node2D(std::vector<std::complex<double> > Z, std::vector<std::complex<do
             } else if (real(Ztrg[iztrg[i]]) > real(center) && imag(Ztrg[iztrg[i]]) > imag(center)){
                 iztrgChild[3].push_back(iztrg[i]);
             } 
-        }
+        } 
 
         double centerXleft = real(center)-size/4;
         double centerXright = real(center)+size/4;
@@ -104,13 +104,14 @@ void node2D::evalCoeffMpole(std::vector<std::complex<double> > Z, std::vector<do
         for ( int i=0; i<nparts; i++ ) {
             A[0] += Q[iz[i]];
             for ( int k=1; k<=p; k++ )
-                A[k] -= Q[iz[i]]*pow(Z[iz[i]],k)/(double)k;
+                A[k] -= Q[iz[i]]*pow(Z[iz[i]]-parent->center,k)/(double)k;
+                // A[k] -= Q[iz[i]]*pow(Z[iz[i]],k)/(double)k;
         }
         
         // compute shifted expansion coefficients b_k about origin
         B[0] = A[0];
         for ( int l=1; l<=p; l++ ){
-            B[l] = -A[0]*pow(center,l)/(double)l;
+            B[l] = -A[0]*pow(z0,l)/(double)l;
             for ( int k=1; k<=l; k++ )
                 B[l] += A[k]*pow(z0,l-k)*(double)binomCoeffs[l-1][k-1];
         }
@@ -127,7 +128,7 @@ void node2D::evalCoeffMpole(std::vector<std::complex<double> > Z, std::vector<do
 
         for ( int j=0; j<4; j++ ){
             B[0] += A[j][0];
-            for ( int l = 1; l<=p; l++ ){
+            for ( int l=1; l<=p; l++ ){
                 B[l] += -A[j][0]*pow(z0[j],l)/(double)l;
                 for ( int k=1; k<=l; k++ )
                     B[l] += A[j][k]*pow(z0[j],l-k)*(double)binomCoeffs[l-1][k-1];
@@ -170,7 +171,7 @@ void node2D::evalIList(){
             child[j]->evalIList();
 }
 
-// Finds the local expansion coefficients due to all particles in a node's interaction list
+/* Finds the local expansion coefficients due to all particles in a node's interaction list
 void node2D::evalCoeffLocalExp( int p ){
  
     std::vector<std::vector<int> > binomCoeffs(2*p, std::vector<int>(p));
@@ -196,6 +197,41 @@ void node2D::evalCoeffLocalExp( int p ){
         }
     }
     this->coeffLocalExp = B;
+
+    if ( !isLeaf )
+        for ( int j=0; j<4; j++ )
+            child[j]->evalCoeffLocalExp(p);
+}*/
+
+// Assigns the local expansion coefficients of all members of a node's interaction list
+// Also, allocates memory for node's own local expansion coefficients
+void node2D::evalCoeffLocalExp( int p ){
+
+ 
+    std::vector<std::vector<int> > binomCoeffs(2*p, std::vector<int>(p));
+    for ( int l=1; l<=p; l++ )
+        for ( int k=1; k<=p; k++ )
+            binomCoeffs[l+k-1][k-1] = binomCoeff(l+k-1,k-1);
+  
+    std::vector<std::complex<double> > A = this->coeffMpole;
+    std::vector<std::complex<double> > B(p+1);
+    std::complex<double> z0;
+
+    this->coeffLocalExp = B;
+    for ( int i=0; i<ilist.size(); i++ ){
+        z0 = (center - ilist[i]->center);
+
+        B[0] = A[0]*log(-z0);
+        for ( int k=1; k<=p; k++ )
+            B[0] += A[k]*pow(-1,k)/pow(z0,k);
+
+        for ( int l=1; l<=p; l++ ){
+            B[l] = -A[0]/((double)l*pow(z0,l));
+            for ( int k=1; k<=p; k++ )
+                B[l] += A[k]*pow(-1,k)/pow(z0,l+k)*(double)binomCoeffs[l+k-1][k-1];
+        }
+        ilist[i]->coeffLocalExp = B;
+    }
 
     if ( !isLeaf )
         for ( int j=0; j<4; j++ )
