@@ -93,8 +93,8 @@ int main(int argc, char *argv[]) {
     double delta = size/(double)Ntargs;
 
     for ( int i=0; i<Ntargs; i++ ) {
-        x = trgDist == 1 ? xmin + i*delta : 0;
-        y = trgDist == 2 ? ymin + i*delta : 0;
+        x = trgDist == 1 ? xmin + i*delta : 0.0;
+        y = trgDist == 2 ? ymin + i*delta : 1.0;
         targets[i] = x+I*y;
         itargets[i] = i;
     }
@@ -103,6 +103,7 @@ int main(int argc, char *argv[]) {
     currTime = omp_get_wtime();  
 
     node2D* treefmm2D = new node2D( sources, targets, Maxparts, isources, itargets, 0, 0, size, center );
+    treefmm2D->evalInode(0);
     cout << "Created FMM2D tree structure... " << omp_get_wtime() - currTime << "s" << endl;
     currTime = omp_get_wtime();
  
@@ -130,7 +131,7 @@ int main(int argc, char *argv[]) {
  
     nsrcFile.open("out/nsrc.csv");    
     ZFile.open("out/Z.bin", std::ios::binary);
-    treefmm2D->fprintList(targets);
+    treefmm2D->fprintList(sources);
     nsrcFile.close();
     ZFile.close();
 

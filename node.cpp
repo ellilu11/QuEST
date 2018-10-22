@@ -70,7 +70,7 @@ node2D::node2D(std::vector<std::complex<double> > Z, std::vector<std::complex<do
 }
 
 // assigns inodes for a node and all its subnodes
-/*void node2D::evalInode(int i){
+void node2D::evalInode(int i){
     
     this->inode = i;
     if (isLeaf) return;
@@ -82,7 +82,7 @@ node2D::node2D(std::vector<std::complex<double> > Z, std::vector<std::complex<do
     for ( int j=0; j<4; j++ )
         child[j]->evalInode(child[j]->inode); 
 
-}*/
+}
 
 // for any node, assigns the truncated multipole coefficients due to all charges within
 void node2D::evalCoeffMpole(std::vector<std::complex<double> > Z, std::vector<double> Q, int p){
@@ -139,27 +139,18 @@ void node2D::evalCoeffMpole(std::vector<std::complex<double> > Z, std::vector<do
     this->coeffMpole = B;
 }
 
-/*
-void node2D::evalMasterList(){
-
-    for ( int i=0; i < numNodes(); i++ ){
-        coeffMpoleList[i] = findNode(i)->coeffMpole; 
-        centerList[i] = findNode(i)->center;
-    }
-}*/
-
 // Assigns a node's interaction list as indices to other nodes
 void node2D::evalIList(){
 
     if (lvl > 2){
-        // find parent's neighbours
-        std::vector<node2D*> nList = parent->findNeighbours();
+        // find parent's colleagues
+        std::vector<node2D*> nList = parent->findNeighboursSlow(1);
     
         // extract interaction list from parent's neighbours;
         for ( int j=0; j<nList.size(); j++){
             if ( !nList[j]->isLeaf ){
                 for ( int k=0; k<4; k++){
-                    if (!isNeighbour(nList[j]->child[k]))
+                    if (!isColleague(nList[j]->child[k]))
                         ilist.push_back(nList[j]->child[k]);
                 }
             }
