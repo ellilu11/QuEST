@@ -57,124 +57,103 @@ std::vector<node2D*> node2D::findNeighboursSlow(int flag){
 
 }
 
-// find the neighbour of larger or equal size in a given direction
-node2D* node2D::findNeighbourGeq(int dir){
+/* THESE DO NOT WORK!
+// returns array of pointers to colleagues (adjacent nodes of same level)
+std::vector<node2D*> node2D::findColleagues(){
 
-    if ( lvl == 0 ) return NULL;
+    std::vector<node2D*> nList;
+    node2D* gparent;
+    node2D* ggparent;
 
-    node2D* node;
+    if ( lvl > 1 ) gparent = this->parent->parent;
+    if ( lvl > 2 ) ggparent = this->parent->parent->parent;
 
-    if ( dir == 1 ) { // south
-        if (order == 2) return parent->child[0];
-        if (order == 3) return parent->child[1];
+    for ( int j=0; j<4; j++ ){
 
-        node = parent->findNeighbour(dir);
-        if (node->isLeaf) return node;
+        // find the 3 sibling colleagues
+        if ( lvl > 0 && order != j )
+            nList.push_back(parent->child[j]);
 
-        if (order == 0) return node->child[2];
-        if (order == 1) return node->child[3];
-
-    } else if ( dir == 6 ) { // north
-        if (order == 0) return parent->child[2];
-        if (order == 1) return parent->child[3];
-        
-        node = parent->findNeighbour(dir);
-        if (node->isLeaf) return node;
-
-        if (order == 2) return node->child[0];
-        if (order == 3) return node->child[1];        
-    
-    } else if ( dir == 3 ) { // west
-        if (order == 1) return parent->child[0];
-        if (order == 3) return parent->child[2];
-        
-        node = parent->findNeighbour(dir);
-        if (node->isLeaf) return node;
-
-        if (order == 0) return node->child[1];
-        if (order == 2) return node->child[3];        
-    
-    } else if ( dir == 4 ) { // east
-        if (order == 0) return parent->child[1];
-        if (order == 2) return parent->child[3];
-        
-        node = parent->findNeighbour(dir);
-        if (node->isLeaf) return node;
-
-        if (order == 1) return node->child[0];
-        if (order == 3) return node->child[2];        
-    
-    } else if ( dir == 0 ) { // southwest
-        if (order == 3) return parent->child[0];
-        
-        if (order == 0) {
-            node = parent->findNeighbour(dir);
-            if (node->isLeaf) return node;
-            return node->child[3];
-        } else if (order == 1){
-            node = parent->findNeighbour(1);
-            if (node->isLeaf) return node;
-            return node->child[2];
-        } else if (order == 2){
-            node = parent->findNeighbour(3);
-            if (node->isLeaf) return node;
-            return node->child[1];
+        // find the 5 non-sibling colleagues
+        if ( lvl > 1 && parent->order != j ) { 
+            if (!gparent->child[j]->isLeaf ) {
+                for ( int k=0; k<4; k++ ) {
+                    if (isColleague(gparent->child[j]->child[k]))
+                        nList.push_back(gparent->child[j]->child[k]);
+                }
+            }
         }
-    } else if ( dir == 2 ) { // southeast
-        if (order == 2) return parent->child[1];
-        
-        if (order == 1) {
-            node = parent->findNeighbour(dir);
-            if (node->isLeaf) return node;
-            return node->child[2];
-        } else if (order == 0){
-            node = parent->findNeighbour(1);
-            if (node->isLeaf) return node;
-            return node->child[3];
-        } else if (order == 3){
-            node = parent->findNeighbour(4);
-            if (node->isLeaf) return node;
-            return node->child[0];
+        // if the node is not an "interior" node of its gparent, have to look at ggparent
+        if ( lvl > 2 && gparent->order != j ) { 
+        // if ( lvl > 2 && abs(center - gparent->center) > size*sqrt(2.0)/2.0 && gparent->order != j ){
+            if ( !ggparent->child[j]->isLeaf ) {
+                for ( int k=0; k<4; k++ ){
+                    if ( !ggparent->child[j]->child[k]->isLeaf ){
+                        for ( int l=0; l<4; l++ ){
+                            if (isColleague(ggparent->child[j]->child[k]->child[l]))
+                                nList.push_back(ggparent->child[j]->child[k]->child[l]);
+                        }
+                    }
+                } 
+            }
         }
-    } else if ( dir == 5 ) { // northwest
-        if (order == 1) return parent->child[2];
-        
-        if (order == 2) {
-            node = parent->findNeighbour(dir);
-            if (node->isLeaf) return node;
-            return node->child[1];
-        } else if (order == 0){
-            node = parent->findNeighbour(3);
-            if (node->isLeaf) return node;
-            return node->child[3];
-        } else if (order == 3){
-            node = parent->findNeighbour(6);
-            if (node->isLeaf) return node;
-            return node->child[0];
-        }
-    } else if ( dir == 7) { // northeast
-        if (order == 0) return parent->child[3];
-        
-        if (order == 3) {
-            node = parent->findNeighbour(dir);
-            if (node->isLeaf) return node;
-            return node->child[0];
-        } else if (order == 1){
-            node = parent->findNeighbour(4);
-            if (node->isLeaf) return node;
-            return node->child[2];
-        } else if (order == 2){
-            node = parent->findNeighbour(6);
-            if (node->isLeaf) return node;
-            return node->child[1];
-        }
-    }
+    }         
+
+    return nList;
 }
 
-std::vector<node2D*> findNeighboursLt(int dir){
-    
+// returns array of pointers to neighbours (adjacent nodes of any level)
+std::vector<node2D*> node2D::findNeighbours(){
 
-}
+    std::vector<node2D*> nList;
+    node2D* gparent;
+    node2D* ggparent;
+
+    if ( lvl > 1 ) gparent = this->parent->parent;
+    if ( lvl > 2 ) ggparent = this->parent->parent->parent;
+
+    for ( int j=0; j<4; j++ ){
+
+        // find the 3 sibling neighbours
+        if ( lvl > 0 && order != j )
+            nList.push_back(parent->child[j]);
+
+        // find the 5 non-sibling neighbours
+        if ( lvl > 1 && parent->order != j ) { 
+            if (!gparent->child[j]->isLeaf ) {
+                for ( int k=0; k<4; k++ ) {
+                    if (isNeighbour(gparent->child[j]->child[k]))
+                        nList.push_back(gparent->child[j]->child[k]);
+                }
+            } else {
+                if (isNeighbour(gparent->child[j]))
+                    nList.push_back(gparent->child[j]);
+            }
+        }
+        // if the node is not an "interior" node of its gparent, have to look at ggparent
+        if ( lvl > 2 && gparent->order != j ) { 
+        // if ( lvl > 2 && abs(center - gparent->center) > size*sqrt(2.0)/2.0 && gparent->order != j ){
+            if ( !ggparent->child[j]->isLeaf ) {
+                for ( int k=0; k<4; k++ ){
+                    if ( !ggparent->child[j]->child[k]->isLeaf ){
+                        for ( int l=0; l<4; l++ ){
+                            if (isNeighbour(ggparent->child[j]->child[k]->child[l]))
+                                nList.push_back(ggparent->child[j]->child[k]->child[l]);
+                        }
+                    } else {
+                        if (isNeighbour(ggparent->child[j]->child[k]))
+                            nList.push_back(ggparent->child[j]->child[k]);
+                    }
+                } 
+           } else {
+                if (isNeighbour(ggparent->child[j]))
+                    nList.push_back(ggparent->child[j]);
+           }
+        }
+    }         
+
+    return nList;
+}*/
 
 std::vector<std::complex<double> > 
     node2D::shiftLocalExp(std::complex<double> z0){

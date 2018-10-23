@@ -40,6 +40,8 @@ public:
 
     std::vector<node2D*> findNeighboursSlow(int flag);
 
+    node2D* findNeighbour(int dir);
+
     std::vector<std::complex<double> > shiftLocalExp(std::complex<double> z0);
 
     node2D* findNode(int i);
