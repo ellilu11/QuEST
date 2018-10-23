@@ -22,7 +22,7 @@ int main(int argc, char *argv[]) {
     int Ntargs = 10000; // Number of targets (field points)
     int Maxparts = 1000; // maximum number of particles allowed in any box
     int Iprec = 0;  // error tolerance flag
-    int srcDist = 1; // 0 - uniform; 1 - Gaussian; etc...
+    int srcDist = 0; // 0 - uniform; 1 - Gaussian; etc...
     int trgDist = 1; // 0 - uniform 2-D; 1 - uniform along x-axis; 2 - uniform along y-axis 
     int potFlag = 2; // 0 - don't eval pot; 1 - eval pot at srcs; 2 - eval pot at trgs
     int fldFlag = 0; 

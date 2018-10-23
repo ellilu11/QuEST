@@ -21,6 +21,7 @@ int node2D::isColleague(node2D* other){
     return (this!=other && lvl == other->lvl && dist <= size*sqrt(2.0)+1.0E-03);
 }
 
+/*
 int node2D::isNeighbour(node2D* other){
     double dist = abs(center - other->center);
     // cout << lvl << " " << other->lvl << " " << isLeaf << " " << other->isLeaf << " " << dist << " " << ((1.0+pow(2.0,lvl-other->lvl))*size*sqrt(2.0)/2.0+1.0E-03)
@@ -28,7 +29,7 @@ int node2D::isNeighbour(node2D* other){
 
     return (this!=other && other->isLeaf 
         && dist <= (1.0+pow(2.0,lvl-other->lvl))*size*sqrt(2.0)/2.0+1.0E-03);
-} 
+}
 
 // flag == 0 : find neighbours (adjacent nodes of any level)
 // flag != 0 : find colleagues (adjacent nodes of same level)
@@ -55,7 +56,7 @@ std::vector<node2D*> node2D::findNeighboursSlow(int flag){
  
     return nList;
 
-}
+}*/
 
 // find the neighbour of larger or equal size in a given direction
 node2D* node2D::findNeighbourGeq(int dir){
@@ -63,14 +64,14 @@ node2D* node2D::findNeighbourGeq(int dir){
     if ( lvl == 0 ) return NULL;
 
     node2D* node;
-
     if ( dir == 1 ) { // south
         if (order == 2) return parent->child[0];
         if (order == 3) return parent->child[1];
 
-        node = parent->findNeighbour(dir);
+        node = parent->findNeighbourGeq(dir);
+        if (node == NULL) return NULL;
         if (node->isLeaf) return node;
-
+ 
         if (order == 0) return node->child[2];
         if (order == 1) return node->child[3];
 
@@ -78,17 +79,19 @@ node2D* node2D::findNeighbourGeq(int dir){
         if (order == 0) return parent->child[2];
         if (order == 1) return parent->child[3];
         
-        node = parent->findNeighbour(dir);
+        node = parent->findNeighbourGeq(dir);
+        if (node == NULL) return NULL;
         if (node->isLeaf) return node;
-
+ 
         if (order == 2) return node->child[0];
         if (order == 3) return node->child[1];        
-    
+
     } else if ( dir == 3 ) { // west
         if (order == 1) return parent->child[0];
         if (order == 3) return parent->child[2];
         
-        node = parent->findNeighbour(dir);
+        node = parent->findNeighbourGeq(dir);
+        if (node == NULL) return NULL;
         if (node->isLeaf) return node;
 
         if (order == 0) return node->child[1];
@@ -98,7 +101,8 @@ node2D* node2D::findNeighbourGeq(int dir){
         if (order == 0) return parent->child[1];
         if (order == 2) return parent->child[3];
         
-        node = parent->findNeighbour(dir);
+        node = parent->findNeighbourGeq(dir);
+        if (node == NULL) return NULL;
         if (node->isLeaf) return node;
 
         if (order == 1) return node->child[0];
@@ -108,15 +112,18 @@ node2D* node2D::findNeighbourGeq(int dir){
         if (order == 3) return parent->child[0];
         
         if (order == 0) {
-            node = parent->findNeighbour(dir);
+            node = parent->findNeighbourGeq(dir);
+            if (node == NULL) return NULL;
             if (node->isLeaf) return node;
             return node->child[3];
         } else if (order == 1){
-            node = parent->findNeighbour(1);
+            node = parent->findNeighbourGeq(1);
+            if (node == NULL) return NULL;
             if (node->isLeaf) return node;
             return node->child[2];
         } else if (order == 2){
-            node = parent->findNeighbour(3);
+            node = parent->findNeighbourGeq(3);
+            if (node == NULL) return NULL;
             if (node->isLeaf) return node;
             return node->child[1];
         }
@@ -124,15 +131,18 @@ node2D* node2D::findNeighbourGeq(int dir){
         if (order == 2) return parent->child[1];
         
         if (order == 1) {
-            node = parent->findNeighbour(dir);
+            node = parent->findNeighbourGeq(dir);
+            if (node == NULL) return NULL;
             if (node->isLeaf) return node;
             return node->child[2];
         } else if (order == 0){
-            node = parent->findNeighbour(1);
+            node = parent->findNeighbourGeq(1);
+            if (node == NULL) return NULL;
             if (node->isLeaf) return node;
             return node->child[3];
         } else if (order == 3){
-            node = parent->findNeighbour(4);
+            node = parent->findNeighbourGeq(4);
+            if (node == NULL) return NULL;
             if (node->isLeaf) return node;
             return node->child[0];
         }
@@ -140,40 +150,117 @@ node2D* node2D::findNeighbourGeq(int dir){
         if (order == 1) return parent->child[2];
         
         if (order == 2) {
-            node = parent->findNeighbour(dir);
+            node = parent->findNeighbourGeq(dir);
+            if (node == NULL) return NULL;
             if (node->isLeaf) return node;
             return node->child[1];
         } else if (order == 0){
-            node = parent->findNeighbour(3);
+            node = parent->findNeighbourGeq(3);
+            if (node == NULL) return NULL;
             if (node->isLeaf) return node;
             return node->child[3];
         } else if (order == 3){
-            node = parent->findNeighbour(6);
+            node = parent->findNeighbourGeq(6);
+            if (node == NULL) return NULL;
             if (node->isLeaf) return node;
             return node->child[0];
         }
-    } else if ( dir == 7) { // northeast
+    } else if ( dir == 7 ) { // northeast
         if (order == 0) return parent->child[3];
         
         if (order == 3) {
-            node = parent->findNeighbour(dir);
+            node = parent->findNeighbourGeq(dir);
+            if (node == NULL) return NULL;
             if (node->isLeaf) return node;
             return node->child[0];
         } else if (order == 1){
-            node = parent->findNeighbour(4);
+            node = parent->findNeighbourGeq(4);
+            if (node == NULL) return NULL;
             if (node->isLeaf) return node;
             return node->child[2];
         } else if (order == 2){
-            node = parent->findNeighbour(6);
+            node = parent->findNeighbourGeq(6);
+            if (node == NULL) return NULL;
             if (node->isLeaf) return node;
             return node->child[1];
         }
     }
+    return NULL;
 }
 
-std::vector<node2D*> findNeighboursLt(int dir){
-    
+// find neighbours of any size in a given direction
+std::vector<node2D*> node2D::findNeighboursDir(int dir){
+    std::vector<node2D*> nList;
+    std::vector<node2D*> nList1, nList2;
 
+    if ( isLeaf ) nList.push_back(this); return nList;
+    
+    if ( dir == 1 ){ // south
+        nList1 = child[2]->findNeighboursDir(dir);
+        nList2 = child[3]->findNeighboursDir(dir);
+    } else if ( dir == 6 ){ // north
+        nList1 = child[0]->findNeighboursDir(dir);
+        nList2 = child[1]->findNeighboursDir(dir);
+    } else if ( dir == 3 ){ // west
+        nList1 = child[1]->findNeighboursDir(dir);
+        nList2 = child[3]->findNeighboursDir(dir);
+    } else if ( dir == 4 ){ // east
+        nList1 = child[0]->findNeighboursDir(dir);
+        nList2 = child[2]->findNeighboursDir(dir);
+    } else if ( dir == 0 ) // southwest
+        nList1 = child[3]->findNeighboursDir(dir);
+      else if ( dir == 2 ) // southeast
+        nList1 = child[2]->findNeighboursDir(dir);
+      else if ( dir == 5 ) // northwest
+        nList1 = child[1]->findNeighboursDir(dir);
+      else if ( dir == 7 ) // northeast
+        nList1 = child[0]->findNeighboursDir(dir);
+
+    nList.reserve( nList1.size() + nList2.size() );
+    nList.insert( nList.end(), nList1.begin(), nList1.end() );
+    nList.insert( nList.end(), nList2.begin(), nList2.end() );
+ 
+    return nList;
+}
+
+// find neighbours (adjacent nodes of any size) of a node
+std::vector<node2D*> node2D::findNeighbours(){
+    
+    std::vector<node2D*> nList, nList1;
+    
+    for ( int i = 0; i < 8; i++ ){
+        if ( findNeighbourGeq(i) != NULL ){
+            nList1 = findNeighbourGeq(i)->findNeighboursDir(i);
+            nList.reserve( nList.size() + nList1.size() );
+            nList.insert( nList.end(), nList1.begin(), nList1.end() );
+        }
+    }
+    
+    // Need to account for duplicate nodes
+
+    int dups = 0;
+    for ( int i = 0; i < nList.size(); i++ )
+        for ( int j = 0; j < nList.size(); j++ )
+            if ( i != j && nList[i] == nList[j] ) dups++;
+
+    cout << dups << " ";
+
+    return nList;
+}
+
+// find colleagues (adjacent nodes of same size) of a node
+std::vector<node2D*> node2D::findColleagues(){
+    
+    std::vector<node2D*> nList;
+    
+    for ( int i = 0; i < 8; i++ )
+        if ( findNeighbourGeq(i) != NULL )
+            if ( lvl == findNeighbourGeq(i)->lvl )
+                nList.push_back(findNeighbourGeq(i));
+
+    // Need to account for duplicate nodes
+
+    return nList;
 }
 
 std::vector<std::complex<double> > 
@@ -208,7 +295,7 @@ std::vector<std::complex<double> > node2D::evalPotSrc(std::vector<std::complex<d
 
     std::vector<std::complex<double> > phi(iz.size());
     int p = coeffLocalExp.size()-1;
-    std::vector<node2D*> nList = findNeighboursSlow(0);
+    std::vector<node2D*> nList = findNeighbours();
     double d;
     int ii;
 
@@ -237,7 +324,7 @@ std::vector<std::complex<double> > node2D::evalPotTrg(
 
     std::vector<std::complex<double> > phi(iztrg.size());
     int p = coeffLocalExp.size()-1;
-    std::vector<node2D*> nList = findNeighboursSlow(0);
+    std::vector<node2D*> nList = findNeighbours();
     double d;
     int ii;
 

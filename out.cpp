@@ -102,7 +102,7 @@ void node2D::fprintList( std::vector<std::complex<double> > Z ){
     std::vector<int> iiz;
 
     if ( lvl > 2 ) {
-    std::vector<node2D*> list = findNeighboursSlow(0);
+    std::vector<node2D*> list = findNeighbours();
 
     double Zreal, Zimag;
     for ( int i=0; i<list.size(); i++ ){

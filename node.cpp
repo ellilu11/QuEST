@@ -17,7 +17,8 @@ node2D::node2D(std::vector<std::complex<double> > Z, std::vector<std::complex<do
     this->order = order;
     this->size = size;
     this->center = center;
-    for ( int j=0; j<4; j++ ) child.push_back(NULL); // allocate memory for the 4 child nodes
+    child.reserve(4);
+    // for ( int j=0; j<4; j++ ) child.push_back(NULL); // allocate memory for the 4 child nodes
 
     if ( iz.size() > maxparts ){ // more particles than allowed in this box; continue to subdivide
 
@@ -144,7 +145,7 @@ void node2D::evalIList(){
 
     if (lvl > 2){
         // find parent's colleagues
-        std::vector<node2D*> nList = parent->findNeighboursSlow(1);
+        std::vector<node2D*> nList = parent->findColleagues();
     
         // extract interaction list from parent's neighbours;
         for ( int j=0; j<nList.size(); j++){

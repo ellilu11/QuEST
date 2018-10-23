@@ -35,12 +35,14 @@ public:
     int numNodes();
 
     int isColleague(node2D* other);
-
     int isNeighbour(node2D* other);
 
     std::vector<node2D*> findNeighboursSlow(int flag);
 
-    node2D* findNeighbour(int dir);
+    node2D* findNeighbourGeq(int dir);
+    std::vector<node2D*> findNeighboursDir(int dir);
+    std::vector<node2D*> findNeighbours();
+    std::vector<node2D*> findColleagues();
 
     std::vector<std::complex<double> > shiftLocalExp(std::complex<double> z0);
 
