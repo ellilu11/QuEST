@@ -6,7 +6,7 @@
 class node2D {
 private:
     int lvl; // level of subdivision of this node
-    int inode; // index of this node among all nodes in the tree
+    // int inode; // index of this node among all nodes in the tree
     int order; // index of this node among its siblings
     bool isLeaf;
 

@@ -103,7 +103,7 @@ int main(int argc, char *argv[]) {
     currTime = omp_get_wtime();  
 
     node2D* treefmm2D = new node2D( sources, targets, Maxparts, isources, itargets, 0, 0, size, center );
-    treefmm2D->evalInode(0);
+    // treefmm2D->evalInode(0);
     cout << "Created FMM2D tree structure... " << omp_get_wtime() - currTime << "s" << endl;
     currTime = omp_get_wtime();
  

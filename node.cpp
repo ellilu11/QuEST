@@ -70,6 +70,7 @@ node2D::node2D(std::vector<std::complex<double> > Z, std::vector<std::complex<do
         isLeaf = 1;   
 }
 
+/*
 // assigns inodes for a node and all its subnodes
 void node2D::evalInode(int i){
     
@@ -83,7 +84,7 @@ void node2D::evalInode(int i){
     for ( int j=0; j<4; j++ )
         child[j]->evalInode(child[j]->inode); 
 
-}
+}*/
 
 // for any node, assigns the truncated multipole coefficients due to all charges within
 void node2D::evalCoeffMpole(std::vector<std::complex<double> > Z, std::vector<double> Q, int p){

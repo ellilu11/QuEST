@@ -1,6 +1,7 @@
 #include <iostream>
 #include <vector>
 #include <complex>
+#include <unordered_set>
 #include <cmath>
 
 #include "node.h"
@@ -24,8 +25,6 @@ int node2D::isColleague(node2D* other){
 /*
 int node2D::isNeighbour(node2D* other){
     double dist = abs(center - other->center);
-    // cout << lvl << " " << other->lvl << " " << isLeaf << " " << other->isLeaf << " " << dist << " " << ((1.0+pow(2.0,lvl-other->lvl))*size*sqrt(2.0)/2.0+1.0E-03)
-    //     << " " << (this!=other && other->isLeaf && dist <= (1.0+pow(2.0,lvl-other->lvl))*size*sqrt(2.0)/2.0+1.0E-03) << endl;
 
     return (this!=other && other->isLeaf 
         && dist <= (1.0+pow(2.0,lvl-other->lvl))*size*sqrt(2.0)/2.0+1.0E-03);
@@ -226,7 +225,7 @@ std::vector<node2D*> node2D::findNeighboursDir(int dir){
 // find neighbours (adjacent nodes of any size) of a node
 std::vector<node2D*> node2D::findNeighbours(){
     
-    std::vector<node2D*> nList, nList1;
+    std::vector<node2D*> nList1, nList;
     
     for ( int i = 0; i < 8; i++ ){
         if ( findNeighbourGeq(i) != NULL ){
@@ -237,13 +236,17 @@ std::vector<node2D*> node2D::findNeighbours(){
     }
     
     // Need to account for duplicate nodes
+    std::unordered_set<node2D*> nSet;
+    nSet.insert( nList.begin(), nList.end() );
+    nList.clear();
+    nList.insert( nList.end(), nSet.begin(), nSet.end() );
 
-    int dups = 0;
+    /*int dups = 0;
     for ( int i = 0; i < nList.size(); i++ )
         for ( int j = 0; j < nList.size(); j++ )
             if ( i != j && nList[i] == nList[j] ) dups++;
 
-    cout << dups << " ";
+    cout << dups << " ";*/
 
     return nList;
 }
@@ -259,6 +262,10 @@ std::vector<node2D*> node2D::findColleagues(){
                 nList.push_back(findNeighbourGeq(i));
 
     // Need to account for duplicate nodes
+    std::unordered_set<node2D*> nSet;
+    nSet.insert( nList.begin(), nList.end() );
+    nList.clear();
+    nList.insert( nList.end(), nSet.begin(), nSet.end() );
 
     return nList;
 }
@@ -276,6 +283,7 @@ std::vector<std::complex<double> >
     return B;
 }
 
+/*
 // returns pointer to ith subnode of a given node
 node2D* node2D::findNode(int i){
     if (this->inode == i)
@@ -288,8 +296,10 @@ node2D* node2D::findNode(int i){
         return child[2]->findNode(i);
     else
         return child[3]->findNode(i);
-}
+}*/
 
+
+/* Need to update this to match evalPotTrg 
 // for a leaf node, evaluates the potential at all source points within
 std::vector<std::complex<double> > node2D::evalPotSrc(std::vector<std::complex<double> > Z,  std::vector<double> Q, double mind){
 
@@ -316,7 +326,7 @@ std::vector<std::complex<double> > node2D::evalPotSrc(std::vector<std::complex<d
     }
 
     return phi;
-}
+}*/
 
 // for a leaf node, evaluates the potential at all target points within
 std::vector<std::complex<double> > node2D::evalPotTrg(
@@ -328,7 +338,7 @@ std::vector<std::complex<double> > node2D::evalPotTrg(
     double d;
     int ii;
 
-    cout << nList.size() << " ";
+    // cout << nList.size() << " ";
 
     for ( int i=0; i<iztrg.size(); i++ ) {
 
@@ -341,7 +351,7 @@ std::vector<std::complex<double> > node2D::evalPotTrg(
             for ( int k=0; k<nList[j]->iz.size(); k++ ){
                 ii = nList[j]->iz[k];
                 d = abs(Ztrg[iztrg[i]] - Z[ii]);
-                // if (d > mind)
+                if (d > mind)
                 phi[i] += Q[ii]/d;
             }
         }
