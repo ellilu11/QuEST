@@ -13,11 +13,13 @@
 FIND_PATH( SILO_INCLUDE_DIR silo.h
   /usr/local/include
   /usr/include
+  /mnt/home/luelliot/research/silo-4.10.2/src/silo/
 )
 
 FIND_LIBRARY( SILO_LIBRARY NAMES silo siloh5
   /usr/lib
   /usr/local/lib
+  /mnt/home/luelliot/research/silo-4.10.2/src/silo/
 )
 
 SET( SILO_FOUND "NO" )

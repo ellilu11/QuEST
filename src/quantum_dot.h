@@ -12,45 +12,72 @@
 #include <vector>
 
 #include "common.h"
+#include "quantum_obs.h"
 
 class QuantumDot;
 
 typedef std::vector<QuantumDot> DotVector;
+typedef std::pair<DotVector::iterator, DotVector::iterator> DotRange;
+typedef std::pair<DotVector::const_iterator, DotVector::const_iterator>
+    const_DotRange;
 typedef Eigen::Vector2cd matrix_elements;
+typedef std::function<Eigen::Vector2cd(const Eigen::Vector2cd,
+                                       const std::complex<double>,
+                                       const int)>
+    BlochFunctionType;
+enum MatrixElement { RHO_00, RHO_01 };
 
 class QuantumDot {
  public:
   QuantumDot() = default;
-  QuantumDot(const Eigen::Vector3d &, const double,
-             const std::pair<double, double> &, const Eigen::Vector3d &);
+  QuantumDot(const Eigen::Vector3d &pos)
+      : QuantumDot(pos, 0, {0.0, 0.0}, Eigen::Vector3d::Zero(), Eigen::Vector3d::Zero()){};
+  QuantumDot(const Eigen::Vector3d &pos, const Eigen::Vector3d &dipr, const Eigen::Vector3d &dipi)
+      : QuantumDot(pos, 0, {0.0, 0.0}, dipr, dipi){};
+  QuantumDot(const Eigen::Vector3d &,
+             const double,
+             const std::pair<double, double> &,
+             const Eigen::Vector3d &,
+             const Eigen::Vector3d &);
 
-  matrix_elements liouville_rhs(const matrix_elements &, const cmplx,
-                                const double) const;
+  matrix_elements liouville_rhs(const matrix_elements &,
+                                const cmplx,
+                                const int,
+                                const double, 
+                                double,
+                                const bool) const;
+
+  friend class ObserverDot;
 
   const Eigen::Vector3d &position() const { return pos; }
-  const Eigen::Vector3d &dipole() const { return dip; }
+  const Eigen::Vector3d &dipole() const { return dipr; }
+  const Eigen::Vector3d &dipole_imag() const { return dipi; }
+  void set_dipole(const Eigen::Vector3d dip) { dipr = dip; }
+
   friend Eigen::Vector3d separation(const QuantumDot &, const QuantumDot &);
-  friend inline double dyadic_product(const QuantumDot &obs,
+  // const Eigen::Vector3d separation_srcobs(const QuantumDot &, const ObserverDot &);
+/*  friend inline std::complex<double> dyadic_product(const QuantumDot &obs,
                                       const Eigen::Matrix3d &dyad,
                                       const QuantumDot &src)
   {
-    return obs.dip.transpose() * dyad * src.dip;
-  }
+    return obs.dipr.transpose() * dyad * src.dipr + obs.dipi.transpose() * dyad * src.dipi +
+     iu * (obs.dipr.transpose() * dyad * src.dipi - obs.dipi.transpose() * dyad * src.dipr );
+  }*/
 
   friend std::ostream &operator<<(std::ostream &, const QuantumDot &);
   friend std::istream &operator>>(std::istream &, QuantumDot &);
 
- private:
   Eigen::Vector3d pos;
+  Eigen::Vector3d dipr;
+ 
+ private:
   double freq;
   std::pair<double, double> damping;
-  Eigen::Vector3d dip;
+  Eigen::Vector3d dipi;
 };
 
 DotVector import_dots(const std::string &);
-
-std::vector<
-    std::function<matrix_elements(const matrix_elements &, const cmplx)>>
-rhs_functions(const DotVector &, const double);
+void set_dipolevec(std::shared_ptr<DotVector>, const Eigen::Vector3d dip);
+std::vector<BlochFunctionType> rhs_functions(const DotVector &, const double, double, const bool);
 
 #endif

@@ -10,14 +10,30 @@ Pulse::Pulse(const double amplitude, const double delay, const double width,
       wavevector(wavevector),
       polarization(polarization.normalized())
 {
+
 }
 
-Eigen::Vector3d Pulse::operator()(const Eigen::Vector3d &r,
-                                  const double t) const
+Eigen::Vector3cd Pulse::operator()(const Eigen::Vector3d &r,
+                                  const double t, const int deriv, const bool rotating) const
 {
   const double arg = wavevector.dot(r) - freq * (t - delay);
-  return (amplitude / 2 * polarization) * gaussian(arg / width);  // * cos(arg);
+  return amplitude * polarization * gaussian(arg / width) * 
+         //(rotating ? 0.5 : cos(arg));
+         (rotating ? cos(arg) * exp( -iu*freq*t ) : cos(arg));
+
+/*    const double arg = t - delay;
+    const double arg2 = wavevector.dot(r) - freq*arg;
+    const double a = pow(freq,2) / ( 2.0 * pow(width,2) );
+    const double b = -wavevector.dot(r) * freq / pow(width,2);
+    const double c = pow(wavevector.dot(r),2) / ( 2.0 * pow(width,2) );
+    return (amplitude * polarization) * gaussian(arg, a, b, c, deriv) * 
+      (rotating ? 
+        // ( ( 1.0 + 0.0 * exp(2.0*iu*arg2) ) / 2.0 )
+         cos(arg2) * exp( iu*freq*t )
+       : cos(arg2));
+*/
 }
+
 
 std::ostream &operator<<(std::ostream &os, const Pulse &p)
 {
@@ -34,10 +50,10 @@ std::istream &operator>>(std::istream &is, Pulse &p)
   return is;
 }
 
-Pulse read_pulse_config(const std::string &fname)
+Pulse read_pulse_config(const std::string &filename)
 {
-  std::ifstream ifs(fname);
-  if(!ifs) throw std::runtime_error("Could not open " + fname);
+  std::ifstream ifs(filename);
+  if(!ifs) throw std::runtime_error("Could not open " + filename);
 
   Pulse p;
   ifs >> p;

@@ -6,6 +6,7 @@
 #include <iostream>
 
 #include "math_utils.h"
+#include "common.h"
 
 class Pulse {
  public:
@@ -13,10 +14,11 @@ class Pulse {
   Pulse(const double, const double, const double, const double,
         const Eigen::Vector3d &, const Eigen::Vector3d &);
 
-  Eigen::Vector3d operator()(const Eigen::Vector3d &, const double) const;
+  Eigen::Vector3cd operator()(const Eigen::Vector3d &, const double, const int, const bool) const;
 
   friend std::ostream &operator<<(std::ostream &, const Pulse &);
   friend std::istream &operator>>(std::istream &, Pulse &);
+
 
  private:
   double amplitude, delay, width, freq;
