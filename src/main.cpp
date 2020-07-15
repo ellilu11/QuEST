@@ -2,15 +2,16 @@
 #include <complex>
 #include <iomanip>
 #include <iostream>
-#include <iterator>
+#include <string>
 #include <vector>
-#include <ctime>
+//#include <omp.h>
 
-#include "configuration.h"
 #include "integrator/RHS/bloch_rhs.h"
 #include "integrator/history.h"
 #include "integrator/integrator.h"
-#include "interactions/AIM/aim_interaction.h"
+//#include "integrator/integrator_newton.h"
+//#include "interactions/AIM/aim_interaction.h"
+// #include "interactions/AIM/grid.h"
 #include "interactions/direct_interaction.h"
 #include "interactions/green_function.h"
 #include "interactions/pulse_interaction.h"
@@ -19,150 +20,250 @@ using namespace std;
 
 int main(int argc, char *argv[])
 {
-  try {
-    std::clock_t start_time;
-    start_time = std::clock();
-
     cout << setprecision(12) << scientific;
-    auto vm = parse_configs(argc, argv);
 
-    std::unique_ptr<DurationLogger> durationLogger =
-        config.report_time_data ? std::make_unique<DurationLogger>() : nullptr;
+    // parameters
+    const int num_src = atoi(argv[1]);
+    const int num_obs = 0;
+    const double tmax = 10000;
+    const double dt = 1.0e-5; // pow(10, atoi(argv[2]) ) ; // rotframe: sigma = 1.0ps -> dt <= 0.52e-1
+                              // fixframe: omega = 2278.9013 mev/hbar -> dt <= 1.379e-4
+    const int num_timesteps = tmax/dt;
+    const int tmult = 5000; // 50 * pow(10, atoi(argv[2]) );
+
+    const int interpolation_order = 4;
+    const bool solve_type = atoi(argv[3]);  
+    const bool interacting = atoi(argv[4]);
+    const bool rotating = 0;
+
+    // constants
+    const double c0 = 299.792458, hbar = 0.65821193, mu0 = 2.0133545e-04;
+    const double omega = 2278.9013, d0 = 5.2917721e-4 * 1.0;
+    double beta = 0.0 / pow( omega, 3 );
+	    // mu0 * pow( omega, 3 ) * pow( d0, 2 ) / ( 6.0 * M_PI * hbar * c0 );
+        // ( atoi(argv[5]) ? 0.1 * pow(2, atoi(argv[5]) - 1) : 0.0 );
+
+    const double k0 = omega/c0, lambda = 2.0*M_PI/k0;    
+
+    // AIM
+    const double ds = 0.050*lambda;
+    Eigen::Vector3d grid_spacing(ds, ds, ds);
+    const int expansion_order = 4;
+    const int border = 1;
 
     cout << "Initializing..." << endl;
-    std::cout << "  Running in "
-              << ((config.sim_type == Configuration::SIMULATION_TYPE::FAST)
-                      ? "FAST"
-                      : "SLOW")
+    std::cout << "  Solving with: "
+              << (solve_type
+                      ? "P-C"
+                      : "Newton")
               << " mode" << std::endl;
     std::cout << "  Interacting particles: " 
-              << config.interacting
-              /*<< ((config.interacting == Configuration::INTERACTING::TRUE)
+              << (interacting
                       ? "TRUE"
-                      : "FALSE") */
+                      : "FALSE")
               << std::endl;
     std::cout << "  Frame: "
-              << ((config.rotating) ? "Rotating" : "Fixed") << std::endl;
+              << ((rotating) ? "Rotating" : "Fixed") << std::endl;
+    std::cout << "  Num timesteps: " << num_timesteps << std::endl;
+    std::cout << "  Num sources: " << num_src << std::endl;
+    std::cout << "  Num observers: " << num_obs << std::endl;
+    std::cout << "  Beta: " << beta << std::endl;
+    std::cout << "  ds/lambda: " << ds/lambda << std::endl;
+    std::cout << "  AIM expansion order: " << expansion_order << std::endl;
 
-    auto qds = make_shared<DotVector>(import_dots(config.qd_path));
-    qds->resize(config.num_particles);
-    auto rhs_funcs = rhs_functions(*qds, config.omega, config.beta, config.rotating);
+    string idstr(argv[5]);
+ 
+    auto qds = make_shared<DotVector>(import_dots("./dots/dots"+idstr+".cfg"));
+    qds->resize(num_src);
+    auto rhs_funcs = rhs_functions(*qds, omega, beta, rotating);
 
-    if(durationLogger) {
-      durationLogger->log_event("Import dots");
-    }
+    auto obs = make_shared<DotVector>(import_dots("./dots/dotsobs.cfg"));
+    obs->resize(num_obs);
+
+    // std::cout << obs->size() << std::endl;
 
     // == HISTORY ====================================================
 
     auto history = make_shared<Integrator::History<Eigen::Vector2cd>>(
-        config.num_particles, 22, config.num_timesteps);
+        num_src, 22, num_timesteps);
     history->fill(Eigen::Vector2cd::Zero());
-    history->initialize_past( Eigen::Vector2cd(1,0), 50 );
-    // history->initialize_past( config.qd_path );
-
-    auto history_efld = make_shared<Integrator::History<Eigen::Vector2cd>>(
-        config.num_particles, 22, config.num_timesteps);
-    history_efld->fill(Eigen::Vector2cd::Zero());
-
-    if(durationLogger) {
-      durationLogger->log_event("Initialize history");
-    }
+    history->initialize_past( Eigen::Vector2cd(1,0), num_src );
+    // history->initialize_past( qd_path );
 
     // == INTERACTIONS ===============================================
 
-    const double propagation_constant = config.mu0 / (4 * M_PI * config.hbar);
+    const double propagation_constant = mu0 / (4 * M_PI * hbar);
+//    Propagation::SelfEFIE dyadic(c0, propagation_constant, beta);
 
-    std::shared_ptr<InteractionBase> pairwise;
-    Propagation::RotatingEFIE dyadic(config.c0, propagation_constant, config.omega);
+/*    Propagation::EFIE<cmplx> dyadic;
+    Propagation::EFIE<cmplx> dyadic_self;
 
-/*    dyadic = config.rotating ? 
-        make_shared<Propagation::RotatingEFIE>(config.c0, propagation_constant,
-                                              config.omega) :
-        make_shared<Propagation::EFIE<cmplx>>(config.c0, propagation_constant);
-*/
-    if(config.sim_type == Configuration::SIMULATION_TYPE::FAST) {
-      AIM::Grid grid(config.grid_spacing, config.expansion_order, *qds);
-      const int transit_steps = grid.max_transit_steps(config.c0, config.dt) +
-                                config.interpolation_order;
-
-      pairwise = make_shared<AIM::Interaction>(
-          qds, history, dyadic, config.grid_spacing,
-          config.interpolation_order, config.expansion_order, config.border,
-          config.c0, config.dt,
-          AIM::Expansions::RotatingEFIE(transit_steps, config.c0, config.dt,
-                                        config.omega),
-          AIM::Normalization::Helmholtz(config.omega / config.c0,
-                                        propagation_constant),
-          config.omega);
+    if (rotating) {
+        dyadic = Propagation::RotatingEFIE(c0, propagation_constant, omega, beta);
+        dyadic_self = Propagation::SelfRotatingEFIE(c0, propagation_constant, omega, beta);
     } else {
-      pairwise = make_shared<DirectInteraction>(qds, history, dyadic,
-                                                config.interpolation_order,
-                                                config.c0, config.dt);
+        dyadic = Propagation::EFIE<cmplx>(c0, propagation_constant, beta);
+        dyadic_self = Propagation::SelfEFIE(c0, propagation_constant, beta);
     }
+*/
+    
+/*    Propagation::SelfRotatingEFIE dyadic_self(c0, propagation_constant,
+                                                omega, beta);
+    Propagation::RotatingEFIE dyadic(c0, propagation_constant,
+                                           omega, beta);
+*/
+    
+      Propagation::SelfEFIE dyadic_self(c0, propagation_constant,
+                                      beta);
+      Propagation::EFIE<cmplx> dyadic(c0, propagation_constant,
+                                            beta);
 
-    auto pulse1 = make_shared<Pulse>(read_pulse_config(config.pulse_path));
+    auto pulse1 = make_shared<Pulse>(read_pulse_config("pulse.cfg"));
 
     std::vector<std::shared_ptr<InteractionBase>> interactions{ 
-        make_shared<PulseInteraction>(qds, pulse1, config.hbar, config.dt, config.rotating)};
+        make_shared<PulseInteraction>(qds, nullptr, pulse1, interpolation_order, c0, dt, hbar, rotating),
+        make_shared<DirectInteraction>(qds, nullptr, history, dyadic_self,
+                                                    interpolation_order, c0, dt, omega, beta, hbar, rotating) };
 
-    if(config.interacting) interactions.push_back( pairwise );
+    if (interacting) {
+        std::shared_ptr<InteractionBase> pairwise;
 
-    if(durationLogger) {
-      durationLogger->log_event("Initialize interactions");
+        pairwise = make_shared<DirectInteraction>(qds, nullptr, history, dyadic,
+                                                    interpolation_order, c0, dt, omega, beta, hbar, rotating);
+        interactions.push_back( pairwise );
     }
 
     // == INTEGRATOR =================================================
 
-    std::unique_ptr<Integrator::RHS<Eigen::Vector2cd>> bloch_rhs =
-        std::make_unique<Integrator::BlochRHS>(
-            config.dt, history, history_efld, std::move(interactions), std::move(rhs_funcs));
+    if (solve_type) {
+      std::unique_ptr<Integrator::RHS<Eigen::Vector2cd>> bloch_rhs =
+          std::make_unique<Integrator::BlochRHS>(
+              dt, history, std::move(interactions), std::move(rhs_funcs));
 
-    Integrator::PredictorCorrector<Eigen::Vector2cd> solver(
-        config.dt, 18, 22, 3.15, history, std::move(bloch_rhs));
+      Integrator::PredictorCorrector<Eigen::Vector2cd> solver_pc(
+          dt, 18, 22, 3.15, history, std::move(bloch_rhs));
 
-    cout << "Solving..." << endl;
-    solver.solve(log_level_t::LOG_INFO);
+      cout << "Solving..." << endl;
+      solver_pc.solve();
 
-    if(durationLogger) {
-      durationLogger->log_event("Full solution");
+    } else {
+      Integrator::NewtonJacobian<Eigen::Vector2cd> solver_nt(
+        dt, beta, omega, interpolation_order, rotating, history, std::move(interactions));
+      
+      cout << "Solving..." << endl;
+      solver_nt.solve();
+
     }
+    // start_time = omp_get_wtime();
+
+    // double elapsed_time = omp_get_wtime() - start_time;
+
+    // cout << "Elapsed time: " << elapsed_time << "s" << std::endl;
+
+    // == FIELD INTERACTIONS ===============================================
+
+/*    *obs = *qds; // examine field at sources only
+ 
+    std::vector<std::shared_ptr<InteractionBase>> interactions_fld{ 
+        make_shared<PulseInteraction>(qds, obs, pulse1, interpolation_order, c0, dt, hbar, rotating),
+        make_shared<DirectInteraction>(qds, obs, history, dyadic_self,
+                                                    interpolation_order, c0, dt, omega, beta, hbar, rotating) };
+
+    if(interacting) {
+        std::shared_ptr<InteractionBase> pairwise_fld;
+
+        pairwise_fld = make_shared<DirectInteraction>(qds, obs, history, dyadic,
+                                                      interpolation_order, c0, dt, omega, beta, hbar, rotating);
+        interactions.push_back( pairwise_fld );
+    }
+*/
 
     // == OUTPUT =====================================================
 
     cout << "Writing output..." << endl;
-   
-    ofstream rhofile("rho.dat");
+
+    string dotstr(argv[1]);
+    string prfx = "./outsr/";
+    string sffx = dotstr + "dots_" + idstr + ".dat";
+
+    string rhostr = prfx + "rho_" + sffx; 
+/*    string fldstr = prfx + "fld_" + sffx;
+    string fldxstr = prfx + "fldx_" + sffx;
+    string fldystr = prfx + "fldy_" + sffx;
+    string fldzstr = prfx + "fldz_" + sffx;
+*/
+    ofstream rhofile(rhostr);
     rhofile << scientific << setprecision(15);
 
-    ofstream fldfile("fld.dat");
+/*    ofstream fldfile(fldstr);
     fldfile << scientific << setprecision(15);
-   
-     for(int t = 0; t < config.num_timesteps; ++t) {
-      for(int n = 0; n < config.num_particles; ++n) {
-        rhofile << history->array_[n][t][0].transpose() << " ";
-        fldfile << history_efld->array_[n][t][0][0] * config.hbar / (*qds)[n].dipole().Eigen::Vector3d::norm() << " ";
-      }
+    ofstream fldxfile(fldxstr);
+    fldxfile << scientific << setprecision(15);
+    ofstream fldyfile(fldystr);
+    fldyfile << scientific << setprecision(15);
+    ofstream fldzfile(fldzstr);
+    fldzfile << scientific << setprecision(15);
+*/
+//    const int NUM_DERIV = 4;
+
+    for(int t = 0; t < num_timesteps; ++t) {
+
+      if (t%tmult == 0){
+
+        // print rho
+        for(int n = 0; n < num_src; ++n)
+          rhofile << history->array_[n][t][0][0].real() << " "
+                  << history->array_[n][t][0][1].real() << " "
+                  << history->array_[n][t][0][1].imag() << " ";
+  //                << history->array_[n][t][0][2].real() << " ";
+  //                << history->array_[n][t][0][2].imag() << " ";
+
+        // print pol and derivatives
+/*        for(int deriv = 0; deriv < NUM_DERIV; ++deriv){
+          auto eval_and_sum = 
+            [t,deriv](const InteractionBase::ResultArray &r,
+            const std::shared_ptr<InteractionBase> &interaction){
+            return r + interaction->evaluatefld(t,deriv);
+          };
+          auto nilfld = InteractionBase::ResultArray::Zero(obs->size(), 1).eval();
+
+          set_dipolevec(obs, Eigen::Vector3d(hbar,0,0));
+          auto fldx = 
+            interactions_fld[interactions_fld.size()-1]->evaluatefld(t,deriv); 
+            //std::accumulate(
+            //  interactions_fld.begin(), interactions_fld.end(), nilfld, eval_and_sum);  
+          
+          set_dipolevec(obs, Eigen::Vector3d(0,hbar,0));
+          auto fldy = 
+            interactions_fld[interactions_fld.size()-1]->evaluatefld(t,deriv); 
+            //std::accumulate(
+            //  interactions_fld.begin(), interactions_fld.end(), nilfld, eval_and_sum);  
+
+          set_dipolevec(obs, Eigen::Vector3d(0,0,hbar));
+          auto fldz = 
+            interactions_fld[interactions_fld.size()-1]->evaluatefld(t,deriv); 
+            //std::accumulate(
+            //  interactions_fld.begin(), interactions_fld.end(), nilfld, eval_and_sum);  
+
+          for(int n = 0; n < obs->size(); ++n){
+            //fldfile << fldx[n] << "," << fldy[n] << "," << fldz[n] << ",";
+            fldxfile << real(fldx[n]) << " ";
+            fldyfile << real(fldy[n]) << " ";
+            fldzfile << real(fldz[n]) << " ";
+
+            fldfile << sqrt( pow( abs(fldx[n]), 2 ) + pow( abs(fldy[n]), 2 ) + pow( abs(fldz[n]), 2 ) ) << " ";
+          }
+        }
+*/      
       rhofile << "\n";
+/*
       fldfile << "\n";
-    }
-
-    /*ofstream outfilebin("output.bin");
-    for(int t = 0; t < config.num_timesteps; ++t) {
-      for(int n = 0; n < config.num_particles; ++n) {
-       outfilebin.write((char*)&history->array_[n][t][0].transpose(), 2*sizeof(double));
+      fldxfile << "\n";
+      fldyfile << "\n";
+      fldzfile << "\n";
+*/
       }
-    }*/
-
-    cout << "Elapsed time: " << (std::clock() - start_time) / (double) CLOCKS_PER_SEC << "s";
-
-    if(durationLogger) {
-      durationLogger->log_event("Write output");
     }
-
-  } catch(CommandLineException &e) {
-    // User most likely queried for help or version info, so we can silently
-    // move on
-  }
 
   return 0;
 }
