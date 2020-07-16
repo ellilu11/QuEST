@@ -5,19 +5,34 @@
 
 namespace Interpolation {
   class UniformLagrangeSet;
+  class HilbertLagrangeSet;
   class DerivFive;
   typedef boost::multi_array<double, 2> InterpolationTable;
-  constexpr int NUM_DERIVATIVES = 4;
 }
 
 class Interpolation::UniformLagrangeSet {
  public:
   InterpolationTable evaluations;
+  constexpr int NUM_DERIVATIVES = 4;
 
   UniformLagrangeSet(const int);
   UniformLagrangeSet(const double, const int, const double = 1);
 
   void evaluate_derivative_table_at_x(const double, const double = 1);
+  int order() const { return order_; }
+ private:
+  int order_;
+};
+
+class Interpolation::HilbertLagrangeSet {
+ public:
+  InterpolationTable evaluations;
+  constexpr int NUM_DERIVATIVES = 2;
+
+  HilbertLagrangeSet(const int);
+  HilbertLagrangeSet(const double, const int, const double = 1);
+
+  void evaluate_table_at_x(const double, const double = 1);
   int order() const { return order_; }
  private:
   int order_;

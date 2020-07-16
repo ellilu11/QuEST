@@ -16,6 +16,9 @@ namespace Integrator {
 
   template <class soltype>
   class NewtonJacobian;
+
+  template <class soltype>
+  class HilbertIntegrator;
 }
 
 using namespace std;
