@@ -13,28 +13,25 @@ namespace Interpolation {
 class Interpolation::UniformLagrangeSet {
  public:
   InterpolationTable evaluations;
-  constexpr int NUM_DERIVATIVES = 4;
-
   UniformLagrangeSet(const int);
   UniformLagrangeSet(const double, const int, const double = 1);
 
   void evaluate_derivative_table_at_x(const double, const double = 1);
   int order() const { return order_; }
  private:
-  int order_;
+ const int NUM_DERIVATIVES = 4;
+ int order_;
 };
 
 class Interpolation::HilbertLagrangeSet {
  public:
   InterpolationTable evaluations;
-  constexpr int NUM_DERIVATIVES = 2;
-
   HilbertLagrangeSet(const int);
-  HilbertLagrangeSet(const double, const int, const double = 1);
 
-  void evaluate_table_at_x(const double, const double = 1);
+  void evaluate_table_at_x(const double, const double, const double, const double);
   int order() const { return order_; }
  private:
+  const int NUM_DERIVATIVES = 2;
   int order_;
 };
 
@@ -52,7 +49,8 @@ class Interpolation::DerivFive {
 
   constexpr static int order() { return 5; }
  private:
-  double dt_;
+ const int NUM_DERIVATIVES = 2;
+ double dt_;
 };
 
 #endif

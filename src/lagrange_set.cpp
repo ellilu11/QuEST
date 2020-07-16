@@ -2,7 +2,7 @@
 #include <iostream>
 
 Interpolation::UniformLagrangeSet::UniformLagrangeSet(const int order)
-    : evaluations(boost::extents[Interpolation::NUM_DERIVATIVES][order + 1]),
+    : evaluations(boost::extents[Interpolation::UniformLagrangeSet::NUM_DERIVATIVES][order + 1]),
       order_(order)
 {
 }
@@ -107,8 +107,37 @@ void Interpolation::UniformLagrangeSet::evaluate_derivative_table_at_x(
 
 }
 
+Interpolation::HilbertLagrangeSet::HilbertLagrangeSet(const int order)
+    : evaluations(boost::extents[Interpolation::HilbertLagrangeSet::NUM_DERIVATIVES][order + 1]),
+      order_(order)
+{
+}
+
+void Interpolation::HilbertLagrangeSet::evaluate_table_at_x(
+    const double t, const double dt, const double omega, const double phi)
+{
+  switch(order_){
+    case 1 : {
+      evaluations[0][1] = -( std::cos( omega*(t+phi) ) - std::cos( omega*(t-dt+phi) ) + dt*omega*std::sin( omega*(t-dt+phi) ) );
+      evaluations[0][0] = std::cos( omega*(t+phi) ) - std::cos( omega*(t-dt+phi) ) + dt*omega*std::sin( omega*(t+phi) );
+    }
+  }
+
+  for(int i = 0; i <= order_; ++i) {
+    evaluations[0][i] *= std::pow(dt, -1) * std::pow(omega, -2);
+    // evaluations[1][i] *= std::pow(dt, -1) * std::pow(omega, -1);
+    
+/*    if ( x == 0 ) {
+      for(int j = 0; j <= 3; ++j)
+        std::cout << evaluations[j][i] << " ";
+      std::cout << std::endl;
+    }*/
+  }
+
+}
+
 Interpolation::DerivFive::DerivFive(const double dt)
-    : evaluations(boost::extents[Interpolation::NUM_DERIVATIVES][5 + 1]),
+    : evaluations(boost::extents[Interpolation::DerivFive::NUM_DERIVATIVES][5 + 1]),
       dt_{dt}
 {
 }

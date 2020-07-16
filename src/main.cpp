@@ -147,11 +147,17 @@ int main(int argc, char *argv[])
       solver_pc.solve();
 
     } else {
-      Integrator::NewtonJacobian<Eigen::Vector2cd> solver_nt(
+      const double phi = M_PI / 6;
+      Integrator::HilbertIntegrator<Eigen::Vector2cd> solver_hilbert(
+        dt, omega, phi, 1, history, std::move(interactions));
+      
+      cout << "Solving..." << endl;
+      solver_hilbert.solve();
+      /*Integrator::NewtonJacobian<Eigen::Vector2cd> solver_nt(
         dt, beta, omega, interpolation_order, rotating, history, std::move(interactions));
       
       cout << "Solving..." << endl;
-      solver_nt.solve();
+      solver_nt.solve();*/
 
     }
     // start_time = omp_get_wtime();
