@@ -147,17 +147,6 @@ const InteractionBase::ResultArray &DirectInteraction::evaluate(
       int src, obs;
       std::tie(src, obs) = idx2coord(pair_idx);
 
-/*        const int s = //time_idx - floor_delays[pair_idx];
-                  std::max(time_idx - floor_delays[pair_idx] ,
-                     static_cast<int>(history->array_.index_bases()[1]));
-
-      Eigen::Vector3d dip_src = (*dots)[src].dipole();
-      Eigen::Vector3d dip_obs = (*dots)[obs].dipole();
-
-      for (int i = 0; i < 1; ++i){
-          results[src] += history->array_[src][s][0][i+1] * coeffs[pair_idx][i];
-          results[obs] += history->array_[obs][s][0][i+1] * coeffs[pair_idx][i];
-*/ 
       Eigen::Vector3d dip_src = (*dots)[src].dipole();
       Eigen::Vector3d dip_obs = (*dots)[obs].dipole();
 
@@ -166,18 +155,6 @@ const InteractionBase::ResultArray &DirectInteraction::evaluate(
             std::max(time_idx - floor_delays[pair_idx] - i,
                      static_cast<int>(history->array_.index_bases()[1]));
 
-        /*double amp = 1000.0;
-        double shift = 5000.0;
-        double arg = omega*(time-shift);
-        double width = 1000.0 * omega;
-        cmplx gauss = amp * gaussian(arg / width);
-        //cmplx gauss = amp * gaussian(time-shift, 0.5/pow(width,2), 1.0/(omega*pow(width,2)), 0.0, 0);
-                      // * 2.0 * cos( omega * time ) ;
-                      // * exp( iu * omega * time );
-
-        results[src] += gauss * coeffs[pair_idx][i];
-        results[obs] += gauss * coeffs[pair_idx][i]; 
-*/
         results[src] += (history->array_[obs][s][0])[RHO_01] * coeffs[pair_idx][i];
         results[obs] += (history->array_[src][s][0])[RHO_01] * coeffs[pair_idx][i];
 

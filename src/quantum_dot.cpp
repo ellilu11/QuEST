@@ -18,34 +18,14 @@ matrix_elements QuantumDot::liouville_rhs(const matrix_elements &rho,
                                           double damping_rr,
                                           const bool rotating) const
 {
-/*  const double T1 = 1000 * damping.first;
-  const double T2 = 1000 * damping.second;
-
-  const cmplx m0 = 2.0 * damping_rr * pow(laser_freq,3) * ( pow( real(rho[1]), 2) + pow( imag(rho[1]), 2) ) + 
-                    2.0 * ( real(rho[1]) * imag(rabi) - imag(rho[1]) * real(rabi) ) + (1.0 - rho[0] ) / T1;
-  
-  const cmplx m1 = -iu * ( ( iu * damping_rr * pow(laser_freq,3) * rho[1] + rabi ) * ( 1.0 - 2.0 * rho[0] ) ) - rho[1] / T2;
-*/
-
-/* temporal deriv test
-
-  const cmplx m0 = rabi;
-  const cmplx m1 = 0.0;
-*/
-
-  const double time = time_idx * 5.0e-5;
-
   const cmplx m0 = -iu * (rabi * conj(rho[1]) - conj(rabi) * rho[1] ) -
                    0.0 * (rho[0] - 1.0) / (damping.first); // same in rot frame?
-                   // - damping_rr * ( pow(laser_freq,3) / 2.0 * (pow( 1.0 - 2.0 * rho[0], 2 ) - 1.0);
 
   const cmplx m1 = rotating ?  
       -iu * (rabi * (1.0 - 2.0 * rho[0]) + rho[1] * (laser_freq - freq)) -
       0.0 * rho[1] / (damping.second) :
-     // + damping_rr * pow(laser_freq,3) * rho[1] * ( 1.0 - 2.0 * rho[0] ) :
       -iu * (rabi * (1.0 - 2.0 * rho[0]) - rho[1] * freq) -
       0.0 * rho[1] / (damping.second);
-     // + damping_rr * pow(laser_freq,3) * rho[1] * ( 1.0 - 2.0 * rho[0] ) ;
 
   return matrix_elements(m0, m1);
 }
