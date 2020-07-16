@@ -1,3 +1,0 @@
-#include "interactions/AIM/direct.h"
-#include "interactions/AIM/farfield.h"
-#include "interactions/AIM/nearfield.h"
