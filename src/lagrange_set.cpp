@@ -114,12 +114,12 @@ Interpolation::HilbertLagrangeSet::HilbertLagrangeSet(const int order)
 }
 
 void Interpolation::HilbertLagrangeSet::evaluate_table_at_x(
-    const double t, const double dt, const double omega, const double phi)
+    const double t, const double t0, const double dt, const double omega)
 {
   switch(order_){
     case 1 : {
-      evaluations[0][1] = -( std::cos( omega*(t+phi) ) - std::cos( omega*(t-dt+phi) ) + dt*omega*std::sin( omega*(t-dt+phi) ) );
-      evaluations[0][0] = std::cos( omega*(t+phi) ) - std::cos( omega*(t-dt+phi) ) + dt*omega*std::sin( omega*(t+phi) );
+      evaluations[0][1] = -( std::cos( omega*(t+t0) ) - std::cos( omega*(t-dt+t0) ) + dt*omega*std::sin( omega*(t-dt+t0) ) );
+      evaluations[0][0] = std::cos( omega*(t+t0) ) - std::cos( omega*(t-dt+t0) ) + dt*omega*std::sin( omega*(t+t0) );
     }
   }
 

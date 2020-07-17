@@ -17,9 +17,7 @@ Eigen::Vector3cd Pulse::operator()(const Eigen::Vector3d &r,
                                   const double t, const int deriv, const bool rotating) const
 {
   const double arg = wavevector.dot(r) - freq * (t - delay);
-  return amplitude * polarization * gaussian(arg / width) * 
-         //(rotating ? 0.5 : cos(arg));
-         (rotating ? cos(arg) * exp( -iu*freq*t ) : cos(arg));
+  return amplitude * polarization * gaussian(arg / width); 
 
 /*    const double arg = t - delay;
     const double arg2 = wavevector.dot(r) - freq*arg;

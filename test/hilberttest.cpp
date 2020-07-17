@@ -23,22 +23,22 @@ int main(int argc, char *argv[])
     cout << setprecision(12) << scientific;
 
     // parameters
+    const double omega = 2278.9013;
+
     const int num_src = atoi(argv[1]);
     const int num_obs = 0;
-    const double tmax = 10;
-    const double dt = 1.0e-5; // pow(10, atoi(argv[2]) ) ; // rotframe: sigma = 1.0ps -> dt <= 0.52e-1
-                              // fixframe: omega = 2278.9013 mev/hbar -> dt <= 1.379e-4
-    const int num_timesteps = tmax/dt;
-    const int tmult = 5000; // 50 * pow(10, atoi(argv[2]) );
+    const double dt = 1.0e-2; // 2.0*M_PI / ( omega / 1000 ) * 0.001; 
+    const int tmax = 10;
+    const double num_timesteps = tmax/dt;
+    const int tmult = 1; // 50 * pow(10, atoi(argv[2]) );
 
     const int interpolation_order = 4;
-    const bool solve_type = atoi(argv[3]);  
+    const bool solve_type = 0;  
     const bool interacting = atoi(argv[4]);
     const bool rotating = 0;
 
     // constants
-    const double c0 = 299.792458, hbar = 0.65821193, mu0 = 2.0133545e-04;
-    const double omega = 2278.9013, d0 = 5.2917721e-4 * 1.0;
+    const double c0 = 299.792458, hbar = 0.65821193, mu0 = 2.0133545e-04, d0 = 5.2917721e-4 * 1.0;
     double beta = 0.0 / pow( omega, 3 );
 	    // mu0 * pow( omega, 3 ) * pow( d0, 2 ) / ( 6.0 * M_PI * hbar * c0 );
         // ( atoi(argv[5]) ? 0.1 * pow(2, atoi(argv[5]) - 1) : 0.0 );
@@ -52,24 +52,9 @@ int main(int argc, char *argv[])
     const int border = 1;
 
     cout << "Initializing..." << endl;
-    std::cout << "  Solving with: "
-              << (solve_type
-                      ? "P-C"
-                      : "Newton")
-              << " mode" << std::endl;
-    std::cout << "  Interacting particles: " 
-              << (interacting
-                      ? "TRUE"
-                      : "FALSE")
-              << std::endl;
-    std::cout << "  Frame: "
-              << ((rotating) ? "Rotating" : "Fixed") << std::endl;
+    std::cout << "  Timestep: " << dt << std::endl;
     std::cout << "  Num timesteps: " << num_timesteps << std::endl;
     std::cout << "  Num sources: " << num_src << std::endl;
-    std::cout << "  Num observers: " << num_obs << std::endl;
-    std::cout << "  Beta: " << beta << std::endl;
-    std::cout << "  ds/lambda: " << ds/lambda << std::endl;
-    std::cout << "  AIM expansion order: " << expansion_order << std::endl;
 
     string idstr(argv[5]);
  
@@ -147,7 +132,6 @@ int main(int argc, char *argv[])
       solver_pc.solve();
 
     } else {
-      const double phi = M_PI / 6;
       Integrator::HilbertIntegrator<Eigen::Vector2cd> solver_hilbert(
         dt, omega, omega, 1, history, std::move(interactions), pulse1);
       
@@ -189,7 +173,7 @@ int main(int argc, char *argv[])
     cout << "Writing output..." << endl;
 
     string dotstr(argv[1]);
-    string prfx = "./outsr/";
+    string prfx = "./out/";
     string sffx = dotstr + "dots_" + idstr + ".dat";
 
     string rhostr = prfx + "rho_" + sffx; 

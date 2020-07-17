@@ -10,6 +10,7 @@
 #include "weights.h"
 #include "../interactions/interaction.h"
 #include "../lagrange_set.h"
+#include "../pulse.h"
 
 namespace Integrator {
   template <class soltype>
@@ -159,325 +160,19 @@ void Integrator::PredictorCorrector<soltype>::log_percentage_complete(
   }
 }
 
-// NEWTON-JACOBIAN SOLVER
-
-template <class soltype>
-class Integrator::NewtonJacobian {
- public:
-  typedef Eigen::Array<cmplx, Eigen::Dynamic, 1> ResultArray;
-
-  NewtonJacobian(const double, 
-                  const double,
-                  const double,
-                  const int,
-                  const bool,
-                  const std::shared_ptr<Integrator::History<soltype>>,
-                  std::vector<std::shared_ptr<InteractionBase>>
-                  );
-  void solve(const log_level_t = log_level_t::LOG_NOTHING);
-  void solve_step(const int);
- 
- private:
-  int num_solutions, time_idx_ubound;
-  const double dt;
-  const double beta;
-  const double omega;
-  const int interp_order;
-  const bool rotating;
-  std::shared_ptr<Integrator::History<soltype>> history;
-  std::vector<std::shared_ptr<InteractionBase>> interactions;
-
-  Eigen::VectorXd y_vec, y_prev, b_vec, x_vec;
-  Eigen::VectorXd rhs_vec, rhs_prev;
-  Eigen::MatrixXd rhs_J;
-  ResultArray rabi;
-  boost::multi_array<cmplx, 2> coeffs; 
-
-  void evaluate(const int);
-  void update_rhs(const int);
-  void update_J(const int);
-  void init_J();
-
-  Eigen::VectorXd cmplx2real(Eigen::Vector2cd);
-  Eigen::Vector2cd real2cmplx(Eigen::VectorXd);
-  int coord2idx(int, int);
-
-  void log_percentage_complete(const int) const;
-};
-
-constexpr int DIM = 3;
-// constexpr int NUM_ITERATIONS = 20;
-constexpr double T1 = 100000.0;
-constexpr double T2 = 200000.0;
-
-template <class soltype>
-Integrator::NewtonJacobian<soltype>::NewtonJacobian(
-    const double dt,
-    const double beta,
-    const double omega,
-    const int interp_order,
-    const bool rotating,
-    const std::shared_ptr<Integrator::History<soltype>> history,
-    std::vector<std::shared_ptr<InteractionBase>> interactions
-    )
-    : num_solutions(history->array_.shape()[0]),
-      time_idx_ubound(history->array_.index_bases()[1] +
-                      history->array_.shape()[1]),
-      dt(dt), beta(beta), omega(omega), interp_order(interp_order), rotating(rotating),
-      history(std::move(history)),
-      interactions(std::move(interactions)),
-      y_vec(DIM*num_solutions),
-      y_prev(DIM*num_solutions),
-      b_vec(DIM*num_solutions),
-      x_vec(DIM*num_solutions),
-      rhs_vec(DIM*num_solutions),
-      rhs_prev(DIM*num_solutions),
-      rhs_J(DIM*num_solutions, DIM*num_solutions),
-      coeffs(boost::extents[num_solutions*(num_solutions+1)/2][interp_order+1])
-
-{
-   for(int solution = 0; solution < num_solutions; ++solution)
-      y_prev.segment<DIM>(DIM*solution) = cmplx2real( history->array_[solution][0][0] ); // assign initial conditions
-
-}
-
-template <class soltype>
-void Integrator::NewtonJacobian<soltype>::solve(
-    const log_level_t log_level)
-{
-
- coeffs = (interactions[interactions.size()-1])->coefficients(); 
-
- for(int i = 0; i < num_solutions; ++i)
-   cout << coeffs[i][0] << endl;
-
- ofstream Jfile("./outsr/J.dat");
-
- for(int step = 1; step < time_idx_ubound; ++step) {
-    assert(0 <= step && step < time_idx_ubound);
-
-    int niter = 0;
-    y_vec = y_prev;
-  
-    if (step%10000 == 0) cout << step << " ";
-
-    do {
-      update_rhs(step);
-      update_J(step);
-
-      if (step%1000 == 1){
-          Jfile << step << endl;
-          Jfile << rhs_J << endl << endl;
-            // (Eigen::MatrixXd::Identity(DIM*num_solutions,DIM*num_solutions) - dt*rhs_J) << endl;
-      }
-
-      evaluate(step);
-      niter++;
- } while ( x_vec.norm() > EPS ); //&& niter < NUM_ITERATIONS);
-
-  y_prev = y_vec;
-
-   if (step%10000 == 0) cout << endl;
-  }
-}
-
-/*
-template <class soltype>
-void Integrator::NewtonJacobian<soltype>::solve_step(const int step)
-{
-  assert(0 <= step && step < time_idx_ubound);
-
-  y_vec = y_prev;
-  
-  if (step%1000 == 0) cout << step << " ";
-
-  for(int m = 0; m < NUM_ITERATIONS; ++m) {
-    update_rhs(step);
-    update_J(step);
-    evaluate(step);
-  }
-
-  y_prev = y_vec;
-
-  if (step%1000 == 0) cout << endl;
-}*/
-
-template <class soltype>
-void Integrator::NewtonJacobian<soltype>::update_rhs(const int step) 
-{
-    rhs_prev = rhs_vec;
-    
-    auto eval_and_sum =
-        [step](const InteractionBase::ResultArray &r,
-               const std::shared_ptr<InteractionBase> &interaction) {
-            return r + interaction->evaluate(step);
-        };
-    auto nil = InteractionBase::ResultArray::Zero(num_solutions, 1).eval();
-
-    rabi = std::accumulate(
-        interactions.begin(), interactions.end(), nil, eval_and_sum);
-
-//    std::cout << step << " " << rabi[0] << " " << rabi[1] << endl;
-
-    // fill in func for all dots
-    double f0, w, fr, fi, gr, gi, hr, hi;
-
-    for(int solution = 0; solution < num_solutions; ++solution) {
-        Eigen::VectorXd y_vec_seg = y_vec.segment<DIM>(DIM*solution);
-        f0 = y_vec_seg[0]; 
-        fr = y_vec_seg[1];
-        fi = y_vec_seg[2];
-
-        rhs_vec.segment<DIM>(DIM*solution) <<
-          2.0 * ( fr * imag( rabi[solution] ) - fi * real( rabi[solution] ) ) + (1.0 - f0) / T1,
-          (1.0 - 2.0 * f0) * imag( rabi[solution] ) - fr / T2 - (rotating ? 0.0 : (omega * fi)),
-         -(1.0 - 2.0 * f0) * real( rabi[solution] ) - fi / T2 + (rotating ? 0.0 : (omega * fr)); 
-
-    }
-}
-
-template <class soltype>
-void Integrator::NewtonJacobian<soltype>::update_J(const int step) 
-{
-  double w, fr, fi;
-
-  // ResultArray rabi_pulse = (interactions[0])->evaluate(step);
-  // ResultArray rabi_direct = (interactions[1])->evaluate(step);
-
-  ResultArray rabi_minus_self = rabi - (interactions[1])->evaluate(step);
-
-  Eigen::MatrixXd rhs_J_pair(DIM*num_solutions,DIM*num_solutions);
-  Eigen::MatrixXd rhs_J_self(DIM*num_solutions,DIM*num_solutions);
-
-  int num_srcsrc = num_solutions * ( num_solutions - 1 ) / 2;
-
-  for(int i = 0; i < num_solutions; ++i) {
-
-    Eigen::VectorXd y_vec_seg = y_vec.segment<DIM>(DIM*i);
-    w = 1.0 - 2.0 * y_vec_seg[0];
-    fr = y_vec_seg[1];
-    fi = y_vec_seg[2];
-
-    // diagonal submatrices
-    rhs_J_pair.block<DIM,DIM>(DIM*i,DIM*i) <<
-     -1.0 / T1, 2.0 * imag( rabi_minus_self[i] ), -2.0 * real( rabi_minus_self[i] ),
-     -2.0 * imag( rabi_minus_self[i] ), -1.0 / T2, -(rotating ? 0.0 : omega),
-      2.0 * real( rabi_minus_self[i] ), rotating ? 0.0 : omega, -1.0 / T2; 
-
-    double self_real = real( coeffs[num_srcsrc+i][0] );
-    double self_imag = imag( coeffs[num_srcsrc+i][0] );
-
-    rhs_J_self.block<DIM,DIM>(DIM*i,DIM*i) <<
-      0.0, 4.0 * self_imag * fr, 4.0 * self_imag * fi,
-     -2.0 * ( self_imag * fr + self_real * fi ),  self_imag * w, self_real * w,
-     -2.0 * ( self_imag * fi - self_real * fr ), -self_real * w, self_imag * w;
-    
-    // off-diagonal submatrices
-    for(int j = 0; j < i; ++j){
-      int pair_idx = coord2idx(i,j); 
-
-      double pair_real, pair_imag;
-      
-      for(int m = 0; m <= 0; ++m){
-        pair_real += real( coeffs[pair_idx][m] );
-        pair_imag += imag( coeffs[pair_idx][m] );
-      }
-
-      rhs_J_pair.block<DIM,DIM>(DIM*i,DIM*j) <<
-        0.0, 2.0 * ( pair_imag * fr - pair_real * fi ), 2.0 * ( pair_real * fr + pair_imag * fi ),
-        0.0,  pair_imag * w, pair_real * w,
-        0.0, -pair_real * w, pair_imag * w;
-
-      rhs_J_pair.block<DIM,DIM>(DIM*j,DIM*i) = 
-        rhs_J_pair.block<DIM,DIM>(DIM*i,DIM*j);
-
-      rhs_J_self.block<DIM,DIM>(DIM*i,DIM*j) = Eigen::MatrixXd::Zero(DIM,DIM);
-      rhs_J_self.block<DIM,DIM>(DIM*j,DIM*i) = Eigen::MatrixXd::Zero(DIM,DIM);
-
-     }
-  }
-  rhs_J = rhs_J_pair + rhs_J_self;
-}
-
-template <class soltype>
-void Integrator::NewtonJacobian<soltype>::evaluate(const int step)
-{
-    b_vec = -y_vec + dt * rhs_vec + y_prev;
-//    Eigen::ColPivHouseholderQR<Eigen::MatrixXd> factor(rhs_J);
-    Eigen::MatrixXd rhs_A = Eigen::MatrixXd::Identity(DIM*num_solutions,DIM*num_solutions) - dt * rhs_J;
-    Eigen::FullPivLU<Eigen::MatrixXd> factor(rhs_A);
-    x_vec = factor.solve( b_vec );
-
-    // get condition number
-    Eigen::BDCSVD<Eigen::MatrixXd> svd(rhs_A);
-    Eigen::VectorXd svalues = svd.singularValues();
-    if (step%10000 == 0)
-        cout << svalues[0] / svalues[DIM*num_solutions-1] << " ";
-
-    /*solver.analyzePattern(rhs_J);
-    solver.factorize(rhs_J);
-    x_vec = solver.solve( -y_vec + dt * rhs_vec + y_prev );
-*/
-    // x_vec = rhs_J * ( -y_vec + dt * rhs_vec + y_prev );
-    y_vec += x_vec;
-
-    for(int solution=0; solution < num_solutions; ++solution)
-        history->array_[solution][step][0] = real2cmplx( y_vec.segment<DIM>(DIM*solution) );
-  
-} 
-
-template <class soltype>
-Eigen::VectorXd Integrator::NewtonJacobian<soltype>::cmplx2real(Eigen::Vector2cd cmplx_vec)
-{
-    Eigen::VectorXd vec(DIM);
-    vec << real(cmplx_vec[0]), 
-           real(cmplx_vec[1]), imag(cmplx_vec[1]);
-
-    return vec;
-}
-
-
-template <class soltype>
-Eigen::Vector2cd Integrator::NewtonJacobian<soltype>::real2cmplx(Eigen::VectorXd vec)
-{
-    Eigen::Vector2cd cmplx_vec;
-    cmplx_vec[0] = vec[0];
-    cmplx_vec[1] = vec[1] + iu * vec[2];
-    
-    return cmplx_vec;
-}
-
-template <class soltype>
-int Integrator::NewtonJacobian<soltype>::coord2idx(int row, int col)
-{
-  assert(row != col);
-  if(col > row) std::swap(row, col);
-
-  return row * (row - 1) / 2 + col;
-}
-
-template <class soltype>
-void Integrator::NewtonJacobian<soltype>::log_percentage_complete(
-    const int step) const
-{
-  if(step % (time_idx_ubound / 10) == 0) {
-    std::cout << "\t" << static_cast<int>(10.0 * step / time_idx_ubound)
-              << std::endl;
-  }
-}
-
 // HILBERT INTEGRATOR SOLVER
 template <class soltype>
 class Integrator::HilbertIntegrator {
  public:
-  typedef Eigen::Array<cmplx, Eigen::Dynamic, 1> ResultArray;
+  typedef boost::multi_array<cmplx, 2> ResultArray2D;
 
   HilbertIntegrator(const double, 
                   const double,
                   const double,
                   const int,
                   const std::shared_ptr<Integrator::History<soltype>>,
-                  std::vector<std::shared_ptr<InteractionBase>>
+                  std::vector<std::shared_ptr<InteractionBase>>,
+                  const std::shared_ptr<Pulse>
                   );
   void solve(const log_level_t = log_level_t::LOG_NOTHING);
   void solve_step(const int);
@@ -485,12 +180,13 @@ class Integrator::HilbertIntegrator {
  private:
   int num_solutions, time_idx_ubound;
   const double dt;
-  const double omega, phi;
+  const double omega, omega0;
   const int interp_order;
   std::shared_ptr<Integrator::History<soltype>> history;
   std::vector<std::shared_ptr<InteractionBase>> interactions;
+  std::shared_ptr<Pulse> pulse;
   Interpolation::HilbertLagrangeSet interp;
-  // ResultArray rabi;
+  ResultArray2D rabis;
 
 };
 
@@ -498,25 +194,28 @@ template <class soltype>
 Integrator::HilbertIntegrator<soltype>::HilbertIntegrator(
     const double dt,
     const double omega,
-    const double phi,
+    const double omega0,
     const int interp_order,
     const std::shared_ptr<Integrator::History<soltype>> history,
-    std::vector<std::shared_ptr<InteractionBase>> interactions
+    std::vector<std::shared_ptr<InteractionBase>> interactions,
+    const std::shared_ptr<Pulse> pulse
     )
     : num_solutions(history->array_.shape()[0]),
       time_idx_ubound(history->array_.index_bases()[1] +
                       history->array_.shape()[1]),
-      dt(dt), omega(omega), phi(phi), interp_order(interp_order),
+      dt(dt), omega(omega), omega0(omega0), interp_order(interp_order),
       history(std::move(history)),
       interactions(std::move(interactions)),
-      interp(interp_order){}
+      pulse(std::move(pulse)),
+      interp(interp_order),
+      rabis(boost::extents[interp_order+1][num_solutions]){}
  
 template <class soltype>
 void Integrator::HilbertIntegrator<soltype>::solve(
     const log_level_t log_level)
 {
 
-  for(int step = 1; step < time_idx_ubound; ++step) {
+  for(int step = interp_order; step < time_idx_ubound - 1; ++step) {
     solve_step(step);
   }
 }
@@ -527,21 +226,49 @@ void Integrator::HilbertIntegrator<soltype>::solve_step(const int step)
   assert(0 <= step && step < time_idx_ubound);
 
   const double time = step * dt;
-  interp.evaluate_table_at_x(time, dt, omega, phi);
+  const double t0 = pulse->delay_();
+  interp.evaluate_table_at_x(time, t0, dt, omega);
 
+  // get Rabi frequency
+  auto eval_and_sum =
+        [step](const InteractionBase::ResultArray &r,
+               const std::shared_ptr<InteractionBase> &interaction) {
+            return r + interaction->evaluate(step);
+        };
+  auto nil = InteractionBase::ResultArray::Zero(num_solutions, 1).eval();
+
+  auto rabi = std::accumulate(
+      interactions.begin(), interactions.end(), nil, eval_and_sum);
+
+  // store rabis for future use
+  for(int j = interp_order; j > 0; --j) 
+    rabis[j] = rabis[j-1];
+  // rabis[0] = rabi;
+  for(int sol_idx = 0; sol_idx < num_solutions; ++sol_idx)
+    rabis[0][sol_idx] = rabi[sol_idx];
+
+  // Adam-Bashforth integration
   for(int sol_idx = 0; sol_idx < num_solutions; ++sol_idx) {
-    for(int j = 0; j < interp_order; ++j) {
-      history->array_[sol_idx][step][0][0] +=
-        std::cos( omega / 1000 * (time-j*dt) ) * history->array_[sol_idx][step-j][0][0] * interp.evaluations[0][j];
+ 
+    /*if ( step < 10 ) {
+        std::cout << "1: " << rabis[1][sol_idx] << std::endl;
+        std::cout << "0: " << rabis[0][sol_idx] << std::endl;
+        std::cout << std::endl;
+    }*/
 
-/*
-      history->array_[sol_idx][step][0][0] +=
-        -iu * ( rabi[sol_idx][step-j] * std:conj( history->array_[sol_idx][step-j][0][1] ) * coeffs[j] - 
-                std::conj( rabi[sol_idx][step-j] ) * history->array_[sol_idx][step-j][0][1] * coeffs[j] );
-      history->array_[sol_idx][step][0][1] +=
-        -iu * ( rabi[sol_idx][step-j] * ( 1.0 - 2.0 * history->array_[sol_idx][step-j][0][0] ) * coeffs[j]
-            - omega0 * history->array_[sol_idx][step-j][0][1] * coeffs[j] );
-*/
+   for(int j = 0; j <= interp_order; ++j) {
+     //history->array_[sol_idx][step][0][0] +=
+     //  std::cos( omega / 1000 * (time+t0-j*dt) ) * interp.evaluations[0][j];
+      cmplx RHO_00 = history->array_[sol_idx][step-j][0][0];
+      cmplx RHO_01 = history->array_[sol_idx][step-j][0][1];
+
+      history->array_[sol_idx][step+1][0][0] +=
+        -iu * ( rabis[j][sol_idx] * std::conj( RHO_01 ) * interp.evaluations[0][j] - 
+                std::conj( rabis[j][sol_idx] ) * RHO_01 * interp.evaluations[0][j] );
+      history->array_[sol_idx][step+1][0][1] +=
+        -iu * ( rabis[j][sol_idx] * ( 1.0 - 2.0 * RHO_00 ) * interp.evaluations[0][j]
+            - omega0 * RHO_01 * interp.evaluations[0][j] );
+
     }
   }
 }
