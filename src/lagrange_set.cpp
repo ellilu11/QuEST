@@ -118,22 +118,21 @@ void Interpolation::HilbertLagrangeSet::evaluate_table_at_x(
 {
   switch(order_){
     case 1 : {
-      evaluations[0][1] = dt*std::sin(omega*(tm))/omega - std::cos(omega*(tm))/pow(omega,2.0) + std::cos(omega*(t))/pow(omega,2.0);
-      //evaluations[0][1] = dt*std::sin(omega*1.0)/omega - std::cos(omega*1.0)/pow(omega,2.0) + std::cos(omega*2.0)/pow(omega,2.0) + t;
-      // evaluations[0][1] = t;
-      //-( std::cos( omega*(t+t0) ) - std::cos( omega*(t-dt+t0) ) + dt*omega*std::sin( omega*(t-dt+t0) ) ) / ( dt * pow(omega,2) );
+      //evaluations[0][1] = dt*std::sin(omega*(tm))/omega - std::cos(omega*(tm))/pow(omega,2.0) + std::cos(omega*(t))/pow(omega,2.0);
+      evaluations[0][1] = //dt*std::sin(omega*1.0)/omega - std::cos(omega*1.0)/pow(omega,2.0) + std::cos(omega*2.0)/pow(omega,2.0) + t;
+        //dt*std::sin(omega*tm)/omega - std::cos(omega*tm)/pow(omega,2) + std::cos(omega*t)/pow(omega,2);
+        ( std::cos(omega*t)/pow(omega,2) - std::cos(omega*tm)/pow(omega,2) + dt*std::sin(omega*tm)/omega );
 
-      evaluations[0][0] = dt*std::sin(omega*t)/omega - std::cos(omega*tm)/pow(omega,2.0) + std::cos(omega*t)/pow(omega,2.0);
-      // evaluations[0][0] = t;
-      //evaluations[0][0] =
-        // (std::cos( omega*(t+t0) ) - std::cos( omega*(t-dt+t0) ) + dt*omega*std::sin( omega*(t+t0) ) ) / ( dt * pow(omega,2) );
+      //evaluations[0][0] = dt*std::sin(omega*t)/omega - std::cos(omega*tm)/pow(omega,2.0) + std::cos(omega*t)/pow(omega,2.0);
+      evaluations[0][0] =
+        //dt*std::sin(omega*t)/omega - std::cos(omega*tm)/pow(omega,2) + std::cos(omega*t)/pow(omega,2);
+        std::cos(omega*t)/pow(omega,2) - std::cos(omega*tm)/pow(omega,2) + dt*std::sin(omega*t)/omega ;
     }
   }
-/*
-  for(int i = 0; i <= order_; ++i) {
-    // evaluations[0][i] *= std::pow(dt, -1) * std::pow(omega, -2);
-    // evaluations[1][i] *= std::pow(dt, -1) * std::pow(omega, -1);
-    
+
+  /*for(int i = 0; i <= order_; ++i) {
+      evaluations[0][i] *= 1.0/dt;
+      // evaluations[1][i] *= std::pow(dt, -1) * std::pow(omega, -1);
   }*/
 
 }

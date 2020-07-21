@@ -23,7 +23,7 @@ int main(int argc, char *argv[])
 //    cout << setprecision(12) << scientific;
 
     // parameters
-    const double omega = 11111.0; 
+    const double omega = 1000.0; 
                          //2278.9013;
 
     const int num_src = atoi(argv[1]);
