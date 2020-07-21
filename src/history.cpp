@@ -19,7 +19,7 @@ void History::write_history(
     const std::string &filename, const int n /* = 0 */)
 {
   std::ofstream output(filename);
-  output << std::setprecision(12) << std::scientific;
+  output << std::setprecision(15) << std::scientific;
 
   const int max_t =
       (n != 0) ? n : history->shape()[1] + history->index_bases()[1];

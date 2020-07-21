@@ -114,25 +114,27 @@ Interpolation::HilbertLagrangeSet::HilbertLagrangeSet(const int order)
 }
 
 void Interpolation::HilbertLagrangeSet::evaluate_table_at_x(
-    const double t, const double t0, const double dt, const double omega)
+    const double t, const double tm, const double t0, const double dt, const double omega)
 {
   switch(order_){
     case 1 : {
-      evaluations[0][1] = -( std::cos( omega*(t+t0) ) - std::cos( omega*(t-dt+t0) ) + dt*omega*std::sin( omega*(t-dt+t0) ) );
-      evaluations[0][0] = std::cos( omega*(t+t0) ) - std::cos( omega*(t-dt+t0) ) + dt*omega*std::sin( omega*(t+t0) );
+      evaluations[0][1] = dt*std::sin(omega*(tm))/omega - std::cos(omega*(tm))/pow(omega,2.0) + std::cos(omega*(t))/pow(omega,2.0);
+      //evaluations[0][1] = dt*std::sin(omega*1.0)/omega - std::cos(omega*1.0)/pow(omega,2.0) + std::cos(omega*2.0)/pow(omega,2.0) + t;
+      // evaluations[0][1] = t;
+      //-( std::cos( omega*(t+t0) ) - std::cos( omega*(t-dt+t0) ) + dt*omega*std::sin( omega*(t-dt+t0) ) ) / ( dt * pow(omega,2) );
+
+      evaluations[0][0] = dt*std::sin(omega*t)/omega - std::cos(omega*tm)/pow(omega,2.0) + std::cos(omega*t)/pow(omega,2.0);
+      // evaluations[0][0] = t;
+      //evaluations[0][0] =
+        // (std::cos( omega*(t+t0) ) - std::cos( omega*(t-dt+t0) ) + dt*omega*std::sin( omega*(t+t0) ) ) / ( dt * pow(omega,2) );
     }
   }
-
+/*
   for(int i = 0; i <= order_; ++i) {
-    evaluations[0][i] *= std::pow(dt, -1) * std::pow(omega, -2);
+    // evaluations[0][i] *= std::pow(dt, -1) * std::pow(omega, -2);
     // evaluations[1][i] *= std::pow(dt, -1) * std::pow(omega, -1);
     
-/*    if ( x == 0 ) {
-      for(int j = 0; j <= 3; ++j)
-        std::cout << evaluations[j][i] << " ";
-      std::cout << std::endl;
-    }*/
-  }
+  }*/
 
 }
 

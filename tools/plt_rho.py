@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 ndots = 1
 dir = '../build/out/hilberttest/'
 
-rhofile = dir+'rho_'+str(ndots)+'dots_dt1e-3.dat'
+rhofile = dir+'rho_'+str(ndots)+'dots_dt1e-4.dat'
 
 def read_rho(filename) :
   rho_raw = np.loadtxt(filename)
@@ -86,7 +86,7 @@ def main() :
 
   ti, tf = 0, 10
  
-  dt0 = 1e-2
+  dt0 = 1e-4
   tincr = 1
   dt = dt0 * tincr
   tdata = np.linspace( ti, tf, (tf-ti)/dt )
@@ -112,7 +112,7 @@ def main() :
     for i in range(3) :
       plt.subplot(1,4,i+1)
       plt.plot( tdata, rho[:,dot,i] )
-      plt.ylim( (0, 1) )
+#      plt.ylim( (0, 1) )
     plt.subplot(1,4,4)
     plt.plot( tdata, rho_abs[:,dot] )
 #    plt.semilogy()

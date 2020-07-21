@@ -28,7 +28,7 @@ class Interpolation::HilbertLagrangeSet {
   InterpolationTable evaluations;
   HilbertLagrangeSet(const int);
 
-  void evaluate_table_at_x(const double, const double, const double, const double);
+  void evaluate_table_at_x(const double, const double, const double, const double, const double);
   int order() const { return order_; }
  private:
   const int NUM_DERIVATIVES = 2;

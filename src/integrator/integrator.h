@@ -161,6 +161,9 @@ void Integrator::PredictorCorrector<soltype>::log_percentage_complete(
 }
 
 // HILBERT INTEGRATOR SOLVER
+const double T1 = 10;
+const double T2 = 20;
+
 template <class soltype>
 class Integrator::HilbertIntegrator {
  public:
@@ -215,20 +218,21 @@ void Integrator::HilbertIntegrator<soltype>::solve(
     const log_level_t log_level)
 {
 
-  for(int step = interp_order; step < time_idx_ubound - 1; ++step) {
-    solve_step(step);
+  for(int step = 0; step < time_idx_ubound - 1; ++step) {
+   solve_step(step);
   }
 }
+
 
 template <class soltype>
 void Integrator::HilbertIntegrator<soltype>::solve_step(const int step)
 {
   assert(0 <= step && step < time_idx_ubound);
 
-  const double time = step * dt;
-  const double t0 = pulse->delay_();
-  interp.evaluate_table_at_x(time, t0, dt, omega);
-
+  const double t0 = 0.0; // -pulse->delay_();
+  interp.evaluate_table_at_x((step+1)*dt, step*dt, t0, dt, omega);
+  // instead of step*dt+dt!!!
+    
   // get Rabi frequency
   auto eval_and_sum =
         [step](const InteractionBase::ResultArray &r,
@@ -243,34 +247,55 @@ void Integrator::HilbertIntegrator<soltype>::solve_step(const int step)
   // store rabis for future use
   for(int j = interp_order; j > 0; --j) 
     rabis[j] = rabis[j-1];
-  // rabis[0] = rabi;
   for(int sol_idx = 0; sol_idx < num_solutions; ++sol_idx)
     rabis[0][sol_idx] = rabi[sol_idx];
 
-  // Adam-Bashforth integration
+  // double eval1 = dt*std::sin(omega*(time+t0))/omega - std::cos(omega*(time+t0))/pow(omega,2) + std::cos(omega*(time+dt+t0))/pow(omega,2);
+  // double eval0 = dt*std::sin(omega*(time+dt+t0))/omega - std::cos(omega*(time+t0))/pow(omega,2) + std::cos(omega*(time+dt+t0))/pow(omega,2);
+  double cos1 = std::cos( omega / 1000 * ((step+1)*dt+t0) );
+  double cos0 = std::cos( omega / 1000 * (step*dt+t0) );
+
+  // Adam-Moulton integration
   for(int sol_idx = 0; sol_idx < num_solutions; ++sol_idx) {
  
-    /*if ( step < 10 ) {
-        std::cout << "1: " << rabis[1][sol_idx] << std::endl;
-        std::cout << "0: " << rabis[0][sol_idx] << std::endl;
-        std::cout << std::endl;
-    }*/
+   history->array_[sol_idx][step+1][0][0] = history->array_[sol_idx][step][0][0] 
+    + 1.0/dt*interp.evaluations[0][0] 
+    - 1.0/dt*interp.evaluations[0][1];
+  // instead of interp.evaluations/dt!!!
+   // history->array_[sol_idx][step+1][0][1] = history->array_[sol_idx][step][0][1]; 
+     //+ dt * iu * history->array_[sol_idx][step][0][1] * omega0;
 
-   for(int j = 0; j <= interp_order; ++j) {
-     //history->array_[sol_idx][step][0][0] +=
-     //  std::cos( omega / 1000 * (time+t0-j*dt) ) * interp.evaluations[0][j];
+   // if ( step < 10 ) 
+    std::cout << std::setprecision(15) << std::scientific << step*dt << ' '
+      << std::real(history->array_[sol_idx][step][0][0]) << ' '
+      << interp.evaluations[0][0] << ' ' 
+      << interp.evaluations[0][1] << std::endl;
+
+/*   for(int j = 0; j <= interp_order; ++j) {
+     history->array_[sol_idx][step+1][0][0] +=
+      // std::cos( omega / 1000 * (time+t0-j*dt) ) *
+      interp.evaluations[0][j]/dt;
+
+     // if ( step < 10 )
+       //std::cout << std::real(history->array_[sol_idx][step+1][0][0]) << ", ";
+       std::cout << interp.evaluations[0][j] << ", ";
+
       cmplx RHO_00 = history->array_[sol_idx][step-j][0][0];
       cmplx RHO_01 = history->array_[sol_idx][step-j][0][1];
 
       history->array_[sol_idx][step+1][0][0] +=
         -iu * ( rabis[j][sol_idx] * std::conj( RHO_01 ) * interp.evaluations[0][j] - 
                 std::conj( rabis[j][sol_idx] ) * RHO_01 * interp.evaluations[0][j] );
+        // 0.0 * dt * (RHO_00 - 1.0) / T1;
+          
       history->array_[sol_idx][step+1][0][1] +=
-        -iu * ( rabis[j][sol_idx] * ( 1.0 - 2.0 * RHO_00 ) * interp.evaluations[0][j]
-            - omega0 * RHO_01 * interp.evaluations[0][j] );
+        -iu * ( rabis[j][sol_idx] * ( 1.0 - 2.0 * RHO_00 ) * interp.evaluations[0][j] );
+        // 0.0 * dt * RHO_01 / T2;
 
-    }
-  }
+    }*/
+  
+ // if ( step < 10 )  
+  } 
 }
 
 #endif

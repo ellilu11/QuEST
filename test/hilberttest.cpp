@@ -20,16 +20,20 @@ using namespace std;
 
 int main(int argc, char *argv[])
 {
-    cout << setprecision(12) << scientific;
+//    cout << setprecision(12) << scientific;
 
     // parameters
-    const double omega = 2278.9013;
+    const double omega = 11111.0; 
+                         //2278.9013;
 
     const int num_src = atoi(argv[1]);
     const int num_obs = 0;
-    const double dt = 1.0e-2; // 2.0*M_PI / ( omega / 1000 ) * 0.001; 
-    const int tmax = 10;
-    const double num_timesteps = tmax/dt;
+    double dt = 1e-3; 
+                      // 2.0*M_PI / ( omega / 1000.0 ) * 0.001 * M_PI; 
+    const int num_timesteps = 10000;
+    const double tmax = dt*num_timesteps;
+    // const double num_timesteps = tmax/dt+1;
+    // const double tmax = dt * num_timesteps;
     const int tmult = 1; // 50 * pow(10, atoi(argv[2]) );
 
     const int interpolation_order = 4;
@@ -51,11 +55,6 @@ int main(int argc, char *argv[])
     const int expansion_order = 4;
     const int border = 1;
 
-    cout << "Initializing..." << endl;
-    std::cout << "  Timestep: " << dt << std::endl;
-    std::cout << "  Num timesteps: " << num_timesteps << std::endl;
-    std::cout << "  Num sources: " << num_src << std::endl;
-
     string idstr(argv[5]);
  
     auto qds = make_shared<DotVector>(import_dots("./dots/dots"+idstr+".cfg"));
@@ -72,7 +71,7 @@ int main(int argc, char *argv[])
     auto history = make_shared<Integrator::History<Eigen::Vector2cd>>(
         num_src, 22, num_timesteps);
     history->fill(Eigen::Vector2cd::Zero());
-    history->initialize_past( Eigen::Vector2cd(1,0), num_src );
+    history->initialize_past( Eigen::Vector2cd(0,0), num_src );
     // history->initialize_past( qd_path );
 
     // == INTERACTIONS ===============================================
@@ -135,7 +134,6 @@ int main(int argc, char *argv[])
       Integrator::HilbertIntegrator<Eigen::Vector2cd> solver_hilbert(
         dt, omega, omega, 1, history, std::move(interactions), pulse1);
       
-      cout << "Solving..." << endl;
       solver_hilbert.solve();
       /*Integrator::NewtonJacobian<Eigen::Vector2cd> solver_nt(
         dt, beta, omega, interpolation_order, rotating, history, std::move(interactions));
@@ -170,8 +168,6 @@ int main(int argc, char *argv[])
 
     // == OUTPUT =====================================================
 
-    cout << "Writing output..." << endl;
-
     string dotstr(argv[1]);
     string prfx = "./out/";
     string sffx = dotstr + "dots_" + idstr + ".dat";
@@ -183,7 +179,7 @@ int main(int argc, char *argv[])
     string fldzstr = prfx + "fldz_" + sffx;
 */
     ofstream rhofile(rhostr);
-    rhofile << scientific << setprecision(15);
+    // rhofile << scientific << setprecision(18);
 
 /*    ofstream fldfile(fldstr);
     fldfile << scientific << setprecision(15);
@@ -198,53 +194,18 @@ int main(int argc, char *argv[])
 
     for(int t = 0; t < num_timesteps; ++t) {
 
-      if (t%tmult == 0){
+//      if (t%tmult == 0){
 
         // print rho
         for(int n = 0; n < num_src; ++n)
-          rhofile << history->array_[n][t][0][0].real() << " "
+          rhofile << std::setprecision(18) << std::scientific
+                  << t * dt << " " 
+                  << std::real(history->array_[n][t][0][0]) << " "
                   << history->array_[n][t][0][1].real() << " "
                   << history->array_[n][t][0][1].imag() << " ";
   //                << history->array_[n][t][0][2].real() << " ";
   //                << history->array_[n][t][0][2].imag() << " ";
 
-        // print pol and derivatives
-/*        for(int deriv = 0; deriv < NUM_DERIV; ++deriv){
-          auto eval_and_sum = 
-            [t,deriv](const InteractionBase::ResultArray &r,
-            const std::shared_ptr<InteractionBase> &interaction){
-            return r + interaction->evaluatefld(t,deriv);
-          };
-          auto nilfld = InteractionBase::ResultArray::Zero(obs->size(), 1).eval();
-
-          set_dipolevec(obs, Eigen::Vector3d(hbar,0,0));
-          auto fldx = 
-            interactions_fld[interactions_fld.size()-1]->evaluatefld(t,deriv); 
-            //std::accumulate(
-            //  interactions_fld.begin(), interactions_fld.end(), nilfld, eval_and_sum);  
-          
-          set_dipolevec(obs, Eigen::Vector3d(0,hbar,0));
-          auto fldy = 
-            interactions_fld[interactions_fld.size()-1]->evaluatefld(t,deriv); 
-            //std::accumulate(
-            //  interactions_fld.begin(), interactions_fld.end(), nilfld, eval_and_sum);  
-
-          set_dipolevec(obs, Eigen::Vector3d(0,0,hbar));
-          auto fldz = 
-            interactions_fld[interactions_fld.size()-1]->evaluatefld(t,deriv); 
-            //std::accumulate(
-            //  interactions_fld.begin(), interactions_fld.end(), nilfld, eval_and_sum);  
-
-          for(int n = 0; n < obs->size(); ++n){
-            //fldfile << fldx[n] << "," << fldy[n] << "," << fldz[n] << ",";
-            fldxfile << real(fldx[n]) << " ";
-            fldyfile << real(fldy[n]) << " ";
-            fldzfile << real(fldz[n]) << " ";
-
-            fldfile << sqrt( pow( abs(fldx[n]), 2 ) + pow( abs(fldy[n]), 2 ) + pow( abs(fldz[n]), 2 ) ) << " ";
-          }
-        }
-*/      
       rhofile << "\n";
 /*
       fldfile << "\n";
@@ -252,7 +213,7 @@ int main(int argc, char *argv[])
       fldyfile << "\n";
       fldzfile << "\n";
 */
-      }
+//      }
     }
 
   return 0;
