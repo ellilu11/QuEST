@@ -25,11 +25,11 @@ int main(int argc, char *argv[])
     // parameters
     const int num_src = atoi(argv[1]);
     const int num_obs = 0;
-    const double tmax = 10000;
-    const double dt = 1.0e-5; // pow(10, atoi(argv[2]) ) ; // rotframe: sigma = 1.0ps -> dt <= 0.52e-1
+    const double tmax = 10;
+    const double dt = 1.0e-4; // pow(10, atoi(argv[2]) ) ; // rotframe: sigma = 1.0ps -> dt <= 0.52e-1
                               // fixframe: omega = 2278.9013 mev/hbar -> dt <= 1.379e-4
     const int num_timesteps = tmax/dt;
-    const int tmult = 5000; // 50 * pow(10, atoi(argv[2]) );
+    const int tmult = 1; // 50 * pow(10, atoi(argv[2]) );
 
     const int interpolation_order = 4;
     const bool solve_type = atoi(argv[3]);  
@@ -183,7 +183,7 @@ int main(int argc, char *argv[])
     cout << "Writing output..." << endl;
 
     string dotstr(argv[1]);
-    string prfx = "./outsr/";
+    string prfx = "./out/";
     string sffx = dotstr + "dots_" + idstr + ".dat";
 
     string rhostr = prfx + "rho_" + sffx; 
@@ -212,9 +212,9 @@ int main(int argc, char *argv[])
 
         // print rho
         for(int n = 0; n < num_src; ++n)
-          rhofile << history->array_[n][t][0][0].real() << " "
-                  << history->array_[n][t][0][1].real() << " "
-                  << history->array_[n][t][0][1].imag() << " ";
+          rhofile << history->array_[n][t][0][0].real() << ","
+                  << history->array_[n][t][0][1].real() << ","
+                  << history->array_[n][t][0][1].imag() << ",";
   //                << history->array_[n][t][0][2].real() << " ";
   //                << history->array_[n][t][0][2].imag() << " ";
 

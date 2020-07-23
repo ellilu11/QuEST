@@ -4,10 +4,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # Parameters
-ndots = 2
-dir = '../outsr/beta0/'
+ndots = 1
+dir = '../out/'
 
-rhofile = dir+'rho_'+str(ndots)+'dots_fixed_dt1e-4_realfld.dat'
+rhofile = dir+'rho_'+str(ndots)+'dots_fixed_dt1e-4.csv'
 #derivfile = dir+'rhoanl_'+str(ndots)+'dots.dat'
 
 def read_rho(filename) :
@@ -85,10 +85,10 @@ def fft_rho(rho_data, ti, tf, dt) :
 
 def main() :
 
-  ti, tf = 0, 10000
+  ti, tf = 0, 10
  
-  dt0 = 5e-3
-  tincr = 10
+  dt0 = 1e-4
+  tincr = 1
   dt = dt0 * tincr
   tdata = np.linspace( ti, tf, (tf-ti)/dt )
 	 
