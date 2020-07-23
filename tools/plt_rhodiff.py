@@ -12,8 +12,8 @@ dir = '../build/out/beta0/'
 
 #rhofile0 = dir+'rho_'+str(ndots)+'dots_dt5e-3.dat'
 #rhofile0 = dir+'rho_'+str(ndots)+'dots_dt5e-5_realfld.dat'
-rhofile0 = dir+'rho_'+str(ndots)+'dots_dt1e-5_nint.dat'
-rhofile1 = dir+'rho_'+str(ndots)+'dots_fixed_dt1e-5_nint.dat'
+rhofile0 = dir+'rho_'+str(ndots)+'dots_dt1e-4_nint.dat'
+rhofile1 = dir+'rho_'+str(ndots)+'dots_fixed_dt1e-4_nint.dat'
 
 rhofile = np.array([rhofile0, rhofile1])
 nfiles = rhofile.shape[0]
@@ -120,11 +120,11 @@ def main() :
     dot = 0
     for i in range(4) :
       plt.subplot(1,4,i+1)
-      #plt.plot( tdata, rho[:,dot,i,:] )
-      plt.plot( tdata, abs( rho[:,dot,i,1] - rho[:,dot,i,0] ) / abs (rho[:,dot,i,0]) )
-      plt.xlim( (ti,tf) )
+      plt.plot( tdata, rho[:,dot,i,:] )
+      #plt.plot( tdata, abs( rho[:,dot,i,1] - rho[:,dot,i,0] ) / abs (rho[:,dot,i,0]) )
+      plt.xlim( (ti,10) )
       #plt.ylim( (-1,1) )
-      plt.semilogy()
+#      plt.semilogy()
 #     print( l2_relerror(rho[:,dot,0], deriv[:,dot,deriv_order]) )
   else :
     ti_fft = 50
@@ -133,7 +133,7 @@ def main() :
     plt.plot( tdata_fft[:len(tdata_fft)-2], rhofft ) 
     plt.xlabel('f (1/ps)')
 #  plt.semilogy()
-  plt.legend(['Rot (dt=5e-5)', 'Fix (dt=5e-5)'])
+  plt.legend(['Rot (dt=1e-4)', 'Fix (dt=1e-4)'])
   plt.show()
  
 if __name__ == '__main__':

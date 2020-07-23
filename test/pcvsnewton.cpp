@@ -212,9 +212,9 @@ int main(int argc, char *argv[])
 
         // print rho
         for(int n = 0; n < num_src; ++n)
-          rhofile << history->array_[n][t][0][0].real() << " "
-                  << history->array_[n][t][0][1].real() << " "
-                  << history->array_[n][t][0][1].imag() << " ";
+          rhofile << history->array_[n][t][0][0].real() << ","
+                  << history->array_[n][t][0][1].real() << ","
+                  << history->array_[n][t][0][1].imag() << ",";
   //                << history->array_[n][t][0][2].real() << " ";
   //                << history->array_[n][t][0][2].imag() << " ";
 
