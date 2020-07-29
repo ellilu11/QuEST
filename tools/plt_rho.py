@@ -5,13 +5,13 @@ import matplotlib.pyplot as plt
 
 # Parameters
 ndots = 1
-dir = '../out/'
+dir = '../build/out/'
 
 rhofile = dir+'rho_'+str(ndots)+'dots_fixed_dt1e-4.csv'
 #derivfile = dir+'rhoanl_'+str(ndots)+'dots.dat'
 
 def read_rho(filename) :
-  rho_raw = np.loadtxt(filename)
+  rho_raw = np.loadtxt(filename,delimiter=',')
 
   ntimes = rho_raw.shape[0]
   ndots = int(rho_raw.shape[1]/3)

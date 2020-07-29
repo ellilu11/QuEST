@@ -4,7 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # Parameters
-ndots = 2
+ndots = 1
 
 #dir = '../build/out/beta1.79e-04/'
 #dir = '../build/out/beta1.00e-03/'
@@ -12,8 +12,8 @@ dir = '../build/out/beta0/'
 
 #rhofile0 = dir+'rho_'+str(ndots)+'dots_dt5e-3.dat'
 #rhofile0 = dir+'rho_'+str(ndots)+'dots_dt5e-5_realfld.dat'
-rhofile0 = dir+'rho_'+str(ndots)+'dots_dt1e-5_nint.dat'
-rhofile1 = dir+'rho_'+str(ndots)+'dots_fixed_dt1e-5_nint.dat'
+rhofile0 = dir+'rho_'+str(ndots)+'dots_dt1e-6_long.dat'
+rhofile1 = dir+'rho_'+str(ndots)+'dots_fixed_dt1e-6_long.dat'
 
 rhofile = np.array([rhofile0, rhofile1])
 nfiles = rhofile.shape[0]
@@ -92,10 +92,10 @@ def fft_rho(rho_data, ti, tf, dt) :
 
 def main() :
 
-  ti, tf = 0, 10000
+  ti, tf = 0, 10
  
-  dt0 = 1e-4
-  tincr = 500
+  dt0 = 1e-6
+  tincr = 1
   dt = dt0 * tincr
   tdata = np.linspace( ti, tf, (tf-ti)/dt )
   ntimes = tdata.shape[0]
@@ -120,8 +120,8 @@ def main() :
     dot = 0
     for i in range(4) :
       plt.subplot(1,4,i+1)
-      #plt.plot( tdata, rho[:,dot,i,:] )
-      plt.plot( tdata, abs( rho[:,dot,i,1] - rho[:,dot,i,0] ) / abs (rho[:,dot,i,0]) )
+      plt.plot( tdata, rho[:,dot,i,:] )
+      #plt.plot( tdata, abs( rho[:,dot,i,1] - rho[:,dot,i,0] ) / abs (rho[:,dot,i,0]) )
       plt.xlim( (ti,tf) )
       #plt.ylim( (-1,1) )
       plt.semilogy()
@@ -132,8 +132,9 @@ def main() :
     rhofft = abs( fft_rho( rho_mean[:,1,2], ti_fft, tf, dt ) )
     plt.plot( tdata_fft[:len(tdata_fft)-2], rhofft ) 
     plt.xlabel('f (1/ps)')
-#  plt.semilogy()
-  plt.legend(['Rot (dt=5e-5)', 'Fix (dt=5e-5)'])
+#  plt.semilogy()c
+  plt.legend(['dt=1e-6'])
+#  plt.legend(['Rot (dt=5e-5)', 'Fix (dt=5e-5)'])
   plt.show()
  
 if __name__ == '__main__':
