@@ -4,7 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # Parameters
-ndots = 1
+ndots = 2
 
 #dir = '../build/out/beta1.79e-04/'
 #dir = '../build/out/beta1.00e-03/'
@@ -12,8 +12,8 @@ dir = '../build/out/beta0/'
 
 #rhofile0 = dir+'rho_'+str(ndots)+'dots_dt5e-3.dat'
 #rhofile0 = dir+'rho_'+str(ndots)+'dots_dt5e-5_realfld.dat'
-rhofile0 = dir+'rho_'+str(ndots)+'dots_dt1e-6_long.dat'
-rhofile1 = dir+'rho_'+str(ndots)+'dots_fixed_dt1e-6_long.dat'
+rhofile0 = dir+'rho_'+str(ndots)+'dots_dt5e-3.dat'
+rhofile1 = dir+'rho_'+str(ndots)+'dots_fixed_dt1e-4.dat'
 
 rhofile = np.array([rhofile0, rhofile1])
 nfiles = rhofile.shape[0]
@@ -92,10 +92,10 @@ def fft_rho(rho_data, ti, tf, dt) :
 
 def main() :
 
-  ti, tf = 0, 10
+  ti, tf = 0, 10000
  
-  dt0 = 1e-6
-  tincr = 1
+  dt0 = 1e-4
+  tincr = 500
   dt = dt0 * tincr
   tdata = np.linspace( ti, tf, (tf-ti)/dt )
   ntimes = tdata.shape[0]
@@ -123,8 +123,8 @@ def main() :
       plt.plot( tdata, rho[:,dot,i,:] )
       #plt.plot( tdata, abs( rho[:,dot,i,1] - rho[:,dot,i,0] ) / abs (rho[:,dot,i,0]) )
       plt.xlim( (ti,tf) )
-      #plt.ylim( (-1,1) )
-      plt.semilogy()
+      plt.ylim( (-1,1) )
+#      plt.semilogy()
 #     print( l2_relerror(rho[:,dot,0], deriv[:,dot,deriv_order]) )
   else :
     ti_fft = 50

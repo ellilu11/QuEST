@@ -25,16 +25,16 @@ int main(int argc, char *argv[])
     // parameters
     const int num_src = atoi(argv[1]);
     const int num_obs = 0;
-    const double tmax = 10;
-    const double dt = 1.0e-6; // pow(10, atoi(argv[2]) ) ; // rotframe: sigma = 1.0ps -> dt <= 0.52e-1
+    const double tmax = 10000;
+    const double dt = 1.0e-4; // pow(10, atoi(argv[2]) ) ; // rotframe: sigma = 1.0ps -> dt <= 0.52e-1
                               // fixframe: omega = 2278.9013 mev/hbar -> dt <= 1.379e-4
     const int num_timesteps = tmax/dt;
-    const int tmult = 1; // 50 * pow(10, atoi(argv[2]) );
+    const int tmult = 500; // 50 * pow(10, atoi(argv[2]) );
 
     const int interpolation_order = 4;
     const bool solve_type = atoi(argv[3]);  
     const bool interacting = atoi(argv[4]);
-    const bool rotating = 0;
+    const bool rotating = 1;
 
     // constants
     const double c0 = 299.792458, hbar = 0.65821193, mu0 = 2.0133545e-04;
@@ -107,18 +107,16 @@ int main(int argc, char *argv[])
     }
 */
     
-/*
     Propagation::SelfRotatingEFIE dyadic_self(c0, propagation_constant,
                                                 omega, beta);
     Propagation::RotatingEFIE dyadic(c0, propagation_constant,
                                            omega, beta);
-*/
 
-      Propagation::SelfEFIE dyadic_self(c0, propagation_constant,
+/*      Propagation::SelfEFIE dyadic_self(c0, propagation_constant,
                                       beta);
       Propagation::EFIE<cmplx> dyadic(c0, propagation_constant,
                                             beta);
-
+*/
     auto pulse1 = make_shared<Pulse>(read_pulse_config("pulse.cfg"));
 
     std::vector<std::shared_ptr<InteractionBase>> interactions{ 
@@ -215,7 +213,7 @@ int main(int argc, char *argv[])
         for(int n = 0; n < num_src; ++n)
           rhofile << history->array_[n][t][0][0].real() << " "
                   << history->array_[n][t][0][1].real() << " "
-                  << history->array_[n][t][0][1].imag();
+                  << history->array_[n][t][0][1].imag() << " ";
   //                << history->array_[n][t][0][2].real() << " ";
   //                << history->array_[n][t][0][2].imag() << " ";
 
