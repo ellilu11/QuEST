@@ -23,17 +23,17 @@ int main(int argc, char *argv[])
 //    cout << setprecision(12) << scientific;
 
     // parameters
-    const double omega = 1000.0; 
-                         //2278.9013;
+    const double omega = // 1000.0; 
+                         2278.9013;
 
     const int num_src = atoi(argv[1]);
     const int num_obs = 0;
-    double dt = 1e-3; 
+    const double dt = 1e-5; 
                       // 2.0*M_PI / ( omega / 1000.0 ) * 0.001 * M_PI; 
-    const int num_timesteps = 10000;
-    const double tmax = dt*num_timesteps;
-    // const double num_timesteps = tmax/dt+1;
-    // const double tmax = dt * num_timesteps;
+//    const int num_timesteps = 10000;
+//  const double tmax = dt*num_timesteps;
+    const double tmax = 10;
+    const int num_timesteps = tmax/dt;
     const int tmult = 1; // 50 * pow(10, atoi(argv[2]) );
 
     const int interpolation_order = 4;
@@ -71,7 +71,7 @@ int main(int argc, char *argv[])
     auto history = make_shared<Integrator::History<Eigen::Vector2cd>>(
         num_src, 22, num_timesteps);
     history->fill(Eigen::Vector2cd::Zero());
-    history->initialize_past( Eigen::Vector2cd(0,0), num_src );
+    history->initialize_past( Eigen::Vector2cd(1,0), num_src );
     // history->initialize_past( qd_path );
 
     // == INTERACTIONS ===============================================
@@ -198,8 +198,8 @@ int main(int argc, char *argv[])
 
         // print rho
         for(int n = 0; n < num_src; ++n)
-          rhofile << std::setprecision(18) << std::scientific
-                  << t * dt << " " 
+          rhofile << std::setprecision(15) << std::scientific
+                  // << t * dt << " " 
                   << std::real(history->array_[n][t][0][0]) << " "
                   << history->array_[n][t][0][1].real() << " "
                   << history->array_[n][t][0][1].imag() << " ";

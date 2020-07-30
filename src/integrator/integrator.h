@@ -229,8 +229,9 @@ void Integrator::HilbertIntegrator<soltype>::solve_step(const int step)
 {
   assert(0 <= step && step < time_idx_ubound);
 
-  const double t0 = 0.0; // -pulse->delay_();
-  interp.evaluate_table_at_x((step+1)*dt, step*dt, t0, dt, omega);
+  const double t0 = -pulse->delay_();
+  // interp.evaluate_table_at_x((step+1)*dt, step*dt, t0, dt, omega); // A-M coefficients
+  interp.evaluate_table_at_x(step*dt, (step-1)*dt, t0, dt, omega); // A-B coefficients
     
   // get Rabi frequency
   auto eval_and_sum =
@@ -249,14 +250,12 @@ void Integrator::HilbertIntegrator<soltype>::solve_step(const int step)
   for(int sol_idx = 0; sol_idx < num_solutions; ++sol_idx)
     rabis[0][sol_idx] = rabi[sol_idx];
 
-  // Adam-Moulton integration
+  // Adam-Bashforth/Moulton integration
   for(int sol_idx = 0; sol_idx < num_solutions; ++sol_idx) {
  
    history->array_[sol_idx][step+1][0][0] = history->array_[sol_idx][step][0][0]; 
- //     + 1.0/dt*interp.evaluations[0][0]
- //     - 1.0/dt*interp.evaluations[0][1];
-   // history->array_[sol_idx][step+1][0][1] = history->array_[sol_idx][step][0][1]; 
-     //+ dt * iu * history->array_[sol_idx][step][0][1] * omega0;
+   history->array_[sol_idx][step+1][0][1] = history->array_[sol_idx][step][0][1] 
+     + dt * iu * history->array_[sol_idx][step][0][1] * omega0;
 
 /*    std::cout << std::setprecision(15) << std::scientific << step*dt << ' '
       << std::real(history->array_[sol_idx][step][0][0]) << ' '
@@ -264,22 +263,20 @@ void Integrator::HilbertIntegrator<soltype>::solve_step(const int step)
       << interp.evaluations[0][1] << std::endl;
 */
    for(int j = 0; j <= interp_order; ++j) {
-     history->array_[sol_idx][step+1][0][0] +=
+     /*history->array_[sol_idx][step+1][0][0] +=
       std::cos( omega / 1000 * ((step+1)*dt-j*dt) ) *
       interp.evaluations[0][j];
-
-     /* cmplx RHO_00 = history->array_[sol_idx][step-j][0][0];
+*/
+      cmplx RHO_00 = history->array_[sol_idx][step-j][0][0];
       cmplx RHO_01 = history->array_[sol_idx][step-j][0][1];
 
       history->array_[sol_idx][step+1][0][0] +=
         -iu * ( rabis[j][sol_idx] * std::conj( RHO_01 ) * interp.evaluations[0][j] - 
                 std::conj( rabis[j][sol_idx] ) * RHO_01 * interp.evaluations[0][j] );
-        // 0.0 * dt * (RHO_00 - 1.0) / T1;
           
       history->array_[sol_idx][step+1][0][1] +=
         -iu * ( rabis[j][sol_idx] * ( 1.0 - 2.0 * RHO_00 ) * interp.evaluations[0][j] );
-        // 0.0 * dt * RHO_01 / T2;
-      */
+     
     }
   } 
 }

@@ -119,7 +119,7 @@ void Interpolation::HilbertLagrangeSet::evaluate_table_at_x(
   switch(order_){
     case 1 : {
       //evaluations[0][1] = dt*std::sin(omega*(tm))/omega - std::cos(omega*(tm))/pow(omega,2.0) + std::cos(omega*(t))/pow(omega,2.0);
-      evaluations[0][1] = //dt*std::sin(omega*1.0)/omega - std::cos(omega*1.0)/pow(omega,2.0) + std::cos(omega*2.0)/pow(omega,2.0) + t;
+      evaluations[0][1] = 
         //dt*std::sin(omega*tm)/omega - std::cos(omega*tm)/pow(omega,2) + std::cos(omega*t)/pow(omega,2);
         -( std::cos(omega*(t+t0))/pow(omega,2) - std::cos(omega*(tm+t0))/pow(omega,2) + dt*std::sin(omega*(tm+t0))/omega );
 

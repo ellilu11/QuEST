@@ -4,10 +4,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # Parameters
-ndots = 2
-dir = '../build/out/beta0/'
+ndots = 1
+dir = '../build/out/hilberttest/'
 
-rhofile = dir+'rho_'+str(ndots)+'dots_dt1e-4_nint.dat'
+rhofile = dir+'rho_'+str(ndots)+'dots_dt1e-3.dat'
 
 def read_rho(filename) :
   rho_raw = np.loadtxt(filename)
@@ -84,10 +84,10 @@ def fft_rho(rho_data, ti, tf, dt) :
 
 def main() :
 
-  ti, tf = 0, 10000
+  ti, tf = 0, 10
  
-  dt0 = 1e-4
-  tincr = 500
+  dt0 = 1e-3
+  tincr = 1
   dt = dt0 * tincr
   tdata = np.linspace( ti, tf, (tf-ti)/dt )
 	 
