@@ -12,7 +12,7 @@ dir = '../build/out/beta0/'
 
 #rhofile0 = dir+'rho_'+str(ndots)+'dots_dt5e-3.dat'
 #rhofile0 = dir+'rho_'+str(ndots)+'dots_dt5e-5_realfld.dat'
-rhofile0 = dir+'rho_'+str(ndots)+'dots_dt5e-3.dat'
+rhofile0 = dir+'rho_'+str(ndots)+'dots_dt1e-4.dat'
 rhofile1 = dir+'rho_'+str(ndots)+'dots_fixed_dt1e-4.dat'
 
 rhofile = np.array([rhofile0, rhofile1])

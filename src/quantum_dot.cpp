@@ -19,13 +19,13 @@ matrix_elements QuantumDot::liouville_rhs(const matrix_elements &rho,
                                           const bool rotating) const
 {
   const cmplx m0 = -iu * (rabi * conj(rho[1]) - conj(rabi) * rho[1] ) -
-                   0.0 * (rho[0] - 1.0) / (damping.first); // same in rot frame?
+                   (rho[0] - 1.0) / (damping.first); // same in rot frame?
 
   const cmplx m1 = rotating ?  
       -iu * (rabi * (1.0 - 2.0 * rho[0]) + rho[1] * (laser_freq - freq)) -
-      0.0 * rho[1] / (damping.second) :
+      rho[1] / (damping.second) :
       -iu * (rabi * (1.0 - 2.0 * rho[0]) - rho[1] * freq) -
-      0.0 * rho[1] / (damping.second);
+      rho[1] / (damping.second);
 
   return matrix_elements(m0, m1);
 }

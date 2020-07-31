@@ -34,7 +34,7 @@ int main(int argc, char *argv[])
     const int interpolation_order = 4;
     const bool solve_type = atoi(argv[3]);  
     const bool interacting = atoi(argv[4]);
-    const bool rotating = 1;
+    const bool rotating = 0;
 
     // constants
     const double c0 = 299.792458, hbar = 0.65821193, mu0 = 2.0133545e-04;
@@ -107,16 +107,16 @@ int main(int argc, char *argv[])
     }
 */
     
-    Propagation::SelfRotatingEFIE dyadic_self(c0, propagation_constant,
+/*    Propagation::SelfRotatingEFIE dyadic_self(c0, propagation_constant,
                                                 omega, beta);
     Propagation::RotatingEFIE dyadic(c0, propagation_constant,
                                            omega, beta);
-
-/*      Propagation::SelfEFIE dyadic_self(c0, propagation_constant,
+*/
+      Propagation::SelfEFIE dyadic_self(c0, propagation_constant,
                                       beta);
       Propagation::EFIE<cmplx> dyadic(c0, propagation_constant,
                                             beta);
-*/
+
     auto pulse1 = make_shared<Pulse>(read_pulse_config("pulse.cfg"));
 
     std::vector<std::shared_ptr<InteractionBase>> interactions{ 
