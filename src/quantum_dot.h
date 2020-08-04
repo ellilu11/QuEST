@@ -44,7 +44,7 @@ class QuantumDot {
                                 const cmplx,
                                 const int,
                                 const double, 
-                                double,
+                                const double,
                                 const bool) const;
 
   friend class ObserverDot;
@@ -78,6 +78,6 @@ class QuantumDot {
 
 DotVector import_dots(const std::string &);
 void set_dipolevec(std::shared_ptr<DotVector>, const Eigen::Vector3d dip);
-std::vector<BlochFunctionType> rhs_functions(const DotVector &, const double, double, const bool);
+std::vector<BlochFunctionType> rhs_functions(const DotVector &, const double, const double, const bool);
 
 #endif

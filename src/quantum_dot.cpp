@@ -15,11 +15,11 @@ matrix_elements QuantumDot::liouville_rhs(const matrix_elements &rho,
                                           const cmplx rabi,
                                           const int time_idx,
                                           const double laser_freq,
-                                          double damping_rr,
+                                          const double damping_rr,
                                           const bool rotating) const
 {
   const cmplx m0 = -iu * (rabi * conj(rho[1]) - conj(rabi) * rho[1] ) -
-                   (rho[0] - 1.0) / (damping.first); // same in rot frame?
+                   (rho[0] - 1.0) / (damping.first);
 
   const cmplx m1 = rotating ?  
       -iu * (rabi * (1.0 - 2.0 * rho[0]) + rho[1] * (laser_freq - freq)) -
@@ -34,11 +34,6 @@ Eigen::Vector3d separation(const QuantumDot &d1, const QuantumDot &d2)
 {
   return d2.pos - d1.pos;
 }
-
-/*const Eigen::Vector3d QuantumDot::separation_srcobs(const QuantumDot &d1, const ObserverDot &d2) 
-{
-  return d2.pos - d1.pos;
-}*/
 
 std::ostream &operator<<(std::ostream &os, const QuantumDot &qd)
 {
@@ -73,7 +68,7 @@ void set_dipolevec(std::shared_ptr<DotVector> dots, const Eigen::Vector3d dip)
 
 std::vector<BlochFunctionType> rhs_functions(const DotVector &dots,
                                              const double laser_frequency,
-                                             double damping_rr,
+                                             const double damping_rr,
                                              const bool rotating)
 {
   std::vector<BlochFunctionType> funcs(dots.size());

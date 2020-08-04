@@ -159,18 +159,16 @@ class Propagation::DelSq_Laplace : public Propagation::Kernel<T> {
 template <class T>
 class Propagation::EFIE : public Propagation::Kernel<T> {
  public:
-  EFIE(const double c, const double k2, const double beta) : c_(c), k2_(k2), beta_(beta){};
+  EFIE(const double c, const double k2, const double beta, const double dist0) : c_(c), k2_(k2), beta_(beta){};
   const std::vector<Mat3D<T>> &coefficients(
       const Eigen::Vector3d &dr,
       const Interpolation::UniformLagrangeSet &interp)
   {
     this->coefs_.resize(interp.order() + 1);
-    double dist0 = 0.0 * c_ / 2278.9013; // 1e-1
 
     const auto dyads(spatial_dyads(dr));
     for(int i = 0; i <= interp.order(); ++i) {
         if ( dr.norm() > dist0 ) {
-            std::cout << "Got here (fixed)!" << std::endl;
             this->coefs_[i] = -k2_ * (dyads[0] * interp.evaluations[0][i] +
                                       dyads[1] * interp.evaluations[1][i] +
                                       dyads[2] * interp.evaluations[2][i] );
@@ -181,7 +179,6 @@ class Propagation::EFIE : public Propagation::Kernel<T> {
                      dyads[3] * interp.evaluations[2][i]);
               this->coefs_[i] += 
                 -beta_ / pow( 5.2917721e-4, 2 ) * Eigen::Matrix3d::Identity() * 
-                // -k2_ * 2.0 * Eigen::Matrix3d::Identity() / ( 3.0 * c_ ) * 
                 interp.evaluations[3][i] ;
             }
        }
@@ -270,24 +267,21 @@ class Propagation::EFIE : public Propagation::Kernel<T> {
 
 class Propagation::RotatingEFIE : public Propagation::EFIE<cmplx> {
  public:
-  RotatingEFIE(const double c, const double k2, const double omega, const double beta)
-      : EFIE<cmplx>(c, k2, beta), omega_(omega){};
+  RotatingEFIE(const double c, const double k2, const double omega, const double beta, const double dist0)
+      : EFIE<cmplx>(c, k2, beta, dist0), omega_(omega){};
 
   const std::vector<Eigen::Matrix3cd> &coefficients(
       const Eigen::Vector3d &dr,
       const Interpolation::UniformLagrangeSet &interp)
   {
     this->coefs_.resize(interp.order() + 1);
-    double dist0 = 0.0 * c_ / omega_; // 1e-1
-
-    // std::cout << dr.norm() * omega_ / c_ << std::endl;
 
     const auto dyads(spatial_dyads(dr));
     for(int i = 0; i <= interp.order(); ++i) {
       this->coefs_[i] = Eigen::Matrix3cd::Zero();
 
       if ( dr.norm() > dist0 ) {
-        std::cout << "Got here (rotating)!" << std::endl;
+        // std::cout << "Got here (rotating)!" << std::endl;
         this->coefs_[i] = 
             -k2_ * std::exp(-iu * omega_ * dr.norm() / c_) *
               (dyads[0].cast<cmplx>() * interp.evaluations[0][i] +
@@ -310,7 +304,6 @@ class Propagation::RotatingEFIE : public Propagation::EFIE<cmplx> {
    
           this->coefs_[i] += 
             beta_ / pow( 5.2917721e-4, 2 ) * Eigen::Matrix3d::Identity() * 
-        // k2_ * 2.0 * Eigen::Matrix3d::Identity() / ( 3.0 * c_ ) * 
             ( 1.0 * iu * pow(omega_,3) * interp.evaluations[0][i] +
               3.0 * pow(omega_,2) * interp.evaluations[1][i] -
               3.0 * iu * omega_ * interp.evaluations[2][i] -
@@ -318,7 +311,6 @@ class Propagation::RotatingEFIE : public Propagation::EFIE<cmplx> {
         }
       }    
     }
-//    std::cout << "coefs[0]: " << this->coefs_[0] << std::endl;
 
     return this->coefs_;
   }

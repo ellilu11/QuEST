@@ -12,26 +12,6 @@ Integrator::BlochRHS::BlochRHS(
 {
 }
 
-/*std::vector<cmplx> Integrator::BlochRHS::evaluate_rabi(const int step) const
-{
-// get rabi frequency
-  auto eval_and_sum =
-      [step](const InteractionBase::ResultArray &r,
-             const std::shared_ptr<InteractionBase> &interaction) {
-        return r + interaction->evaluate(step);
-      };
-  auto nil = InteractionBase::ResultArray::Zero(num_solutions, 1).eval();
-
-  auto projected_rabi = std::accumulate(
-      interactions.begin(), interactions.end(), nil, eval_and_sum);
-
-  std::vector<cmplx> projected_rabi_vec(num_solutions);
-  for (int solution = 0; solution < num_solutions; ++solution)
-    projected_rabi_vec[solution] = projected_rabi[solution];
-
-  return projected_rabi_vec;
-}*/
-
 void Integrator::BlochRHS::evaluate(const int step) const
 {
   auto eval_and_sum =
@@ -43,8 +23,6 @@ void Integrator::BlochRHS::evaluate(const int step) const
 
   auto projected_rabi = std::accumulate(
       interactions.begin(), interactions.end(), nil, eval_and_sum);
-
-//  auto projected_rabi = evaluate_rabi(step);
 
   for(int solution = 0; solution < num_solutions; ++solution) {
     history->array_[solution][step][1] = rhs_functions[solution](
