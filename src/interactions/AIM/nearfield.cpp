@@ -2,7 +2,6 @@
 
 AIM::Nearfield::Nearfield(
     const std::shared_ptr<const DotVector> dots,
-    const std::shared_ptr<const DotVector> obss,
     const std::shared_ptr<const Integrator::History<Eigen::Vector2cd>> history,
     const int interp_order,
     const double c0,
@@ -14,7 +13,6 @@ AIM::Nearfield::Nearfield(
     std::shared_ptr<const std::vector<Grid::ipair_t>> interaction_pairs,
     const double omega)
     : AimBase(dots,
-              obss,
               history,
               interp_order,
               c0,

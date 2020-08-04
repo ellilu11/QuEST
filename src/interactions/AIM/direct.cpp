@@ -2,14 +2,13 @@
 
 AIM::DirectInteraction::DirectInteraction(
     std::shared_ptr<const DotVector> dots,
-    std::shared_ptr<const DotVector> obss,
     std::shared_ptr<const Integrator::History<Eigen::Vector2cd>> history,
     Propagation::Kernel<cmplx> &kernel,
     const int interp_order,
     const double c0,
     const double dt,
     std::shared_ptr<const std::vector<Grid::ipair_t>> interaction_pairs)
-    : HistoryInteraction(dots, obss, history, interp_order, c0, dt),
+    : HistoryInteraction(dots, history, interp_order, c0, dt),
       interaction_pairs_{std::move(interaction_pairs)},
       shape_(
           {{static_cast<int>(interaction_pairs_->size()), interp_order + 1}}),

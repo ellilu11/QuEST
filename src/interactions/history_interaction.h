@@ -15,17 +15,14 @@ class HistoryInteraction : public InteractionBase {
  public:
   HistoryInteraction(
       std::shared_ptr<const DotVector> dots,
-      std::shared_ptr<const DotVector> obss,
       std::shared_ptr<const Integrator::History<Eigen::Vector2cd>> history, // feed Gaussian pulse into here
       const int interp_order,
       const double c0,
       const double dt)
-      : InteractionBase(std::move(dots), std::move(obss), dt),
+      : InteractionBase(std::move(dots), dt),
         history(std::move(history)),
         interp_order(interp_order),
         c0(c0){};
-
-//    const ResultArray &evaluate(const int);
 
  protected:
   std::shared_ptr<const Integrator::History<Eigen::Vector2cd>> history;

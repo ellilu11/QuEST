@@ -2,7 +2,6 @@
 
 AIM::Farfield::Farfield(
     const std::shared_ptr<const DotVector> dots,
-    const std::shared_ptr<const DotVector> obss,
     const std::shared_ptr<const Integrator::History<Eigen::Vector2cd>> history,
     const int interp_order,
     const double c0,
@@ -12,7 +11,6 @@ AIM::Farfield::Farfield(
     Expansions::ExpansionFunction expansion_function,
     Normalization::SpatialNorm normalization)
     : AimBase(dots,
-              obss,
               history,
               interp_order,
               c0,

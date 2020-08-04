@@ -11,7 +11,6 @@ namespace AIM {
   class AimBase : public HistoryInteraction {
    public:
     AimBase(const std::shared_ptr<const DotVector> dots,
-            const std::shared_ptr<const DotVector> obss,
             const std::shared_ptr<const Integrator::History<Eigen::Vector2cd>>
                 history,
             const int interp_order,
@@ -21,7 +20,7 @@ namespace AIM {
             std::shared_ptr<const Expansions::ExpansionTable> expansion_table,
             Expansions::ExpansionFunction expansion_function,
             Normalization::SpatialNorm normalization)
-        : HistoryInteraction(dots, obss, history, interp_order, c0, dt),
+        : HistoryInteraction(dots, history, interp_order, c0, dt),
           grid(std::move(grid)),
           expansion_table(std::move(expansion_table)),
           expansion_function(std::move(expansion_function)),

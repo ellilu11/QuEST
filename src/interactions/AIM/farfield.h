@@ -11,7 +11,6 @@ namespace AIM {
 class AIM::Farfield final : public AimBase {
  public:
   Farfield(const std::shared_ptr<const DotVector>,
-           const std::shared_ptr<const DotVector>,
            const std::shared_ptr<const Integrator::History<Eigen::Vector2cd>>,
            const int,
            const double,
@@ -30,7 +29,6 @@ class AIM::Farfield final : public AimBase {
 
     return results;
   }
-  // const ResultArray &evaluatefld(const int step) final;
  
  private:
   std::array<int, 4> table_dimensions_;

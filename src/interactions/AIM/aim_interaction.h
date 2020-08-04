@@ -12,7 +12,6 @@ namespace AIM {
 class AIM::Interaction final : public InteractionBase {
  public:
   Interaction(const std::shared_ptr<DotVector> dots,
-              const std::shared_ptr<DotVector> obss,
               const std::shared_ptr<const Integrator::History<Eigen::Vector2cd>>
                   history,
               Propagation::Kernel<cmplx> &kernel,
@@ -34,7 +33,6 @@ class AIM::Interaction final : public InteractionBase {
             grid->nearfield_point_pairs(border, *dots))},
 
         ff(dots,
-           obss,
            history,
            interp_order,
            c0,
@@ -45,7 +43,6 @@ class AIM::Interaction final : public InteractionBase {
            normalization),
 
         nf(dots,
-           obss,
            history,
            5,
            c0,
@@ -57,7 +54,7 @@ class AIM::Interaction final : public InteractionBase {
            nearfield_pairs,
            omega),
 
-        direct(dots, obss, history, kernel, interp_order, c0, dt, nearfield_pairs)
+        direct(dots, history, kernel, interp_order, c0, dt, nearfield_pairs)
   {
         // std::cout << (*nearfield_pairs).size() << std::endl;
         /*for ( int i=0; i < (*nearfield_pairs).size(); i++ )
@@ -66,11 +63,6 @@ class AIM::Interaction final : public InteractionBase {
 
   const ResultArray &evaluate(const int t)
   {
-   /* if (t%10 == 0)
-    std::cout << t/10 << // " " << ff.evaluate(t).conjugate()[1] <<
-                 // " " << nf.evaluate(t)[1] << 
-                 // " " << direct.evaluate(t)[1] << 
-                 std::endl;*/
     // I DON'T KNOW WHY THAT NEEDS A CONJUGATE!!!
     results = 
          (ff.evaluate(t).conjugate() - nf.evaluate(t)) + direct.evaluate(t);

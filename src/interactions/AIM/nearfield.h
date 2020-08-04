@@ -11,7 +11,6 @@ namespace AIM {
 class AIM::Nearfield final : public AimBase {
  public:
   Nearfield(const std::shared_ptr<const DotVector>,
-            const std::shared_ptr<const DotVector>,
             const std::shared_ptr<const Integrator::History<Eigen::Vector2cd>>,
             const int,
             const double,
@@ -25,7 +24,6 @@ class AIM::Nearfield final : public AimBase {
   ~Nearfield() = default;
 
   const ResultArray &evaluate(const int) final;
-  // const ResultArray &evaluatefld(const int) final;
 
  private:
   struct support_range_t {
