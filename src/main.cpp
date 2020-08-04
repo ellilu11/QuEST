@@ -26,10 +26,10 @@ int main(int argc, char *argv[])
     const int num_src = atoi(argv[1]);
     const int num_obs = 0;
     const double tmax = 10000;
-    const double dt = 1.0e-5; // pow(10, atoi(argv[2]) ) ; // rotframe: sigma = 1.0ps -> dt <= 0.52e-1
+    const double dt = 1.0e-4; // pow(10, atoi(argv[2]) ) ; // rotframe: sigma = 1.0ps -> dt <= 0.52e-1
                               // fixframe: omega = 2278.9013 mev/hbar -> dt <= 1.379e-4
     const int num_timesteps = tmax/dt;
-    const int tmult = 5000; // 50 * pow(10, atoi(argv[2]) );
+    const int tmult = 500; // 50 * pow(10, atoi(argv[2]) );
 
     const int interpolation_order = 4;
     const bool solve_type = atoi(argv[3]);  
@@ -40,8 +40,6 @@ int main(int argc, char *argv[])
     const double c0 = 299.792458, hbar = 0.65821193, mu0 = 2.0133545e-04;
     const double omega = 2278.9013, d0 = 5.2917721e-4 * 1.0;
     double beta = 0.0 / pow( omega, 3 );
-	    // mu0 * pow( omega, 3 ) * pow( d0, 2 ) / ( 6.0 * M_PI * hbar * c0 );
-        // ( atoi(argv[5]) ? 0.1 * pow(2, atoi(argv[5]) - 1) : 0.0 );
 
     const double k0 = omega/c0, lambda = 2.0*M_PI/k0;    
 
@@ -52,11 +50,6 @@ int main(int argc, char *argv[])
     const int border = 1;
 
     cout << "Initializing..." << endl;
-    std::cout << "  Solving with: "
-              << (solve_type
-                      ? "P-C"
-                      : "Newton")
-              << " mode" << std::endl;
     std::cout << "  Interacting particles: " 
               << (interacting
                       ? "TRUE"
@@ -66,21 +59,12 @@ int main(int argc, char *argv[])
               << ((rotating) ? "Rotating" : "Fixed") << std::endl;
     std::cout << "  Num timesteps: " << num_timesteps << std::endl;
     std::cout << "  Num sources: " << num_src << std::endl;
-    std::cout << "  Num observers: " << num_obs << std::endl;
-    std::cout << "  Beta: " << beta << std::endl;
-    std::cout << "  ds/lambda: " << ds/lambda << std::endl;
-    std::cout << "  AIM expansion order: " << expansion_order << std::endl;
 
     string idstr(argv[5]);
  
     auto qds = make_shared<DotVector>(import_dots("./dots/dots"+idstr+".cfg"));
     qds->resize(num_src);
     auto rhs_funcs = rhs_functions(*qds, omega, beta, rotating);
-
-    auto obs = make_shared<DotVector>(import_dots("./dots/dotsobs.cfg"));
-    obs->resize(num_obs);
-
-    // std::cout << obs->size() << std::endl;
 
     // == HISTORY ====================================================
 
@@ -93,46 +77,47 @@ int main(int argc, char *argv[])
     // == INTERACTIONS ===============================================
 
     const double propagation_constant = mu0 / (4 * M_PI * hbar);
-//    Propagation::SelfEFIE dyadic(c0, propagation_constant, beta);
 
-/*    Propagation::EFIE<cmplx> dyadic;
-    Propagation::EFIE<cmplx> dyadic_self;
+    auto pulse1 = make_shared<Pulse>(read_pulse_config("pulse.cfg"));
+ 
+    std::shared_ptr<InteractionBase> selfwise;
+    std::shared_ptr<InteractionBase> pairwise;
 
     if (rotating) {
-        dyadic = Propagation::RotatingEFIE(c0, propagation_constant, omega, beta);
-        dyadic_self = Propagation::SelfRotatingEFIE(c0, propagation_constant, omega, beta);
+        Propagation::RotatingEFIE dyadic(c0, propagation_constant, omega, beta);
+        Propagation::SelfRotatingEFIE dyadic_self(c0, propagation_constant, omega, beta);
+
+        selfwise = make_shared<DirectInteraction>(qds, history, dyadic_self,
+                                                    interpolation_order, c0, dt, omega, rotating);
+        pairwise = make_shared<DirectInteraction>(qds, history, dyadic,
+                                                      interpolation_order, c0, dt, omega, rotating);
+    
     } else {
-        dyadic = Propagation::EFIE<cmplx>(c0, propagation_constant, beta);
-        dyadic_self = Propagation::SelfEFIE(c0, propagation_constant, beta);
+        Propagation::EFIE<cmplx> dyadic(c0, propagation_constant, beta);
+        Propagation::SelfEFIE dyadic_self(c0, propagation_constant, beta);
+ 
+        selfwise = make_shared<DirectInteraction>(qds, history, dyadic_self,
+                                                    interpolation_order, c0, dt, omega, rotating);
+        pairwise = make_shared<DirectInteraction>(qds, history, dyadic,
+                                                      interpolation_order, c0, dt, omega, rotating); 
     }
-*/
+ 
+    std::vector<std::shared_ptr<InteractionBase>> interactions{ 
+      make_shared<PulseInteraction>(qds, pulse1, interpolation_order, c0, dt, hbar, rotating),
+      selfwise };
+
+    if (interacting)
+      interactions.push_back( pairwise );
     
 /*    Propagation::SelfRotatingEFIE dyadic_self(c0, propagation_constant,
                                                 omega, beta);
     Propagation::RotatingEFIE dyadic(c0, propagation_constant,
                                            omega, beta);
-*/
-    
       Propagation::SelfEFIE dyadic_self(c0, propagation_constant,
                                       beta);
       Propagation::EFIE<cmplx> dyadic(c0, propagation_constant,
                                             beta);
-
-    auto pulse1 = make_shared<Pulse>(read_pulse_config("pulse.cfg"));
-
-    std::vector<std::shared_ptr<InteractionBase>> interactions{ 
-        make_shared<PulseInteraction>(qds, nullptr, pulse1, interpolation_order, c0, dt, hbar, rotating),
-        make_shared<DirectInteraction>(qds, nullptr, history, dyadic_self,
-                                                    interpolation_order, c0, dt, omega, beta, hbar, rotating) };
-
-    if (interacting) {
-        std::shared_ptr<InteractionBase> pairwise;
-
-        pairwise = make_shared<DirectInteraction>(qds, nullptr, history, dyadic,
-                                                    interpolation_order, c0, dt, omega, beta, hbar, rotating);
-        interactions.push_back( pairwise );
-    }
-
+*/
     // == INTEGRATOR =================================================
 
     if (solve_type) {
@@ -183,28 +168,12 @@ int main(int argc, char *argv[])
     cout << "Writing output..." << endl;
 
     string dotstr(argv[1]);
-    string prfx = "./outsr/";
+    string prfx = "./out/";
     string sffx = dotstr + "dots_" + idstr + ".dat";
 
     string rhostr = prfx + "rho_" + sffx; 
-/*    string fldstr = prfx + "fld_" + sffx;
-    string fldxstr = prfx + "fldx_" + sffx;
-    string fldystr = prfx + "fldy_" + sffx;
-    string fldzstr = prfx + "fldz_" + sffx;
-*/
     ofstream rhofile(rhostr);
     rhofile << scientific << setprecision(15);
-
-/*    ofstream fldfile(fldstr);
-    fldfile << scientific << setprecision(15);
-    ofstream fldxfile(fldxstr);
-    fldxfile << scientific << setprecision(15);
-    ofstream fldyfile(fldystr);
-    fldyfile << scientific << setprecision(15);
-    ofstream fldzfile(fldzstr);
-    fldzfile << scientific << setprecision(15);
-*/
-//    const int NUM_DERIV = 4;
 
     for(int t = 0; t < num_timesteps; ++t) {
 
