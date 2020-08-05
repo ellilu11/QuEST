@@ -84,27 +84,28 @@ int main(int argc, char *argv[])
     std::shared_ptr<InteractionBase> pairwise;
 
     if (rotating) {
-        Propagation::RotatingEFIE dyadic(c0, propagation_constant, omega, beta);
+        Propagation::RotatingEFIE dyadic(c0, propagation_constant, omega, beta, 0.0);
         Propagation::SelfRotatingEFIE dyadic_self(c0, propagation_constant, omega, beta);
 
-        selfwise = make_shared<DirectInteraction>(qds, history, dyadic_self,
-                                                    interpolation_order, c0, dt, omega, rotating);
+        //selfwise = make_shared<DirectInteraction>(qds, history, dyadic_self,
+        //                                            interpolation_order, c0, dt, omega, rotating);
         pairwise = make_shared<DirectInteraction>(qds, history, dyadic,
                                                       interpolation_order, c0, dt, omega, rotating);
     
     } else {
-        Propagation::EFIE<cmplx> dyadic(c0, propagation_constant, beta);
-        Propagation::SelfEFIE dyadic_self(c0, propagation_constant, beta);
+        Propagation::EFIE<cmplx> dyadic(c0, propagation_constant, beta, 0.0);
+/*        Propagation::SelfEFIE dyadic_self(c0, propagation_constant, beta);
  
         selfwise = make_shared<DirectInteraction>(qds, history, dyadic_self,
                                                     interpolation_order, c0, dt, omega, rotating);
+                                                    */
         pairwise = make_shared<DirectInteraction>(qds, history, dyadic,
                                                       interpolation_order, c0, dt, omega, rotating); 
     }
  
     std::vector<std::shared_ptr<InteractionBase>> interactions{ 
       make_shared<PulseInteraction>(qds, pulse1, interpolation_order, c0, dt, hbar, rotating),
-      selfwise };
+      };
 
     if (interacting)
       interactions.push_back( pairwise );

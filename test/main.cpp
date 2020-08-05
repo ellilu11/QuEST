@@ -20,21 +20,21 @@ using namespace std;
 
 int main(int argc, char *argv[])
 {
-    cout << setprecision(12) << scientific;
+    cout << setprecision(15) << scientific;
 
     // parameters
     const int num_src = atoi(argv[1]);
     const int num_obs = 0;
-    const double tmax = 10000;
+    const double tmax = 1000;
     const double dt = 1.0e-4; // pow(10, atoi(argv[2]) ) ; // rotframe: sigma = 1.0ps -> dt <= 0.52e-1
                               // fixframe: omega = 2278.9013 mev/hbar -> dt <= 1.379e-4
     const int num_timesteps = tmax/dt;
     const int tmult = 500; // 50 * pow(10, atoi(argv[2]) );
 
     const int interpolation_order = 4;
-    const bool solve_type = atoi(argv[3]);  
-    const bool interacting = atoi(argv[4]);
-    const bool rotating = 0;
+    const bool solve_type = 1;  
+    const bool interacting = atoi(argv[2]);
+    const bool rotating = atoi(argv[3]);
 
     // constants
     const double c0 = 299.792458, hbar = 0.65821193, mu0 = 2.0133545e-04;
@@ -60,9 +60,7 @@ int main(int argc, char *argv[])
     std::cout << "  Num timesteps: " << num_timesteps << std::endl;
     std::cout << "  Num sources: " << num_src << std::endl;
 
-    string idstr(argv[5]);
- 
-    auto qds = make_shared<DotVector>(import_dots("./dots/dots"+idstr+".cfg"));
+    auto qds = make_shared<DotVector>(import_dots("./dots/dots0.cfg"));
     qds->resize(num_src);
     auto rhs_funcs = rhs_functions(*qds, omega, beta, rotating);
 
@@ -84,7 +82,7 @@ int main(int argc, char *argv[])
     std::shared_ptr<InteractionBase> pairwise;
 
     if (rotating) {
-        Propagation::RotatingEFIE dyadic(c0, propagation_constant, omega, beta);
+        Propagation::RotatingEFIE dyadic(c0, propagation_constant, omega, beta, 0.0);
         Propagation::SelfRotatingEFIE dyadic_self(c0, propagation_constant, omega, beta);
 
         selfwise = make_shared<DirectInteraction>(qds, history, dyadic_self,
@@ -93,11 +91,11 @@ int main(int argc, char *argv[])
                                                       interpolation_order, c0, dt, omega, rotating);
     
     } else {
-        Propagation::EFIE<cmplx> dyadic(c0, propagation_constant, beta);
+        Propagation::EFIE<cmplx> dyadic(c0, propagation_constant, beta, 0.0);
         Propagation::SelfEFIE dyadic_self(c0, propagation_constant, beta);
  
-        selfwise = make_shared<DirectInteraction>(qds, history, dyadic_self,
-                                                    interpolation_order, c0, dt, omega, rotating);
+        //selfwise = make_shared<DirectInteraction>(qds, history, dyadic_self,
+        //                                            interpolation_order, c0, dt, omega, rotating);
         pairwise = make_shared<DirectInteraction>(qds, history, dyadic,
                                                       interpolation_order, c0, dt, omega, rotating); 
     }
@@ -128,14 +126,14 @@ int main(int argc, char *argv[])
       Integrator::PredictorCorrector<Eigen::Vector2cd> solver_pc(
           dt, 18, 22, 3.15, history, std::move(bloch_rhs));
 
-      cout << "Solving..." << endl;
+      cout << "Solving P-C..." << endl;
       solver_pc.solve();
 
     } else {
       Integrator::NewtonJacobian<Eigen::Vector2cd> solver_nt(
         dt, beta, omega, interpolation_order, rotating, history, std::move(interactions));
       
-      cout << "Solving..." << endl;
+      cout << "Solving Newton..." << endl;
       solver_nt.solve();
 
     }
@@ -167,12 +165,13 @@ int main(int argc, char *argv[])
 
     cout << "Writing output..." << endl;
 
-    string dotstr(argv[1]);
+/*    string dotstr(argv[1]);
     string prfx = "./out/";
     string sffx = dotstr + "dots_" + idstr + ".dat";
 
     string rhostr = prfx + "rho_" + sffx; 
-    ofstream rhofile(rhostr);
+    ofstream rhofile(rhostr);*/
+    ofstream rhofile("./output.dat");
     rhofile << scientific << setprecision(15);
 
     for(int t = 0; t < num_timesteps; ++t) {

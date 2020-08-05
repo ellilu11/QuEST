@@ -44,14 +44,6 @@ class Propagation::Kernel {
                 "Propagation kernels require numeric types");
   virtual const std::vector<Mat3D<T>> &coefficients(
       const Eigen::Vector3d &, const Interpolation::UniformLagrangeSet &) = 0;
-  virtual const std::vector<Mat3D<T>> &coeffs_deriv0(
-      const Interpolation::UniformLagrangeSet &) = 0;
-  virtual const std::vector<Mat3D<T>> &coeffs_deriv1(
-      const Interpolation::UniformLagrangeSet &) = 0;
-  virtual const std::vector<Mat3D<T>> &coeffs_deriv2(
-      const Interpolation::UniformLagrangeSet &) = 0;
-  virtual const std::vector<Mat3D<T>> &coeffs_deriv3(
-      const Interpolation::UniformLagrangeSet &) = 0;
 
  protected:
   std::vector<Mat3D<T>> coefs_;
@@ -159,7 +151,7 @@ class Propagation::DelSq_Laplace : public Propagation::Kernel<T> {
 template <class T>
 class Propagation::EFIE : public Propagation::Kernel<T> {
  public:
-  EFIE(const double c, const double k2, const double beta, const double dist0) : c_(c), k2_(k2), beta_(beta){};
+  EFIE(const double c, const double k2, const double beta, const double dist0) : c_(c), k2_(k2), beta_(beta), dist0_(dist0){};
   const std::vector<Mat3D<T>> &coefficients(
       const Eigen::Vector3d &dr,
       const Interpolation::UniformLagrangeSet &interp)
@@ -168,71 +160,27 @@ class Propagation::EFIE : public Propagation::Kernel<T> {
 
     const auto dyads(spatial_dyads(dr));
     for(int i = 0; i <= interp.order(); ++i) {
-        if ( dr.norm() > dist0 ) {
+        if ( dr.norm() > 0.0 ) {
             this->coefs_[i] = -k2_ * (dyads[0] * interp.evaluations[0][i] +
                                       dyads[1] * interp.evaluations[1][i] +
                                       dyads[2] * interp.evaluations[2][i] );
-        } else {
-            if ( dr.norm() > 0.0 ){
-                this->coefs_[i] = -k2_ * 
+        } /*else if ( dr.norm() > 0.0 ){
+              this->coefs_[i] = -k2_ * 
                     (dyads[0] * interp.evaluations[0][i] +
                      dyads[3] * interp.evaluations[2][i]);
               this->coefs_[i] += 
                 -beta_ / pow( 5.2917721e-4, 2 ) * Eigen::Matrix3d::Identity() * 
                 interp.evaluations[3][i] ;
-            }
-       }
+        }*/ else
+            this->coefs_[i] = Eigen::Matrix3d::Zero();
+
     }
 
     return this->coefs_;
   }
 
-  const std::vector<Eigen::Matrix3cd> &coeffs_deriv0(
-      const Interpolation::UniformLagrangeSet &interp)
-  {
-    this->coefs_.resize(interp.order() + 1);
-
-    for(int i = 0; i <= interp.order(); ++i)
-        this->coefs_[i] = Eigen::Matrix3d::Identity() * interp.evaluations[0][i] ;
-
-    return this->coefs_;
-  }
-
-  const std::vector<Eigen::Matrix3cd> &coeffs_deriv1(
-      const Interpolation::UniformLagrangeSet &interp)
-  {
-    this->coefs_.resize(interp.order() + 1);
-
-    for(int i = 0; i <= interp.order(); ++i)
-        this->coefs_[i] = Eigen::Matrix3d::Identity() * interp.evaluations[1][i] ;
-
-    return this->coefs_;
-  }
-
-  const std::vector<Eigen::Matrix3cd> &coeffs_deriv2(
-      const Interpolation::UniformLagrangeSet &interp)
-  {
-    this->coefs_.resize(interp.order() + 1);
-
-    for(int i = 0; i <= interp.order(); ++i)
-        this->coefs_[i] = Eigen::Matrix3d::Identity() * interp.evaluations[2][i] ;
-
-    return this->coefs_;
-  }
-
-  const std::vector<Eigen::Matrix3cd> &coeffs_deriv3(
-      const Interpolation::UniformLagrangeSet &interp)
-  {
-    this->coefs_.resize(interp.order() + 1);
-
-    for(int i = 0; i <= interp.order(); ++i)
-        this->coefs_[i] = Eigen::Matrix3d::Identity() * interp.evaluations[3][i] ;
-
-    return this->coefs_;
-  }
-
  protected:
-  double c_, k2_, beta_;
+  double c_, k2_, beta_, dist0_;
 
   std::array<Eigen::Matrix3d, 4> spatial_dyads(const Eigen::Vector3d &dr) const
   {
@@ -280,8 +228,7 @@ class Propagation::RotatingEFIE : public Propagation::EFIE<cmplx> {
     for(int i = 0; i <= interp.order(); ++i) {
       this->coefs_[i] = Eigen::Matrix3cd::Zero();
 
-      if ( dr.norm() > dist0 ) {
-        // std::cout << "Got here (rotating)!" << std::endl;
+      if ( dr.norm() > dist0_ ) {
         this->coefs_[i] = 
             -k2_ * std::exp(-iu * omega_ * dr.norm() / c_) *
               (dyads[0].cast<cmplx>() * interp.evaluations[0][i] +
@@ -292,7 +239,7 @@ class Propagation::RotatingEFIE : public Propagation::EFIE<cmplx> {
                   2.0 * iu * omega_ * interp.evaluations[1][i] -
                   std::pow(omega_, 2) * interp.evaluations[0][i]));
 
-      } else { 
+      } /*else { 
         if ( dr.norm() > 0.0 ){
 
          this->coefs_[i] = -k2_ * 
@@ -309,7 +256,7 @@ class Propagation::RotatingEFIE : public Propagation::EFIE<cmplx> {
               3.0 * iu * omega_ * interp.evaluations[2][i] -
               interp.evaluations[3][i] );
         }
-      }    
+      }*/    
     }
 
     return this->coefs_;
@@ -320,10 +267,10 @@ class Propagation::RotatingEFIE : public Propagation::EFIE<cmplx> {
 
 };
 
-class Propagation::SelfEFIE : public Propagation::EFIE<cmplx> {
+class Propagation::SelfEFIE : public Propagation::Kernel<cmplx> {
  public:
   SelfEFIE(const double c, const double k2, const double beta)
-      : EFIE<cmplx>(c, k2, beta){};
+      : c_(c), k2_(k2), beta_(beta){};
 
   const std::vector<Eigen::Matrix3cd> &coefficients(
       const Eigen::Vector3d &dr,
@@ -331,11 +278,7 @@ class Propagation::SelfEFIE : public Propagation::EFIE<cmplx> {
   {
     this->coefs_.resize(interp.order() + 1);
 
-/*    for(int i = 0; i <= interp.order(); ++i) {
-      this->coefs_[i] = Mat3D<cmplx>::Identity() * interp.evaluations[0][i];
-    }
-*/
-    const auto dyads(spatial_dyads(dr));
+    std::cout << "I'm a self EFIE!" << std::endl;
 
     if ( dr.norm() == 0.0 ) {
       for(int i = 0; i <= interp.order(); ++i) {
@@ -348,12 +291,14 @@ class Propagation::SelfEFIE : public Propagation::EFIE<cmplx> {
     }
     return this->coefs_;
   }
+ protected:
+  double c_, k2_, beta_;
 };
 
-class Propagation::SelfRotatingEFIE : public Propagation::EFIE<cmplx> {
+class Propagation::SelfRotatingEFIE : public Propagation::SelfEFIE {
  public:
   SelfRotatingEFIE(const double c, const double k2, const double omega, const double beta)
-      : EFIE<cmplx>(c, k2, beta), omega_(omega){};
+      : SelfEFIE(c, k2, beta), omega_(omega){};
 
   const std::vector<Eigen::Matrix3cd> &coefficients(
       const Eigen::Vector3d &dr,
@@ -361,7 +306,7 @@ class Propagation::SelfRotatingEFIE : public Propagation::EFIE<cmplx> {
   {
     this->coefs_.resize(interp.order() + 1);
 
-    const auto dyads(spatial_dyads(dr));
+    std::cout << "I'm a self rotating EFIE!" << std::endl;
 
     if ( dr.norm() == 0.0 ) {
       for(int i = 0; i <= interp.order(); ++i) {

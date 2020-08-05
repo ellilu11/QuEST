@@ -39,9 +39,6 @@ void DirectInteraction::build_coeff_table(
 
     floor_delays[pair_idx] = delay.first;
 
-    std::cout << "Dist: " << dist << std::endl;
-    std::cout << "Delay: " << delay.second << std::endl; // gets fractional part!
-
 //    lagrange.evaluate_derivative_table_at_x(0.0, dt);
     lagrange.evaluate_derivative_table_at_x(delay.second, dt);
 
@@ -53,20 +50,23 @@ void DirectInteraction::build_coeff_table(
 
     for(int i = 0; i <= interp_order; ++i){
        coeffs[pair_idx][i] = dip_obs.dot( interp_dyads[i] * dip_src );
-   }
+//       std::cout << pair_idx << " " << i << " " << coeffs[pair_idx][i] << std::endl;
+    }
   }
 // src self coefficients
   for(int src = 0; src < num_src; ++src) {
     lagrange.evaluate_derivative_table_at_x(0.0, dt);
 
-    std::vector<Eigen::Matrix3cd> interp_dyads(
+    std::vector<Eigen::Matrix3cd> interp_dyads_self(
         kernel.coefficients(Eigen::Vector3d::Zero(), lagrange));
 
     Eigen::Vector3d dip_src = (*dots)[src].dipole();
  
     for(int i = 0; i <= interp_order; ++i){
-       coeffs[num_interactions+src][i] = dip_src.dot( interp_dyads[i] * dip_src );
+       coeffs[num_interactions+src][i] = dip_src.dot( interp_dyads_self[i] * dip_src );
+      std::cout << coeffs[num_interactions+src][i] << std::endl;
     }
+
   }
 }
 
@@ -102,6 +102,9 @@ const InteractionBase::ResultArray &DirectInteraction::evaluate(
 //        results[src] *= std::exp( -iu*omega*time );
 //        results[obs] *= std::exp( -iu*omega*time );
 
+      if (time_idx == 0)
+        std::cout << i << " " << 
+          (history->array_[obs][1][0])[RHO_01] << " " << results[0] << std::endl;
 
       }
     }
