@@ -13,8 +13,8 @@ dir2 = '/mnt/home/luelliot/QuEST-branch/QuEST-thomas/build/out/'
 
 #rhofile0 = dir+'rho_'+str(ndots)+'dots_dt1e-4.dat'
 #rhofile0 = dir2+'rho_'+str(ndots)+'dots_dt1e-4_nint.dat'
-rhofile0 = dir+'rho_'+str(ndots)+'dots_fixed.dat'
-rhofile1 = dir+'rho_'+str(ndots)+'dots.dat'
+rhofile0 = dir+'rho_'+str(ndots)+'dots_fixed_dt5e-5.dat'
+rhofile1 = dir+'rho_'+str(ndots)+'dots_dt5e-5.dat'
 
 rhofile = np.array([rhofile0, rhofile1])
 nfiles = rhofile.shape[0]
@@ -95,7 +95,7 @@ def main() :
 
   ti, tf = 0, 1000
  
-  dt0 = 1e-4
+  dt0 = 5e-5
   tincr = 500
   dt = dt0 * tincr
   tdata = np.linspace( ti, tf, (tf-ti)/dt )
@@ -108,34 +108,41 @@ def main() :
     rho[:,:,:3,i], rho_mean[:,:3,i] = read_rho(rhofile[i])
     rho[:,:,3,i], rho_mean[:,3,i] = abs_rho(rho[:,:,:,i])
 
+  rho_mean_err = abs( rho_mean[:,:,1] - rho_mean[:,:,0] ) / abs (rho_mean[:,:,0])
+  rho_err = abs( rho[:,:,:,1] - rho[:,:,:,0] ) / abs (rho[:,:,:,0])
+
   # Plot
   fig = plt.figure()
   get_mean = 0
 
   if get_mean == 1 :
     for i in range(4) :
-      plt.subplot(1,4,i+1)
+      plt.subplot(2,4,i+1)
       plt.plot( tdata, rho_mean[:,i,:] )
+
+      plt.subplot(2,4,i+5)
+      plt.plot( tdata, rho_mean_err[:,i] )
+      plt.semilogy()
 
   elif get_mean == 0 :
     dot = 0
     for i in range(4) :
-      plt.subplot(1,4,i+1)
+      plt.subplot(2,4,i+1)
       plt.plot( tdata, rho[:,dot,i,:] )
-#      plt.plot( tdata, abs( rho[:,dot,i,1] - rho[:,dot,i,0] ) / abs (rho[:,dot,i,0]) )
-#      plt.plot( tdata, rho[:,dot,i,1] - rho[:,dot,i,0] )
-      plt.xlim( (ti,tf) )
-#      plt.ylim( (-1,1) )
-#      plt.semilogy()
+      plt.legend(['Fix (dt=5e-5)', 'Rot (dt=5e-5)'])
+ 
+      plt.subplot(2,4,i+5)
+      plt.plot( tdata, rho_err[:,dot,i] )
+      plt.semilogy()
+      plt.legend(['Rel err'])
+ 
   else :
     ti_fft = 50
     tdata_fft = np.linspace( 0, 1.0 / dt, (tf-ti_fft)/dt+1 )
     rhofft = abs( fft_rho( rho_mean[:,1,2], ti_fft, tf, dt ) )
     plt.plot( tdata_fft[:len(tdata_fft)-2], rhofft ) 
     plt.xlabel('f (1/ps)')
-#  plt.semilogy()c
-#  plt.legend(['Rot (dt=5e-5)', 'Fix (dt=5e-5)'])
-  plt.legend(['0','1'])
+  #  plt.legend(['Rot','Fix'])
   plt.show()
  
 if __name__ == '__main__':

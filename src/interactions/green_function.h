@@ -160,7 +160,9 @@ class Propagation::EFIE : public Propagation::Kernel<T> {
 
     const auto dyads(spatial_dyads(dr));
     for(int i = 0; i <= interp.order(); ++i) {
-        if ( dr.norm() > 0.0 ) {
+      this->coefs_[i] = Eigen::Matrix3d::Zero();
+
+      if ( dr.norm() > 0.0 ) {
             this->coefs_[i] = -k2_ * (dyads[0] * interp.evaluations[0][i] +
                                       dyads[1] * interp.evaluations[1][i] +
                                       dyads[2] * interp.evaluations[2][i] );
@@ -171,8 +173,7 @@ class Propagation::EFIE : public Propagation::Kernel<T> {
               this->coefs_[i] += 
                 -beta_ / pow( 5.2917721e-4, 2 ) * Eigen::Matrix3d::Identity() * 
                 interp.evaluations[3][i] ;
-        }*/ else
-            this->coefs_[i] = Eigen::Matrix3d::Zero();
+        }*/ 
 
     }
 
@@ -278,8 +279,6 @@ class Propagation::SelfEFIE : public Propagation::Kernel<cmplx> {
   {
     this->coefs_.resize(interp.order() + 1);
 
-    std::cout << "I'm a self EFIE!" << std::endl;
-
     if ( dr.norm() == 0.0 ) {
       for(int i = 0; i <= interp.order(); ++i) {
         this->coefs_[i] = 
@@ -305,8 +304,6 @@ class Propagation::SelfRotatingEFIE : public Propagation::SelfEFIE {
       const Interpolation::UniformLagrangeSet &interp)
   {
     this->coefs_.resize(interp.order() + 1);
-
-    std::cout << "I'm a self rotating EFIE!" << std::endl;
 
     if ( dr.norm() == 0.0 ) {
       for(int i = 0; i <= interp.order(); ++i) {

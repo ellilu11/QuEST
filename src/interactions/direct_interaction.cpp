@@ -64,7 +64,7 @@ void DirectInteraction::build_coeff_table(
  
     for(int i = 0; i <= interp_order; ++i){
        coeffs[num_interactions+src][i] = dip_src.dot( interp_dyads_self[i] * dip_src );
-      std::cout << coeffs[num_interactions+src][i] << std::endl;
+      // std::cout << coeffs[num_interactions+src][i] << std::endl;
     }
 
   }
@@ -102,10 +102,10 @@ const InteractionBase::ResultArray &DirectInteraction::evaluate(
 //        results[src] *= std::exp( -iu*omega*time );
 //        results[obs] *= std::exp( -iu*omega*time );
 
-      if (time_idx == 0)
+     /* if (time_idx == 0)
         std::cout << i << " " << 
           (history->array_[obs][1][0])[RHO_01] << " " << results[0] << std::endl;
-
+*/
       }
     }
 

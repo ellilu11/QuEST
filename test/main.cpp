@@ -26,7 +26,7 @@ int main(int argc, char *argv[])
     const int num_src = atoi(argv[1]);
     const int num_obs = 0;
     const double tmax = 1000;
-    const double dt = 1.0e-4; // pow(10, atoi(argv[2]) ) ; // rotframe: sigma = 1.0ps -> dt <= 0.52e-1
+    const double dt = 5.0e-5; // pow(10, atoi(argv[2]) ) ; // rotframe: sigma = 1.0ps -> dt <= 0.52e-1
                               // fixframe: omega = 2278.9013 mev/hbar -> dt <= 1.379e-4
     const int num_timesteps = tmax/dt;
     const int tmult = 500; // 50 * pow(10, atoi(argv[2]) );
@@ -94,8 +94,8 @@ int main(int argc, char *argv[])
         Propagation::EFIE<cmplx> dyadic(c0, propagation_constant, beta, 0.0);
         Propagation::SelfEFIE dyadic_self(c0, propagation_constant, beta);
  
-        //selfwise = make_shared<DirectInteraction>(qds, history, dyadic_self,
-        //                                            interpolation_order, c0, dt, omega, rotating);
+        selfwise = make_shared<DirectInteraction>(qds, history, dyadic_self,
+                                                    interpolation_order, c0, dt, omega, rotating);
         pairwise = make_shared<DirectInteraction>(qds, history, dyadic,
                                                       interpolation_order, c0, dt, omega, rotating); 
     }
