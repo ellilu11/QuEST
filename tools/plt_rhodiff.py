@@ -4,14 +4,14 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # Parameters
-ndots = 1
+ndots = 2
 
 #dir = '../build/out/beta1.79e-04/'
-#dir = '../build/out/beta0_realfld/'
-dir = '../build/out/beta1.79e-04_realfld/'
+dir = '../build/out/beta0/'
+#dir = '../build/out/beta1.79e-04_realfld/'
 
-rhofile0 = dir+'rho_'+str(ndots)+'dots_fixed_dt5e-5_long.dat'
-rhofile1 = dir+'rho_'+str(ndots)+'dots_dt5e-3_long.dat'
+rhofile0 = dir+'rho_'+str(ndots)+'dots_dt5e-3.dat'
+rhofile1 = dir+'rho_'+str(ndots)+'dots_dt5e-3_newhistory.dat'
 #rhofile0 = dir+'rho_'+str(ndots)+'dots_fixed_dt5e-5.dat'
 #rhofile1 = dir+'rho_'+str(ndots)+'dots_dt5e-3.dat'
 
@@ -92,10 +92,10 @@ def fft_rho(rho_data, ti, tf, dt) :
 
 def main() :
 
-  ti, tf = 0, 10000
+  ti, tf = 0, 10
  
   dt0 = 5e-3
-  tincr = 5
+  tincr = 1
   dt = dt0 * tincr
   tdata = np.linspace( ti, tf, (tf-ti)/dt )
   ntimes = tdata.shape[0]
@@ -122,7 +122,7 @@ def main() :
   
       plt.subplot(2,4,i+5)
       plt.plot( tdata, rho_mean_err[:,i] )
-      plt.semilogy()
+  #    plt.semilogy()
   #    plt.xlim( (0,10) )
 
   elif get_mean == 0 :
@@ -136,7 +136,7 @@ def main() :
       plt.subplot(2,4,i+5)
       #plt.plot( tdata, rho[:,dot+1,i,:] )
       plt.plot( tdata, rho_err[:,dot,i] )
-      plt.semilogy()
+      #plt.semilogy()
       plt.legend(['Rel err'])
 
   else :
