@@ -78,6 +78,8 @@ const InteractionBase::ResultArray &DirectInteraction::evaluate(
   results.setZero();
   constexpr int RHO_01 = 1;
   const double time0 = time_idx * dt;
+  
+  if ( time_idx <= 1 )
 
   // source pairwise interactions
     for(int pair_idx = 0; pair_idx < num_interactions; ++pair_idx) {
@@ -120,9 +122,6 @@ const InteractionBase::ResultArray &DirectInteraction::evaluate(
 
       }
     } 
-
-//    if ( time_idx <= 1 )
-//      std::cout << results[0] << " " << results[1] << std::endl;
 
     return results;
 }
