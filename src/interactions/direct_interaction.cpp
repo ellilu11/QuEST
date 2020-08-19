@@ -120,7 +120,11 @@ const InteractionBase::ResultArray &DirectInteraction::evaluate(
 
       }
     } 
-  return results;
+
+//    if ( time_idx <= 1 )
+//      std::cout << results[0] << " " << results[1] << std::endl;
+
+    return results;
 }
 
 int DirectInteraction::coord2idx(int row, int col)
