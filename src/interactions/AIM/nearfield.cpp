@@ -44,12 +44,12 @@ const InteractionBase::ResultArray &AIM::Nearfield::evaluate(const int time_idx)
 
     for(int t = support_[pair_idx].begin; t < support_[pair_idx].end; ++t) {
       const int s = std::max(
-          time_idx - t, static_cast<int>(history->array_.index_bases()[1]));
+          time_idx - t, -history->window);
 
-      results[pair.first] += (history->array_[pair.second][s][0])[RHO_01] *
+      results[pair.first] += (history->get_value(pair.second, s, 0))[RHO_01] *
                              coefficients_[pair_idx][t][0];
 
-      results[pair.second] += (history->array_[pair.first][s][0])[RHO_01] *
+      results[pair.second] += (history->get_value(pair.first, s, 0))[RHO_01] *
                               coefficients_[pair_idx][t][1];
     }
   }

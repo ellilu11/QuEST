@@ -18,7 +18,7 @@ namespace Propagation {
 
   template <class T>
   class Identity;
-/*
+
   template <class T>
   class Laplace;
 
@@ -26,7 +26,7 @@ namespace Propagation {
 
   template <class T>
   class DelSq_Laplace;
-*/
+
   template <class T>
   class EFIE;
 
@@ -68,7 +68,7 @@ class Propagation::Identity : public Propagation::Kernel<T> {
   }
 };
 
-/*
+
 template <class T>
 class Propagation::Laplace : public Propagation::Kernel<T> {
  public:
@@ -146,7 +146,6 @@ class Propagation::DelSq_Laplace : public Propagation::Kernel<T> {
  private:
   double c_, k2_;
 };
-*/
 
 template <class T>
 class Propagation::EFIE : public Propagation::Kernel<T> {
@@ -166,14 +165,15 @@ class Propagation::EFIE : public Propagation::Kernel<T> {
             this->coefs_[i] = -k2_ * (dyads[0] * interp.evaluations[0][i] +
                                       dyads[1] * interp.evaluations[1][i] +
                                       dyads[2] * interp.evaluations[2][i] );
-        } /*else if ( dr.norm() > 0.0 ){
+        } /*else if ( dr.norm() == 0.0 ){
               this->coefs_[i] = -k2_ * 
                     (dyads[0] * interp.evaluations[0][i] +
                      dyads[3] * interp.evaluations[2][i]);
-              this->coefs_[i] += 
+            
+          this->coefs_[i] = 
                 -beta_ / pow( 5.2917721e-4, 2 ) * Eigen::Matrix3d::Identity() * 
                 interp.evaluations[3][i] ;
-        }*/ 
+        }*/
 
     }
 
@@ -240,8 +240,7 @@ class Propagation::RotatingEFIE : public Propagation::EFIE<cmplx> {
                   2.0 * iu * omega_ * interp.evaluations[1][i] -
                   std::pow(omega_, 2) * interp.evaluations[0][i]));
 
-      } /*else { 
-        if ( dr.norm() > 0.0 ){
+      } /*else if ( dr.norm() == 0.0 ){
 
          this->coefs_[i] = -k2_ * 
           (dyads[0].cast<cmplx>() * interp.evaluations[0][i] +
@@ -250,14 +249,13 @@ class Propagation::RotatingEFIE : public Propagation::EFIE<cmplx> {
                2.0 * iu * omega_ * interp.evaluations[1][i] - 
                std::pow(omega_, 2) * interp.evaluations[0][i] ) );
    
-          this->coefs_[i] += 
+          this->coefs_[i] = 
             beta_ / pow( 5.2917721e-4, 2 ) * Eigen::Matrix3d::Identity() * 
             ( 1.0 * iu * pow(omega_,3) * interp.evaluations[0][i] +
               3.0 * pow(omega_,2) * interp.evaluations[1][i] -
               3.0 * iu * omega_ * interp.evaluations[2][i] -
               interp.evaluations[3][i] );
-        }
-      }*/    
+      } */   
     }
 
     return this->coefs_;
@@ -273,13 +271,14 @@ class Propagation::SelfEFIE : public Propagation::Kernel<cmplx> {
   SelfEFIE(const double c, const double k2, const double beta)
       : c_(c), k2_(k2), beta_(beta){};
 
-  const std::vector<Eigen::Matrix3cd> &coefficients(
+ const std::vector<Eigen::Matrix3cd> &coefficients(
       const Eigen::Vector3d &dr,
       const Interpolation::UniformLagrangeSet &interp)
   {
+    //assert( dr.norm() == 0.0 );
     this->coefs_.resize(interp.order() + 1);
 
-    if ( dr.norm() == 0.0 ) {
+    if ( dr.norm() == 0.0){
       for(int i = 0; i <= interp.order(); ++i) {
         this->coefs_[i] = 
           -beta_ / pow( 5.2917721e-4, 2 ) * Eigen::Matrix3d::Identity() * 
@@ -303,9 +302,10 @@ class Propagation::SelfRotatingEFIE : public Propagation::SelfEFIE {
       const Eigen::Vector3d &dr,
       const Interpolation::UniformLagrangeSet &interp)
   {
+    // assert( dr.norm() == 0.0 );
     this->coefs_.resize(interp.order() + 1);
 
-    if ( dr.norm() == 0.0 ) {
+    if ( dr.norm() == 0.0){
       for(int i = 0; i <= interp.order(); ++i) {
         this->coefs_[i] = 
           beta_ / pow( 5.2917721e-4, 2 ) * Eigen::Matrix3d::Identity() * 
@@ -314,10 +314,9 @@ class Propagation::SelfRotatingEFIE : public Propagation::SelfEFIE {
               3.0 * pow(omega_,2) * interp.evaluations[1][i] -
               3.0 * iu * omega_ * interp.evaluations[2][i] -
               interp.evaluations[3][i] ) ;
-
       }
     }
-    return this->coefs_;
+  return this->coefs_;
   }
 
  private:

@@ -20,26 +20,28 @@ using namespace std;
 
 int main(int argc, char *argv[])
 {
-    cout << setprecision(12) << scientific;
+    cout << setprecision(15) << scientific;
 
     // parameters
     const int num_src = atoi(argv[1]);
-    const int num_obs = 0;
-    const double tmax = 10000;
-    const double dt = 1.0e-4; // pow(10, atoi(argv[2]) ) ; // rotframe: sigma = 1.0ps -> dt <= 0.52e-1
+    const double tmax = 10;
+    const double dt = 5.0 / pow(10.0, atoi(argv[2]) ); 
+                              // rotframe: sigma = 1.0ps -> dt <= 0.52e-1
                               // fixframe: omega = 2278.9013 mev/hbar -> dt <= 1.379e-4
     const int num_timesteps = tmax/dt;
-    const int tmult = 500; // 50 * pow(10, atoi(argv[2]) );
+    const int tmult = 5.0e-3 * pow(10, atoi(argv[2]) );
+    const int num_corrector_steps = 10;
 
     const int interpolation_order = 4;
-    const bool solve_type = atoi(argv[3]);  
-    const bool interacting = atoi(argv[4]);
-    const bool rotating = 0;
+    const bool interacting = atoi(argv[3]);
+    const bool rotating = atoi(argv[4]);
 
     // constants
     const double c0 = 299.792458, hbar = 0.65821193, mu0 = 2.0133545e-04;
     const double omega = 2278.9013, d0 = 5.2917721e-4 * 1.0;
-    double beta = 0.0 / pow( omega, 3 );
+    double beta = 0.0;
+                  // 1.0e-1 / pow(omega,3);
+                  // 1.79e-4 / pow( omega, 3 );
 
     const double k0 = omega/c0, lambda = 2.0*M_PI/k0;    
 
@@ -51,34 +53,33 @@ int main(int argc, char *argv[])
 
     cout << "Initializing..." << endl;
     std::cout << "  Interacting particles: " 
-              << (interacting
-                      ? "TRUE"
-                      : "FALSE")
-              << std::endl;
+              << (interacting ? "TRUE" : "FALSE") << std::endl;
     std::cout << "  Frame: "
               << ((rotating) ? "Rotating" : "Fixed") << std::endl;
+    std::cout << "  dt: " << dt << std::endl;
     std::cout << "  Num timesteps: " << num_timesteps << std::endl;
     std::cout << "  Num sources: " << num_src << std::endl;
+    std::cout << "  Beta: " << beta * pow(omega,3) << std::endl;
 
-    string idstr(argv[5]);
- 
-    auto qds = make_shared<DotVector>(import_dots("./dots/dots"+idstr+".cfg"));
+    auto qds = make_shared<DotVector>(import_dots("./dots0.cfg"));
     qds->resize(num_src);
     auto rhs_funcs = rhs_functions(*qds, omega, beta, rotating);
 
     // == HISTORY ====================================================
-
+    int min_time_to_keep =
+        max_transit_steps_between_dots(qds, c0, dt) +
+        interpolation_order;
     auto history = make_shared<Integrator::History<Eigen::Vector2cd>>(
-        num_src, 22, num_timesteps);
+        num_src, 22, num_timesteps, min_time_to_keep);
     history->fill(Eigen::Vector2cd::Zero());
-    history->initialize_past( Eigen::Vector2cd(1,0), num_src );
+    history->initialize_past( Eigen::Vector2cd(1,0) );
     // history->initialize_past( qd_path );
 
     // == INTERACTIONS ===============================================
 
     const double propagation_constant = mu0 / (4 * M_PI * hbar);
 
-    auto pulse1 = make_shared<Pulse>(read_pulse_config("pulse.cfg"));
+    auto pulse1 = make_shared<Pulse>(read_pulse_config("pulse_test.cfg"));
  
     std::shared_ptr<InteractionBase> selfwise;
     std::shared_ptr<InteractionBase> pairwise;
@@ -87,59 +88,44 @@ int main(int argc, char *argv[])
         Propagation::RotatingEFIE dyadic(c0, propagation_constant, omega, beta, 0.0);
         Propagation::SelfRotatingEFIE dyadic_self(c0, propagation_constant, omega, beta);
 
-        //selfwise = make_shared<DirectInteraction>(qds, history, dyadic_self,
-        //                                            interpolation_order, c0, dt, omega, rotating);
+        std::cout << "Constructing self interaction" << std::endl; 
+        selfwise = make_shared<DirectInteraction>(qds, history, dyadic_self,
+                                                    interpolation_order, c0, dt, omega, rotating);
+        std::cout << "Constructing pair interaction" << std::endl;
         pairwise = make_shared<DirectInteraction>(qds, history, dyadic,
                                                       interpolation_order, c0, dt, omega, rotating);
     
     } else {
         Propagation::EFIE<cmplx> dyadic(c0, propagation_constant, beta, 0.0);
-/*        Propagation::SelfEFIE dyadic_self(c0, propagation_constant, beta);
- 
+        Propagation::SelfEFIE dyadic_self(c0, propagation_constant, beta);
+       
+        std::cout << "Constructing self interaction" << std::endl; 
         selfwise = make_shared<DirectInteraction>(qds, history, dyadic_self,
                                                     interpolation_order, c0, dt, omega, rotating);
-                                                    */
+        std::cout << "Constructing pair interaction" << std::endl;
         pairwise = make_shared<DirectInteraction>(qds, history, dyadic,
                                                       interpolation_order, c0, dt, omega, rotating); 
     }
  
     std::vector<std::shared_ptr<InteractionBase>> interactions{ 
       make_shared<PulseInteraction>(qds, pulse1, interpolation_order, c0, dt, hbar, rotating),
-      };
+      selfwise};
 
     if (interacting)
       interactions.push_back( pairwise );
     
-/*    Propagation::SelfRotatingEFIE dyadic_self(c0, propagation_constant,
-                                                omega, beta);
-    Propagation::RotatingEFIE dyadic(c0, propagation_constant,
-                                           omega, beta);
-      Propagation::SelfEFIE dyadic_self(c0, propagation_constant,
-                                      beta);
-      Propagation::EFIE<cmplx> dyadic(c0, propagation_constant,
-                                            beta);
-*/
     // == INTEGRATOR =================================================
 
-    if (solve_type) {
-      std::unique_ptr<Integrator::RHS<Eigen::Vector2cd>> bloch_rhs =
-          std::make_unique<Integrator::BlochRHS>(
-              dt, history, std::move(interactions), std::move(rhs_funcs));
+    std::unique_ptr<Integrator::RHS<Eigen::Vector2cd>> bloch_rhs =
+        std::make_unique<Integrator::BlochRHS>(
+            dt, history, std::move(interactions), std::move(rhs_funcs));
 
-      Integrator::PredictorCorrector<Eigen::Vector2cd> solver_pc(
-          dt, 18, 22, 3.15, history, std::move(bloch_rhs));
+    Integrator::PredictorCorrector<Eigen::Vector2cd> solver_pc(
+        dt, num_corrector_steps, 18, 22, 3.15, history, std::move(bloch_rhs));
 
-      cout << "Solving..." << endl;
-      solver_pc.solve();
+    cout << "Solving P-C..." << endl;
+    solver_pc.solve();
 
-    } else {
-      Integrator::NewtonJacobian<Eigen::Vector2cd> solver_nt(
-        dt, beta, omega, interpolation_order, rotating, history, std::move(interactions));
-      
-      cout << "Solving..." << endl;
-      solver_nt.solve();
-
-    }
     // start_time = omp_get_wtime();
 
     // double elapsed_time = omp_get_wtime() - start_time;
@@ -163,77 +149,6 @@ int main(int argc, char *argv[])
         interactions.push_back( pairwise_fld );
     }
 */
-
-    // == OUTPUT =====================================================
-
-    cout << "Writing output..." << endl;
-
-    string dotstr(argv[1]);
-    string prfx = "./out/";
-    string sffx = dotstr + "dots_" + idstr + ".dat";
-
-    string rhostr = prfx + "rho_" + sffx; 
-    ofstream rhofile(rhostr);
-    rhofile << scientific << setprecision(15);
-
-    for(int t = 0; t < num_timesteps; ++t) {
-
-      if (t%tmult == 0){
-
-        // print rho
-        for(int n = 0; n < num_src; ++n)
-          rhofile << history->array_[n][t][0][0].real() << " "
-                  << history->array_[n][t][0][1].real() << " "
-                  << history->array_[n][t][0][1].imag() << " ";
-  //                << history->array_[n][t][0][2].real() << " ";
-  //                << history->array_[n][t][0][2].imag() << " ";
-
-        // print pol and derivatives
-/*        for(int deriv = 0; deriv < NUM_DERIV; ++deriv){
-          auto eval_and_sum = 
-            [t,deriv](const InteractionBase::ResultArray &r,
-            const std::shared_ptr<InteractionBase> &interaction){
-            return r + interaction->evaluatefld(t,deriv);
-          };
-          auto nilfld = InteractionBase::ResultArray::Zero(obs->size(), 1).eval();
-
-          set_dipolevec(obs, Eigen::Vector3d(hbar,0,0));
-          auto fldx = 
-            interactions_fld[interactions_fld.size()-1]->evaluatefld(t,deriv); 
-            //std::accumulate(
-            //  interactions_fld.begin(), interactions_fld.end(), nilfld, eval_and_sum);  
-          
-          set_dipolevec(obs, Eigen::Vector3d(0,hbar,0));
-          auto fldy = 
-            interactions_fld[interactions_fld.size()-1]->evaluatefld(t,deriv); 
-            //std::accumulate(
-            //  interactions_fld.begin(), interactions_fld.end(), nilfld, eval_and_sum);  
-
-          set_dipolevec(obs, Eigen::Vector3d(0,0,hbar));
-          auto fldz = 
-            interactions_fld[interactions_fld.size()-1]->evaluatefld(t,deriv); 
-            //std::accumulate(
-            //  interactions_fld.begin(), interactions_fld.end(), nilfld, eval_and_sum);  
-
-          for(int n = 0; n < obs->size(); ++n){
-            //fldfile << fldx[n] << "," << fldy[n] << "," << fldz[n] << ",";
-            fldxfile << real(fldx[n]) << " ";
-            fldyfile << real(fldy[n]) << " ";
-            fldzfile << real(fldz[n]) << " ";
-
-            fldfile << sqrt( pow( abs(fldx[n]), 2 ) + pow( abs(fldy[n]), 2 ) + pow( abs(fldz[n]), 2 ) ) << " ";
-          }
-        }
-*/      
-      rhofile << "\n";
-/*
-      fldfile << "\n";
-      fldxfile << "\n";
-      fldyfile << "\n";
-      fldzfile << "\n";
-*/
-      }
-    }
 
   return 0;
 }

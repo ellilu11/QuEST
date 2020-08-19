@@ -19,9 +19,9 @@ matrix_elements QuantumDot::liouville_rhs(const matrix_elements &rho,
                                           const bool rotating) const
 {
   const cmplx m0 = -iu * (rabi * std::conj(rho[1]) - std::conj(rabi) * rho[1]) -
-                   (rho[0] - 1.0) / damping.first;
+                   0.0 * (rho[0] - 1.0) / damping.first;
 
-  cmplx m1_temp = -iu * (rabi * (1.0 - 2.0 * rho[0])) - rho[1] / damping.second;
+  cmplx m1_temp = -iu * (rabi * (1.0 - 2.0 * rho[0])) - 0.0 * rho[1] / damping.second;
 
   m1_temp -=
       rotating ? iu * rho[1] * (laser_freq - freq) : iu * rho[1] * (-freq);
@@ -44,6 +44,21 @@ matrix_elements QuantumDot::liouville_rhs(const matrix_elements &rho,
 Eigen::Vector3d separation(const QuantumDot &d1, const QuantumDot &d2)
 {
   return d2.pos - d1.pos;
+}
+
+int max_transit_steps_between_dots(const std::shared_ptr<DotVector> dots,
+                                   const double c,
+                                   const double dt)
+{
+  // TODO: find the max separation between two dots
+  double max_separation{0};
+  for(auto dot_i_it = (*dots).begin(); dot_i_it != (*dots).end(); ++dot_i_it) {
+    for(auto dot_j_it = dot_i_it + 1; dot_j_it != (*dots).end(); ++dot_j_it) {
+      max_separation =
+          std::max(max_separation, separation(*dot_i_it, *dot_j_it).norm());
+    }
+  }
+  return std::ceil(max_separation / (c * dt));
 }
 
 std::ostream &operator<<(std::ostream &os, const QuantumDot &qd)

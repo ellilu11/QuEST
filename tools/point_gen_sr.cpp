@@ -76,7 +76,7 @@ int main(int argc, char *argv[])
     
   // const double r, ph;
 
-  const double ds = 0.030 * lambda;
+  const double ds = 0.10 * lambda;
   const double xlen = ds; // ds;
   const double ylen = xlen;
   const double zlen = xlen; // std::max( xlen, 0.015 * num_dots * ds );  
@@ -121,13 +121,13 @@ int main(int argc, char *argv[])
   }
 
   // additionally, generate random points on surface of outer sphere
-  const int num_obs = atoi(argv[2]);
+/*  const int num_obs = atoi(argv[2]);
  
   std::vector<Qdot> obss;
   obss.reserve(num_obs);
 
   const double R = 10 * xlen;
-/*  std::uniform_real_distribution<double> u(0, 1);
+  std::uniform_real_distribution<double> u(0, 1);
   std::uniform_real_distribution<double> v(0, 1);
 
   for(int i = 0; i < num_obs; ++i){
@@ -140,7 +140,7 @@ int main(int argc, char *argv[])
     qd = {{x, y, z, 0, 0, 0, 0, 0, 0}};
     obss.push_back(qd);
 
-  }*/ 
+  } 
 
 
   // additionally, generate evenly spaced observer "dots" on surface of outer sphere
@@ -161,7 +161,7 @@ int main(int argc, char *argv[])
   obss.push_back({{0, 0, R, 0, 0, 0, 0, 0, 0}});
   obss.push_back({{0, 0, -R, 0, 0, 0, 0, 0, 0}});
 
- 
+ */
 
 
   /*std::sort(dots.begin(), dots.end(), [](const Qdot &a, const Qdot &b) {
@@ -171,7 +171,7 @@ int main(int argc, char *argv[])
 
   min_dist(dots);
 
-  std::string taskstr(argv[4]);
+  std::string taskstr(argv[2]);
 
   std::ofstream fd("./dots/dots"+taskstr+".cfg");
   fd << std::setprecision(12);
@@ -183,7 +183,7 @@ int main(int argc, char *argv[])
   fd.close();
 
 
-  std::ofstream fd2("./dots/dotsobs.cfg");
+/*  std::ofstream fd2("./dots/dotsobs.cfg");
   fd2 << std::setprecision(12);
 
   for(const auto &d : obss) {
@@ -191,6 +191,6 @@ int main(int argc, char *argv[])
   }
 
   fd2.close();
-
+*/
   return 0;
 }

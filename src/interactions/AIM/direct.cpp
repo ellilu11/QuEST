@@ -27,14 +27,13 @@ const InteractionBase::ResultArray &AIM::DirectInteraction::evaluate(
 
     for(int i = 0; i < shape_[1]; ++i) {
       const int s =
-          std::max(time_idx - floor_delays_[pair_idx] - i,
-                   static_cast<int>(history->array_.index_bases()[1]));
+          std::max(time_idx - floor_delays_[pair_idx] - i, -history->window);
 
       constexpr int RHO_01 = 1;
 
-      results[pair.first] += (history->array_[pair.second][s][0])[RHO_01] *
+      results[pair.first] += (history->get_value(pair.second, s, 0))[RHO_01] *
                              coefficients_[pair_idx][i];
-      results[pair.second] += (history->array_[pair.first][s][0])[RHO_01] *
+      results[pair.second] += (history->get_value(pair.first, s, 0))[RHO_01] *
                               coefficients_[pair_idx][i];
     }
   }

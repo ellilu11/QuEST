@@ -55,14 +55,9 @@ class QuantumDot {
   void set_dipole(const Eigen::Vector3d dip) { dipr = dip; }
 
   friend Eigen::Vector3d separation(const QuantumDot &, const QuantumDot &);
-  // const Eigen::Vector3d separation_srcobs(const QuantumDot &, const ObserverDot &);
-/*  friend inline std::complex<double> dyadic_product(const QuantumDot &obs,
-                                      const Eigen::Matrix3d &dyad,
-                                      const QuantumDot &src)
-  {
-    return obs.dipr.transpose() * dyad * src.dipr + obs.dipi.transpose() * dyad * src.dipi +
-     iu * (obs.dipr.transpose() * dyad * src.dipi - obs.dipi.transpose() * dyad * src.dipr );
-  }*/
+  friend int max_transit_steps_between_dots(const std::shared_ptr<DotVector>,
+                                            const double,
+                                            const double);
 
   friend std::ostream &operator<<(std::ostream &, const QuantumDot &);
   friend std::istream &operator>>(std::istream &, QuantumDot &);

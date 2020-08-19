@@ -5,13 +5,13 @@ import matplotlib.pyplot as plt
 
 # Parameters
 ndots = 1
-dir = '../build/out/'
+#dir = '../build/out/beta1.79e-04_realfld/'
+dir = '../build/out/harmonicbalance/'
 
-rhofile = dir+'rho_'+str(ndots)+'dots_fixed_dt1e-4.csv'
-#derivfile = dir+'rhoanl_'+str(ndots)+'dots.dat'
+rhofile = dir+'rho_'+str(ndots)+'dots_dt5e-3.dat'
 
 def read_rho(filename) :
-  rho_raw = np.loadtxt(filename,delimiter=',')
+  rho_raw = np.loadtxt(filename)
 
   ntimes = rho_raw.shape[0]
   ndots = int(rho_raw.shape[1]/3)
@@ -57,18 +57,6 @@ def read_deriv(filename) :
   deriv_mean = np.mean( deriv, axis=(1) )
   return deriv, deriv_mean
 
-def l2_relerror(data0, data1) :
-  ntimes = data0.shape[0];
-
-  sqerr = 0
-  sqsum = 0
-
-  for time in range(ntimes) :
-    sqerr += (data0[time] - data1[time])**2
-    sqsum += data0[time]**2
-
-  return np.sqrt(sqerr / sqsum)
-
 def fft_rho(rho_data, ti, tf, dt) :
 
   ntimes = rho_data.shape[0]
@@ -87,37 +75,33 @@ def main() :
 
   ti, tf = 0, 10
  
-  dt0 = 1e-4
-  tincr = 1
+  dt0 = 5e-3
+  tincr = 5
   dt = dt0 * tincr
   tdata = np.linspace( ti, tf, (tf-ti)/dt )
-	 
-  rho, rho_mean = read_rho(rhofile)
-  rho_abs, rho_abs_mean = abs_rho(rho)
+  ntimes = tdata.shape[0]
+
+  rho = np.zeros( (ntimes, ndots, 4) )
+  rho_mean = np.zeros( (ntimes, 4) )
+
+  rho[:,:,:3], rho_mean[:,:3] = read_rho(rhofile)
+  rho[:,:,3], rho_mean[:,3] = abs_rho(rho[:,:,:])
 #
   # Plot
   fig = plt.figure()
   get_mean = 0
+
   if get_mean == 1 :
-    for i in range(3) :
+    for i in range(4) :
       plt.subplot(1,4,i+1)
       plt.plot( tdata, rho_mean[:,i] )
-#      plt.ylim( (0, 1) )
-    plt.subplot(1,4,4)
-    plt.plot( tdata, rho_abs_mean )
-#    plt.ylim( (0, 1) )
-  
+
   elif get_mean == 0 :
     dot = 0
-#    deriv_order = 0
-    for i in range(3) :
+    for i in range(4) :
       plt.subplot(1,4,i+1)
       plt.plot( tdata, rho[:,dot,i] )
-      plt.ylim( (0, 1) )
-    plt.subplot(1,4,4)
-    plt.plot( tdata, rho_abs[:,dot] )
 #    plt.semilogy()
-#    print( l2_relerror(rho[:,dot,0], deriv[:,dot,deriv_order]) )
   else :
     ti_fft = 50
     tdata_fft = np.linspace( 0, 1.0 / dt, (tf-ti_fft)/dt+1 )

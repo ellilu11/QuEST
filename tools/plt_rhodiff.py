@@ -4,17 +4,16 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # Parameters
-ndots = 2
+ndots = 1
 
 #dir = '../build/out/beta1.79e-04/'
-#dir = '../build/out/beta1.00e-03/'
-dir = '../build/out/beta0/'
-dir2 = '/mnt/home/luelliot/QuEST-branch/QuEST-thomas/build/out/'
+#dir = '../build/out/beta0_realfld/'
+dir = '../build/out/beta1.79e-04_realfld/'
 
-#rhofile0 = dir+'rho_'+str(ndots)+'dots_dt1e-4.dat'
-#rhofile0 = dir2+'rho_'+str(ndots)+'dots_dt1e-4_nint.dat'
-rhofile0 = dir+'rho_'+str(ndots)+'dots_fixed_dt5e-5.dat'
-rhofile1 = dir+'rho_'+str(ndots)+'dots_dt5e-5.dat'
+rhofile0 = dir+'rho_'+str(ndots)+'dots_fixed_dt5e-5_long.dat'
+rhofile1 = dir+'rho_'+str(ndots)+'dots_dt5e-3_long.dat'
+#rhofile0 = dir+'rho_'+str(ndots)+'dots_fixed_dt5e-5.dat'
+#rhofile1 = dir+'rho_'+str(ndots)+'dots_dt5e-3.dat'
 
 rhofile = np.array([rhofile0, rhofile1])
 nfiles = rhofile.shape[0]
@@ -93,10 +92,10 @@ def fft_rho(rho_data, ti, tf, dt) :
 
 def main() :
 
-  ti, tf = 0, 1000
+  ti, tf = 0, 10000
  
-  dt0 = 5e-5
-  tincr = 500
+  dt0 = 5e-3
+  tincr = 5
   dt = dt0 * tincr
   tdata = np.linspace( ti, tf, (tf-ti)/dt )
   ntimes = tdata.shape[0]
@@ -108,34 +107,38 @@ def main() :
     rho[:,:,:3,i], rho_mean[:,:3,i] = read_rho(rhofile[i])
     rho[:,:,3,i], rho_mean[:,3,i] = abs_rho(rho[:,:,:,i])
 
-  rho_mean_err = abs( rho_mean[:,:,1] - rho_mean[:,:,0] ) / abs (rho_mean[:,:,0])
-  rho_err = abs( rho[:,:,:,1] - rho[:,:,:,0] ) / abs (rho[:,:,:,0])
+  rho_mean_err = abs( rho_mean[:,:,1] - rho_mean[:,:,0] ) / 1.0 #abs (rho_mean[:,:,0])
+  rho_err = abs( rho[:,:,:,1] - rho[:,:,:,0] ) / 1.0 #abs (rho[:,:,:,0])
 
   # Plot
   fig = plt.figure()
-  get_mean = 0
+  get_mean = 1
 
   if get_mean == 1 :
     for i in range(4) :
       plt.subplot(2,4,i+1)
       plt.plot( tdata, rho_mean[:,i,:] )
-
+  #    plt.xlim( (0,10) )
+  
       plt.subplot(2,4,i+5)
       plt.plot( tdata, rho_mean_err[:,i] )
       plt.semilogy()
+  #    plt.xlim( (0,10) )
 
   elif get_mean == 0 :
     dot = 0
     for i in range(4) :
       plt.subplot(2,4,i+1)
       plt.plot( tdata, rho[:,dot,i,:] )
-      plt.legend(['Fix (dt=5e-5)', 'Rot (dt=5e-5)'])
- 
+      plt.legend(['Fix (dt=5e-5)', 'Rot (dt=5e-3)'])
+      #plt.xlim( (0,10000) )
+
       plt.subplot(2,4,i+5)
+      #plt.plot( tdata, rho[:,dot+1,i,:] )
       plt.plot( tdata, rho_err[:,dot,i] )
       plt.semilogy()
       plt.legend(['Rel err'])
- 
+
   else :
     ti_fft = 50
     tdata_fft = np.linspace( 0, 1.0 / dt, (tf-ti_fft)/dt+1 )

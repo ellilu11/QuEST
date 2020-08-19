@@ -55,7 +55,7 @@ int main(int argc, char *argv[])
   const double omega = 2278.9013;
   const double lambda = 2 * M_PI * c0 / omega;
 
-  const double T1 = 10000.0, T2 = 20000.0;
+  const double T1 = 10000000.0, T2 = 20000000.0;
   const double dip = 5.2917721e-4;
   const double dipx = dip, dipy = 0.0, dipz = 0.0;
   const int num_dots = atoi(argv[1]);
