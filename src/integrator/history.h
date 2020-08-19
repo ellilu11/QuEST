@@ -146,7 +146,10 @@ template <class soltype>
 void Integrator::History<soltype>::write_step_to_file(const int timestep)
 {
   for(int n = 0; n < num_particles; ++n)
-    outfile << prep_for_output(get_value(n, timestep, 0)) << " ";
+    //outfile << prep_for_output(get_value(n, timestep, 0)) << " ";
+    outfile << (get_value(n, timestep, 0))[0].real() << " "
+            << (get_value(n, timestep, 0))[1].real() << " "
+            << (get_value(n, timestep, 0))[1].imag() << " ";
 
   outfile << "\n";
   if(timestep == num_timesteps - 1)

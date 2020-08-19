@@ -61,7 +61,7 @@ int main(int argc, char *argv[])
     std::cout << "  Num sources: " << num_src << std::endl;
     std::cout << "  Beta: " << beta * pow(omega,3) << std::endl;
 
-    auto qds = make_shared<DotVector>(import_dots("./dots0.cfg"));
+    auto qds = make_shared<DotVector>(import_dots("./dots/dots0.cfg"));
     qds->resize(num_src);
     auto rhs_funcs = rhs_functions(*qds, omega, beta, rotating);
 
@@ -70,7 +70,7 @@ int main(int argc, char *argv[])
         max_transit_steps_between_dots(qds, c0, dt) +
         interpolation_order;
     auto history = make_shared<Integrator::History<Eigen::Vector2cd>>(
-        num_src, 22, num_timesteps, min_time_to_keep);
+        num_src, 22, num_timesteps, min_time_to_keep, 2);
     history->fill(Eigen::Vector2cd::Zero());
     history->initialize_past( Eigen::Vector2cd(1,0) );
     // history->initialize_past( qd_path );

@@ -4,9 +4,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # Parameters
-ndots = 1
-#dir = '../build/out/beta1.79e-04_realfld/'
-dir = '../build/out/harmonicbalance/'
+ndots = 2
+dir = '../build/out/beta1.79e-04/'
+#dir = '../build/out/beta0/'
 
 rhofile = dir+'rho_'+str(ndots)+'dots_dt5e-3.dat'
 
@@ -73,10 +73,10 @@ def fft_rho(rho_data, ti, tf, dt) :
 
 def main() :
 
-  ti, tf = 0, 10
+  ti, tf = 0, 20000
  
   dt0 = 5e-3
-  tincr = 5
+  tincr = 1
   dt = dt0 * tincr
   tdata = np.linspace( ti, tf, (tf-ti)/dt )
   ntimes = tdata.shape[0]
