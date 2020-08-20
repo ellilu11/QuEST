@@ -51,7 +51,7 @@ void DirectInteraction::build_coeff_table(
     // std::cout << "Pairwise coeffs: " << std::endl;
     for(int i = 0; i <= interp_order; ++i){
        coeffs[pair_idx][i] = dip_obs.dot( interp_dyads[i] * dip_src );
-       std::cout << coeffs[pair_idx][i] << std::endl;
+ //      std::cout << coeffs[pair_idx][i] << std::endl;
     }
   }
 // src self coefficients
@@ -123,8 +123,8 @@ const InteractionBase::ResultArray &DirectInteraction::evaluate(
       }
     } 
 
-    if (time_idx <= 1)
-      std::cout << results[0] << " " << results[1] << std::endl;
+//    if (time_idx <= 1)
+//      std::cout << results[0] << " " << results[1] << std::endl;
 
     return results;
 }

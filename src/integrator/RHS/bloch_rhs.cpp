@@ -31,8 +31,8 @@ void Integrator::BlochRHS::evaluate(const int step) const
         step); // apply Liouville eq
   }
 
-//  if ( step <= 1 )
-//    std::cout << projected_rabi[0] << std::endl;
+  if ( step <= 1 )
+    std::cout << projected_rabi[0] << std::endl;
 
 }
 

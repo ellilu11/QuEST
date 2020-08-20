@@ -5,41 +5,26 @@ import matplotlib.pyplot as plt
 
 # Parameters
 ndots = 2
+nvars = 4
 dir = '../build/out/beta1.79e-04/'
 #dir = '../build/out/beta0/'
 
-rhofile = dir+'rho_'+str(ndots)+'dots_newhistory.dat'
+rhofile = dir+'rho_'+str(ndots)+'dots_dt5e-3_newhistory.dat'
 
 def read_rho(filename) :
   rho_raw = np.loadtxt(filename)
 
   ntimes = rho_raw.shape[0]
-  ndots = int(rho_raw.shape[1]/3)
+  ndots = int(rho_raw.shape[1]/nvars)
 
-  rho = np.zeros( (ntimes, ndots, 3) )
+  rho = np.zeros( (ntimes, ndots, nvars) )
 
-  for j in range(3) :
-    idx = [i for i in range(j, rho_raw.shape[1], 3)]
+  for j in range(nvars) :
+    idx = [i for i in range(j, rho_raw.shape[1], nvars)]
     rho[:,:,j] = rho_raw[:, idx] 
 
   rho_mean = np.mean( rho, axis=(1) )
   return rho, rho_mean
-
-def abs_rho(rho) :
-
-  ntimes = rho.shape[0]
-  ndots = rho.shape[1]
-
-  rho_abs = np.zeros( (ntimes, ndots) )
-
-  for time in range(ntimes) :
-    for dot in range(ndots) :
-      rho_abs[time,dot] = np.sqrt( rho[time,dot,1]**2 + rho[time,dot,2]**2 )
-
-  rho_abs_mean = np.mean( rho_abs, axis=(1) )
-
-  return rho_abs, rho_abs_mean
-
 
 def read_deriv(filename) :
   deriv_raw = np.loadtxt(filename)
@@ -64,8 +49,6 @@ def fft_rho(rho_data, ti, tf, dt) :
   ti_idx = int(ti / dt)
   tf_idx = int(tf / dt) - 1
 
-#  rho_fft = np.zeros( (tf_idx - ti_idx, ndots) )
-
   rho_fft = np.fft.fft( rho_data[ti_idx:tf_idx] )
 
   return rho_fft
@@ -73,19 +56,18 @@ def fft_rho(rho_data, ti, tf, dt) :
 
 def main() :
 
-  ti, tf = 0, 20000
+  ti, tf = 0, 10 #20000
  
   dt0 = 5e-3
-  tincr = 50
+  tincr = 1
   dt = dt0 * tincr
   tdata = np.linspace( ti, tf, (tf-ti)/dt )
   ntimes = tdata.shape[0]
 
-  rho = np.zeros( (ntimes, ndots, 4) )
-  rho_mean = np.zeros( (ntimes, 4) )
+  rho = np.zeros( (ntimes, ndots, nvars) )
+  rho_mean = np.zeros( (ntimes, nvars) )
 
-  rho[:,:,:3], rho_mean[:,:3] = read_rho(rhofile)
-  rho[:,:,3], rho_mean[:,3] = abs_rho(rho[:,:,:])
+  rho, rho_mean = read_rho(rhofile)
 #
   # Plot
   fig = plt.figure()
