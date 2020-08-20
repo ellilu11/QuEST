@@ -8,7 +8,7 @@ ndots = 2
 dir = '../build/out/beta1.79e-04/'
 #dir = '../build/out/beta0/'
 
-rhofile = dir+'rho_'+str(ndots)+'dots_dt5e-3.dat'
+rhofile = dir+'rho_'+str(ndots)+'dots_newhistory.dat'
 
 def read_rho(filename) :
   rho_raw = np.loadtxt(filename)
@@ -76,7 +76,7 @@ def main() :
   ti, tf = 0, 20000
  
   dt0 = 5e-3
-  tincr = 1
+  tincr = 50
   dt = dt0 * tincr
   tdata = np.linspace( ti, tf, (tf-ti)/dt )
   ntimes = tdata.shape[0]

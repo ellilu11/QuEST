@@ -27,7 +27,7 @@ template <class soltype>
 class Integrator::History {
  public:
   // History(const int, const int, const int, const int = 2);
-  History(const int, const int, const int, const int = -1, const int = 2);
+  History(const int, const int, const int, const int = -1, const int = 2, const int = 0);
   ~History();
 
   void fill(const soltype &);
@@ -61,7 +61,8 @@ Integrator::History<soltype>::History(const int num_particles,
                                       const int window,
                                       const int num_timesteps,
                                       const int min_time_idx_ubound,  // rename!
-                                      const int num_derivatives)
+                                      const int num_derivatives,
+                                      const int task_idx)
     : num_particles(num_particles), num_timesteps(num_timesteps), window(window)
 {
   // TODO: need to make the minimum: max_transit_steps_between_dots +
@@ -71,7 +72,7 @@ Integrator::History<soltype>::History(const int num_particles,
   array_.resize(
       boost::extents[num_particles][time_idx_ubound][num_derivatives]);
 
-  outfile.open("./out/output.dat");
+  outfile.open("./out/output" + std::to_string(task_idx) + ".dat");
   outfile << std::scientific << std::setprecision(15);
 }
 
@@ -145,14 +146,21 @@ Integrator::History<soltype>::prep_for_output(soltype element)
 template <class soltype>
 void Integrator::History<soltype>::write_step_to_file(const int timestep)
 {
-  for(int n = 0; n < num_particles; ++n)
+  for(int n = 0; n < num_particles; ++n){
     //outfile << prep_for_output(get_value(n, timestep, 0)) << " ";
-    outfile << (get_value(n, timestep, 0))[0].real() << " "
-            << (get_value(n, timestep, 0))[1].real() << " "
-            << (get_value(n, timestep, 0))[1].imag() << " ";
+    double rho01_real = (get_value(n, timestep, 0))[1].real();
+    double rho01_imag = (get_value(n, timestep, 0))[1].imag();
+    double rho01_abs = sqrt( pow(rho01_real,2) + pow(rho01_imag,2) );
+
+    outfile // << timestep << " "
+            << (get_value(n, timestep, 0))[0].real() << " "
+            << rho01_real << " "
+            << rho01_imag << " "
+            << rho01_abs << " ";
+  }
 
   outfile << "\n";
-  if(timestep == num_timesteps - 1)
+  if(timestep > num_timesteps*0.95)
     outfile.flush();  // QUESTION: why is this needed?
 }
 

@@ -64,16 +64,18 @@ void Integrator::PredictorCorrector<soltype>::solve(
     const log_level_t log_level) const
 {
   int num_logsteps = 100;
-  int outstep = 5;
+  int outstep = 50;
 
   for(int step = 0; step < time_idx_ubound; ++step) {
     solve_step(step);
     
-    //if (step%outstep == 0)
-    history->write_step_to_file(step);
+    if (!(step%outstep)){
+       history->write_step_to_file(step);
+        // std::cout << step/outstep << " " << step << std::endl;
+    }
 
     if (step%(time_idx_ubound/num_logsteps) == 0) 
-      std::cout << step / (time_idx_ubound/num_logsteps) << std::endl;
+       std::cout << step / (time_idx_ubound/num_logsteps) << "%" << std::endl;
 
     // if(log_level >= log_level_t::LOG_INFO) log_percentage_complete(step);
   }

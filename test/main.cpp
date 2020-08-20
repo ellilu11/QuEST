@@ -24,12 +24,11 @@ int main(int argc, char *argv[])
 
     // parameters
     const int num_src = atoi(argv[1]);
-    const double tmax = 10000;
+    const double tmax = 20000;
     const double dt = 5.0 / pow(10.0, atoi(argv[2]) ); 
                               // rotframe: sigma = 1.0ps -> dt <= 0.52e-1
                               // fixframe: omega = 2278.9013 mev/hbar -> dt <= 1.379e-4
     const int num_timesteps = tmax/dt;
-    const int tmult = 1.0; // 5.0e-3 * pow(10, atoi(argv[2]) );
     const int num_corrector_steps = 10;
 
     const int interpolation_order = 4;
@@ -61,16 +60,18 @@ int main(int argc, char *argv[])
     std::cout << "  Num sources: " << num_src << std::endl;
     std::cout << "  Beta: " << beta * pow(omega,3) << std::endl;
 
-    auto qds = make_shared<DotVector>(import_dots("./dots/dots0.cfg"));
+    string idstr(argv[5]);
+    auto qds = make_shared<DotVector>(import_dots("./dots/dots"+idstr+".cfg"));
     qds->resize(num_src);
     auto rhs_funcs = rhs_functions(*qds, omega, beta, rotating);
 
     // == HISTORY ====================================================
+    int task_idx = atoi(argv[5]);
     int min_time_to_keep =
         max_transit_steps_between_dots(qds, c0, dt) +
         interpolation_order;
     auto history = make_shared<Integrator::History<Eigen::Vector2cd>>(
-        num_src, 22, num_timesteps, min_time_to_keep, 2);
+        num_src, 22, num_timesteps, min_time_to_keep, 2, task_idx);
     history->fill(Eigen::Vector2cd::Zero());
     history->initialize_past( Eigen::Vector2cd(1,0) );
     // history->initialize_past( qd_path );
