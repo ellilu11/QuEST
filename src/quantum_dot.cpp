@@ -50,7 +50,6 @@ int max_transit_steps_between_dots(const std::shared_ptr<DotVector> dots,
                                    const double c,
                                    const double dt)
 {
-  // TODO: find the max separation between two dots
   double max_separation{0};
   for(auto dot_i_it = (*dots).begin(); dot_i_it != (*dots).end(); ++dot_i_it) {
     for(auto dot_j_it = dot_i_it + 1; dot_j_it != (*dots).end(); ++dot_j_it) {
