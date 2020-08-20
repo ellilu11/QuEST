@@ -123,6 +123,9 @@ const InteractionBase::ResultArray &DirectInteraction::evaluate(
       }
     } 
 
+    if (time_idx <= 1)
+      std::cout << results[0] << " " << results[1] << std::endl;
+
     return results;
 }
 
