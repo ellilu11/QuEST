@@ -105,7 +105,7 @@ const InteractionBase::ResultArray &DirectInteraction::evaluate(
                           * std::exp( iu*omega*time) ) * std::exp( -iu*omega*time );
           
         }    
-        if (time_idx <= 1)
+        if (time_idx == 1500)
           std::cout << i << " " << (history->get_value(0, s, 0))[RHO_01]  << " " << (history->get_value(1, s, 0))[RHO_01] << std::endl; 
  
       }
