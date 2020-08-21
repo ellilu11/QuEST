@@ -103,8 +103,10 @@ int Integrator::History<soltype>::time_idx_in_array(const int time_idx) const
   int time_idx_ubound =
       static_cast<int>(array_.index_bases()[1] + array_.shape()[1]);
 
-  return (time_idx >= time_base) ? (time_idx-1) % time_idx_ubound + 1;
-                                 : time_idx_ubound - abs(time_idx);
+  return (time_idx >= time_base) ? 
+    //(time_idx-1) % time_idx_ubound + 1;
+    time_idx % time_idx_ubound
+    : time_idx_ubound - abs(time_idx);
 }
 
 template <class soltype>

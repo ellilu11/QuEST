@@ -104,7 +104,10 @@ const InteractionBase::ResultArray &DirectInteraction::evaluate(
           results[obs] += 2.0 * std::real( (history->get_value(src, s, 0))[RHO_01] * coeffs[pair_idx][i] 
                           * std::exp( iu*omega*time) ) * std::exp( -iu*omega*time );
           
-        }
+        }    
+        if (time_idx <= 1)
+          std::cout << i << " " << (history->get_value(0, s, 0))[RHO_01]  << " " << (history->get_value(1, s, 0))[RHO_01] << std::endl; 
+ 
       }
     }
 
@@ -123,8 +126,7 @@ const InteractionBase::ResultArray &DirectInteraction::evaluate(
       }
     } 
 
-//    if (time_idx <= 1)
-//      std::cout << results[0] << " " << results[1] << std::endl;
+       // std::cout << results[0] << " " << results[1] << std::endl;
 
     return results;
 }
