@@ -40,6 +40,8 @@ class Integrator::PredictorCorrector {
   void log_percentage_complete(const int) const;
 };
 
+constexpr double EPS = 1e-12;
+
 template <class soltype>
 Integrator::PredictorCorrector<soltype>::PredictorCorrector(
     const double dt,
@@ -72,8 +74,8 @@ void Integrator::PredictorCorrector<soltype>::solve(
     if (!(step%outstep))
        history->write_step_to_file(step);
     
-    if (step%(time_idx_ubound/num_logsteps) == 0) 
-       std::cout << step / (time_idx_ubound/num_logsteps) << "%" << std::endl;
+    //if (step%(time_idx_ubound/num_logsteps) == 0) 
+    //   std::cout << step / (time_idx_ubound/num_logsteps) << "%" << std::endl;
 
     // if(log_level >= log_level_t::LOG_INFO) log_percentage_complete(step);
   }
@@ -87,9 +89,34 @@ void Integrator::PredictorCorrector<soltype>::solve_step(const int step) const
   predictor(step);
   rhs->evaluate(step);
 
-  for(int m = 0; m < num_corrector_steps; ++m) {
-    corrector(step);
-    rhs->evaluate(step);
+  if ( num_corrector_steps == 0 ) { // if zero, terminate corrector based on L2 error of rho_01
+
+    int m = 0;
+    Eigen::VectorXcd history_prev(num_solutions); 
+    Eigen::VectorXcd history_diff(num_solutions);
+
+    do{
+      for( int sol_idx = 0; sol_idx < num_solutions; ++sol_idx ) // how to extract a column from history array?
+        history_prev[sol_idx] = (history->get_value(sol_idx, step, 0))[1];
+
+      corrector(step);
+      rhs->evaluate(step);
+
+      for( int sol_idx = 0; sol_idx < num_solutions; ++sol_idx )
+        history_diff[sol_idx] = (history->get_value(sol_idx, step, 0))[1] - history_prev[sol_idx];
+      
+      m++;
+      // if (step == 0) std::cout << history_diff.norm() << std::endl;
+
+    } while( (history_diff.norm() / num_solutions) > EPS );
+
+    // if (step < 1000) std::cout << m << std::endl;
+
+  } else {
+    for(int m = 0; m < num_corrector_steps; ++m) {
+      corrector(step);
+      rhs->evaluate(step);
+    }
   }
 }
 

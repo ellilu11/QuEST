@@ -31,6 +31,12 @@ double skew_gaussian(const double alpha, const double t)
 {
   return gaussian(t) * std::erfc(-alpha * t / std::sqrt(2));
 }
+
+//double cmplx_norm(std::vector<cmplx> vec)
+//{
+
+//}
+
 /*
 double gaussian(const double t, const double a, const double b, const double c, const int deriv) { 
   

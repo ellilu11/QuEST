@@ -29,7 +29,7 @@ int main(int argc, char *argv[])
                               // rotframe: sigma = 1.0ps -> dt <= 0.52e-1
                               // fixframe: omega = 2278.9013 mev/hbar -> dt <= 1.379e-4
     const int num_timesteps = tmax/dt;
-    const int num_corrector_steps = 10;
+    const int num_corrector_steps = 0;
 
     const int interpolation_order = 4;
     const bool interacting = atoi(argv[3]);

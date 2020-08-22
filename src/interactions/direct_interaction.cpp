@@ -78,53 +78,51 @@ const InteractionBase::ResultArray &DirectInteraction::evaluate(
   results.setZero();
   constexpr int RHO_01 = 1;
   const double time0 = time_idx * dt;
-  
-  if ( time_idx <= 1 )
-
-  // source pairwise interactions
-    for(int pair_idx = 0; pair_idx < num_interactions; ++pair_idx) {
-      int src, obs;
-      std::tie(src, obs) = idx2coord(pair_idx);
-
-      Eigen::Vector3d dip_src = (*dots)[src].dipole();
-      Eigen::Vector3d dip_obs = (*dots)[obs].dipole();
-
-      for(int i = 0; i <= interp_order; ++i) {
-        const int s =
-            std::max(time_idx - floor_delays[pair_idx] - i, -history->window);
-        const double time = time0 - i*dt;
-
-        if ( !rotating ){
-          results[src] += 2.0 * std::real( (history->get_value(obs, s, 0))[RHO_01] * coeffs[pair_idx][i] );
-          results[obs] += 2.0 * std::real( (history->get_value(src, s, 0))[RHO_01] * coeffs[pair_idx][i] );
-        } else {
-          results[src] += 2.0 * std::real( (history->get_value(obs, s, 0))[RHO_01] * coeffs[pair_idx][i] 
-                          * std::exp( iu*omega*time) ) * std::exp( -iu*omega*time );
-                                                                                                        
-          results[obs] += 2.0 * std::real( (history->get_value(src, s, 0))[RHO_01] * coeffs[pair_idx][i] 
-                          * std::exp( iu*omega*time) ) * std::exp( -iu*omega*time );
-          
-        }    
-        if (time_idx == 1500)
-          std::cout << i << " " << (history->get_value(0, s, 0))[RHO_01]  << " " << (history->get_value(1, s, 0))[RHO_01] << std::endl; 
  
-      }
+  // source pairwise interactions
+  for(int pair_idx = 0; pair_idx < num_interactions; ++pair_idx) {
+    int src, obs;
+    std::tie(src, obs) = idx2coord(pair_idx);
+
+    Eigen::Vector3d dip_src = (*dots)[src].dipole();
+    Eigen::Vector3d dip_obs = (*dots)[obs].dipole();
+
+    for(int i = 0; i <= interp_order; ++i) {
+      const int s =
+          std::max(time_idx - floor_delays[pair_idx] - i, -history->window);
+      const double time = time0 - i*dt;
+
+      if ( !rotating ){
+        results[src] += 2.0 * std::real( (history->get_value(obs, s, 0))[RHO_01] * coeffs[pair_idx][i] );
+        results[obs] += 2.0 * std::real( (history->get_value(src, s, 0))[RHO_01] * coeffs[pair_idx][i] );
+      } else {
+        results[src] += 2.0 * std::real( (history->get_value(obs, s, 0))[RHO_01] * coeffs[pair_idx][i] 
+                        * std::exp( iu*omega*time) ) * std::exp( -iu*omega*time );
+                                                                                                      
+        results[obs] += 2.0 * std::real( (history->get_value(src, s, 0))[RHO_01] * coeffs[pair_idx][i] 
+                        * std::exp( iu*omega*time) ) * std::exp( -iu*omega*time );
+        
+      }    
+  //    if (time_idx == 1500)
+  //      std::cout << i << " " << (history->get_value(0, s, 0))[RHO_01]  << " " << (history->get_value(1, s, 0))[RHO_01] << std::endl; 
+
     }
+  }
 
-    // source self-interactions
-    for(int src = 0; src < num_src; ++src) {
-      for(int i = 0; i <= interp_order; ++i) {
-        const int s =
-            std::max(time_idx - i, -history->window);
-        if ( !rotating ){
-          results[src] += 2.0 * std::real( (history->get_value(src, s, 0))[RHO_01] * coeffs[num_interactions+src][i] );
-        } else {
-          results[src] += 2.0 * std::real( (history->get_value(src, s, 0))[RHO_01] * coeffs[num_interactions+src][i] 
-                          * std::exp( iu*omega*time0) ) * std::exp( -iu*omega*time0 );
-        }
-
+  // source self-interactions
+  for(int src = 0; src < num_src; ++src) {
+    for(int i = 0; i <= interp_order; ++i) {
+      const int s =
+          std::max(time_idx - i, -history->window);
+      if ( !rotating ){
+        results[src] += 2.0 * std::real( (history->get_value(src, s, 0))[RHO_01] * coeffs[num_interactions+src][i] );
+      } else {
+        results[src] += 2.0 * std::real( (history->get_value(src, s, 0))[RHO_01] * coeffs[num_interactions+src][i] 
+                        * std::exp( iu*omega*time0) ) * std::exp( -iu*omega*time0 );
       }
-    } 
+
+    }
+  } 
 
        // std::cout << results[0] << " " << results[1] << std::endl;
 

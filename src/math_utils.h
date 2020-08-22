@@ -5,6 +5,7 @@
 #include <cmath>
 #include <utility>
 #include <vector>
+#include "common.h"
 
 std::vector<double> linspace(const double,
                              const double,
