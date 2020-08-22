@@ -66,7 +66,7 @@ void Integrator::PredictorCorrector<soltype>::solve(
     const log_level_t log_level) const
 {
   int num_logsteps = 10;
-  int outstep = 1;
+  int outstep = 50;
 
   for(int step = 0; step < time_idx_ubound; ++step) {
     solve_step(step);
