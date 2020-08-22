@@ -17,6 +17,7 @@ class DirectInteraction final : public HistoryInteraction {
       const bool);
 
   const ResultArray &evaluate(const int) final;
+  const ResultArray &evaluate_present_field(const int) final;
   boost::multi_array<cmplx, 2> &coefficients() final { return coeffs; }
 
  private:

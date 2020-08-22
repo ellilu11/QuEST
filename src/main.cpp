@@ -4,7 +4,7 @@
 #include <iostream>
 #include <string>
 #include <vector>
-//#include <omp.h>
+#include <omp.h>
 
 #include "integrator/RHS/bloch_rhs.h"
 #include "integrator/history.h"
@@ -24,13 +24,12 @@ int main(int argc, char *argv[])
 
     // parameters
     const int num_src = atoi(argv[1]);
-    const double tmax = 10;
+    const double tmax = 20000;
     const double dt = 5.0 / pow(10.0, atoi(argv[2]) ); 
                               // rotframe: sigma = 1.0ps -> dt <= 0.52e-1
                               // fixframe: omega = 2278.9013 mev/hbar -> dt <= 1.379e-4
     const int num_timesteps = tmax/dt;
-    const int tmult = 5.0e-3 * pow(10, atoi(argv[2]) );
-    const int num_corrector_steps = 10;
+    const int num_corrector_steps = 0;
 
     const int interpolation_order = 4;
     const bool interacting = atoi(argv[3]);
@@ -38,10 +37,10 @@ int main(int argc, char *argv[])
 
     // constants
     const double c0 = 299.792458, hbar = 0.65821193, mu0 = 2.0133545e-04;
-    const double omega = 2278.9013, d0 = 5.2917721e-4 * 1.0;
-    double beta = 0.0;
+    const double omega = 2278.9013;
+    double beta = // 0.0;
                   // 1.0e-1 / pow(omega,3);
-                  // 1.79e-4 / pow( omega, 3 );
+                  1.79e-4 / pow( omega, 3 );
 
     const double k0 = omega/c0, lambda = 2.0*M_PI/k0;    
 
@@ -61,16 +60,18 @@ int main(int argc, char *argv[])
     std::cout << "  Num sources: " << num_src << std::endl;
     std::cout << "  Beta: " << beta * pow(omega,3) << std::endl;
 
-    auto qds = make_shared<DotVector>(import_dots("./dots0.cfg"));
+    string idstr(argv[5]);
+    auto qds = make_shared<DotVector>(import_dots("./dots/dots"+idstr+".cfg"));
     qds->resize(num_src);
     auto rhs_funcs = rhs_functions(*qds, omega, beta, rotating);
 
     // == HISTORY ====================================================
+    int task_idx = atoi(argv[5]);
     int min_time_to_keep =
         max_transit_steps_between_dots(qds, c0, dt) +
         interpolation_order;
     auto history = make_shared<Integrator::History<Eigen::Vector2cd>>(
-        num_src, 22, num_timesteps, min_time_to_keep);
+        num_src, 22, num_timesteps, min_time_to_keep, 2, task_idx);
     history->fill(Eigen::Vector2cd::Zero());
     history->initialize_past( Eigen::Vector2cd(1,0) );
     // history->initialize_past( qd_path );
@@ -79,7 +80,7 @@ int main(int argc, char *argv[])
 
     const double propagation_constant = mu0 / (4 * M_PI * hbar);
 
-    auto pulse1 = make_shared<Pulse>(read_pulse_config("pulse_test.cfg"));
+    auto pulse1 = make_shared<Pulse>(read_pulse_config("pulse.cfg"));
  
     std::shared_ptr<InteractionBase> selfwise;
     std::shared_ptr<InteractionBase> pairwise;
@@ -88,10 +89,8 @@ int main(int argc, char *argv[])
         Propagation::RotatingEFIE dyadic(c0, propagation_constant, omega, beta, 0.0);
         Propagation::SelfRotatingEFIE dyadic_self(c0, propagation_constant, omega, beta);
 
-        std::cout << "Constructing self interaction" << std::endl; 
         selfwise = make_shared<DirectInteraction>(qds, history, dyadic_self,
                                                     interpolation_order, c0, dt, omega, rotating);
-        std::cout << "Constructing pair interaction" << std::endl;
         pairwise = make_shared<DirectInteraction>(qds, history, dyadic,
                                                       interpolation_order, c0, dt, omega, rotating);
     
@@ -99,10 +98,8 @@ int main(int argc, char *argv[])
         Propagation::EFIE<cmplx> dyadic(c0, propagation_constant, beta, 0.0);
         Propagation::SelfEFIE dyadic_self(c0, propagation_constant, beta);
        
-        std::cout << "Constructing self interaction" << std::endl; 
         selfwise = make_shared<DirectInteraction>(qds, history, dyadic_self,
                                                     interpolation_order, c0, dt, omega, rotating);
-        std::cout << "Constructing pair interaction" << std::endl;
         pairwise = make_shared<DirectInteraction>(qds, history, dyadic,
                                                       interpolation_order, c0, dt, omega, rotating); 
     }
@@ -113,7 +110,7 @@ int main(int argc, char *argv[])
 
     if (interacting)
       interactions.push_back( pairwise );
-    
+
     // == INTEGRATOR =================================================
 
     std::unique_ptr<Integrator::RHS<Eigen::Vector2cd>> bloch_rhs =
@@ -124,13 +121,13 @@ int main(int argc, char *argv[])
         dt, num_corrector_steps, 18, 22, 3.15, history, std::move(bloch_rhs));
 
     cout << "Solving P-C..." << endl;
+    double start_time = omp_get_wtime();
+
     solver_pc.solve();
 
-    // start_time = omp_get_wtime();
+    double elapsed_time = omp_get_wtime() - start_time;
 
-    // double elapsed_time = omp_get_wtime() - start_time;
-
-    // cout << "Elapsed time: " << elapsed_time << "s" << std::endl;
+    cout << "Elapsed time: " << elapsed_time << "s" << std::endl;
 
     // == FIELD INTERACTIONS ===============================================
 

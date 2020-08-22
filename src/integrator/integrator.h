@@ -65,9 +65,11 @@ template <class soltype>
 void Integrator::PredictorCorrector<soltype>::solve(
     const log_level_t log_level) const
 {
-  int num_logsteps = 10;
-  int outstep = 50;
+  int num_outsteps = 40000;
+  int outstep = time_idx_ubound / num_outsteps;
 
+  int num_logsteps = 100;
+ 
   for(int step = 0; step < time_idx_ubound; ++step) {
     solve_step(step);
     
@@ -100,7 +102,7 @@ void Integrator::PredictorCorrector<soltype>::solve_step(const int step) const
         history_prev[sol_idx] = (history->get_value(sol_idx, step, 0))[1];
 
       corrector(step);
-      rhs->evaluate(step);
+      rhs->evaluate_present(step);
 
       for( int sol_idx = 0; sol_idx < num_solutions; ++sol_idx )
         history_diff[sol_idx] = (history->get_value(sol_idx, step, 0))[1] - history_prev[sol_idx];
@@ -115,7 +117,7 @@ void Integrator::PredictorCorrector<soltype>::solve_step(const int step) const
   } else {
     for(int m = 0; m < num_corrector_steps; ++m) {
       corrector(step);
-      rhs->evaluate(step);
+      rhs->evaluate_present(step);
     }
   }
 }

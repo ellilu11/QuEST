@@ -12,6 +12,10 @@ class PulseInteraction : public InteractionBase {
                    const double, const double, const double, 
                    const bool);
   const ResultArray &evaluate(const int);
+  const ResultArray &evaluate_present_field(const int time_idx)
+  {
+    return evaluate(time_idx);
+  }
   boost::multi_array<cmplx, 2> &coefficients() final { return coeffs; }
 
 //  const Eigen::MatrixXd &evaluateJ(const int, const int);
