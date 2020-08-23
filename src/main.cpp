@@ -106,7 +106,7 @@ int main(int argc, char *argv[])
  
     std::vector<std::shared_ptr<InteractionBase>> interactions{ 
       make_shared<PulseInteraction>(qds, pulse1, interpolation_order, c0, dt, hbar, rotating),
-      selfwise};
+      selfwise} ;
 
     if (interacting)
       interactions.push_back( pairwise );
