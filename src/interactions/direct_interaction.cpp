@@ -121,11 +121,8 @@ const InteractionBase::ResultArray &DirectInteraction::evaluate(
       results[obs] += 2.0 * std::real( rho_src * coeffs[pair_idx][0] 
                       * std::exp( iu*omega*time0) ) * std::exp( -iu*omega*time0 );
     }    
-    
-    results += past_terms_of_convolution;
-
   }
-
+  
   // source self-interactions
   for(int src = 0; src < num_src; ++src) {
     for(int i = 1; i <= interp_order; ++i) {
@@ -138,8 +135,8 @@ const InteractionBase::ResultArray &DirectInteraction::evaluate(
       else 
         past_terms_of_convolution[src] += 2.0 * std::real( rho_src * coeffs[num_interactions+src][i] 
                         * std::exp( iu*omega*time0) ) * std::exp( -iu*omega*time0 );
-
     }
+
     const int s = std::max(time_idx, -history->window);
     rho_src = (history->get_value(src, s, 0))[RHO_01];
 
@@ -148,10 +145,9 @@ const InteractionBase::ResultArray &DirectInteraction::evaluate(
     else 
       results[src] += 2.0 * std::real( rho_src * coeffs[num_interactions+src][0] 
                       * std::exp( iu*omega*time0) ) * std::exp( -iu*omega*time0 );
-
-    results += past_terms_of_convolution;
-
   } 
+  
+  results += past_terms_of_convolution;
 
   // std::cout << results[0] << " " << results[1] << std::endl;
 
@@ -186,11 +182,8 @@ const InteractionBase::ResultArray &DirectInteraction::evaluate_present_field(
       results[obs] += 2.0 * std::real( rho_src * coeffs[pair_idx][0] 
                       * std::exp( iu*omega*time0) ) * std::exp( -iu*omega*time0 );
     }    
-    
-    results += past_terms_of_convolution;
-
- }
-
+  }
+ 
   // source self-interactions
   for(int src = 0; src < num_src; ++src) {
   
@@ -202,10 +195,9 @@ const InteractionBase::ResultArray &DirectInteraction::evaluate_present_field(
     else 
       results[src] += 2.0 * std::real( rho_src * coeffs[num_interactions+src][0] 
                       * std::exp( iu*omega*time0) ) * std::exp( -iu*omega*time0 );
-
-    results += past_terms_of_convolution;
-
   } 
+
+  results += past_terms_of_convolution;
 
   return results;
 }
