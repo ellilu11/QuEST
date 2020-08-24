@@ -4,7 +4,6 @@
 #include <iostream>
 #include <string>
 #include <vector>
-#include <omp.h>
 
 #include "integrator/RHS/bloch_rhs.h"
 #include "integrator/history.h"
@@ -121,11 +120,13 @@ int main(int argc, char *argv[])
         dt, num_corrector_steps, 18, 22, 3.15, history, std::move(bloch_rhs));
 
     cout << "Solving P-C..." << endl;
-    double start_time = omp_get_wtime();
+    
+    std::clock_t start_time;
+    start_time = std::clock();
 
     solver_pc.solve();
 
-    double elapsed_time = omp_get_wtime() - start_time;
+    double elapsed_time = ( std::clock() - start_time ) / (double) CLOCKS_PER_SEC;
 
     cout << "Elapsed time: " << elapsed_time << "s" << std::endl;
 

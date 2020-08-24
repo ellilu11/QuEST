@@ -22,6 +22,8 @@ void Interpolation::UniformLagrangeSet::evaluate_derivative_table_at_x(
   double y = 1.0 - x;
   double y2 = pow(y,2), y3 = pow(y,3), y4 = pow(y,4);
 
+  assert(order_ == 4);
+
   switch(order_){
     case 4 : {
 

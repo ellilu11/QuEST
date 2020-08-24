@@ -50,7 +50,7 @@ void DirectInteraction::build_coeff_table(
     // std::cout << "Pairwise coeffs: " << std::endl;
     for(int i = 0; i <= interp_order; ++i){
        coeffs[pair_idx][i] = dip_obs.dot( interp_dyads[i] * dip_src );
- //      std::cout << coeffs[pair_idx][i] << std::endl;
+       std::cout << i << " " << coeffs[pair_idx][i] << std::endl;
     }
   }
   
@@ -106,7 +106,9 @@ const InteractionBase::ResultArray &DirectInteraction::evaluate(
                         * std::exp( iu*omega*time) ) * std::exp( -iu*omega*time );
       }    
     }
-    
+   
+//    std::cout << past_terms_of_convolution[0] << " " << past_terms_of_convolution[1] << std::endl;
+
     const int s = std::max(time_idx - floor_delays[pair_idx], -history->window);
     rho_obs = (history->get_value(obs, s, 0))[RHO_01];
     rho_src = (history->get_value(src, s, 0))[RHO_01];
@@ -148,8 +150,6 @@ const InteractionBase::ResultArray &DirectInteraction::evaluate(
   } 
   
   results += past_terms_of_convolution;
-
-  // std::cout << results[0] << " " << results[1] << std::endl;
 
   return results;
 }

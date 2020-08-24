@@ -165,7 +165,8 @@ class Propagation::EFIE : public Propagation::Kernel<T> {
             this->coefs_[i] = -k2_ * (dyads[0] * interp.evaluations[0][i] +
                                       dyads[1] * interp.evaluations[1][i] +
                                       dyads[2] * interp.evaluations[2][i] );
-        } /*else if ( dr.norm() == 0.0 ){
+
+      } /*else if ( dr.norm() == 0.0 ){
               this->coefs_[i] = -k2_ * 
                     (dyads[0] * interp.evaluations[0][i] +
                      dyads[3] * interp.evaluations[2][i]);
