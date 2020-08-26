@@ -50,7 +50,7 @@ void DirectInteraction::build_coeff_table(
     // std::cout << "Pairwise coeffs: " << std::endl;
     for(int i = 0; i <= interp_order; ++i){
        coeffs[pair_idx][i] = dip_obs.dot( interp_dyads[i] * dip_src );
-       std::cout << i << " " << coeffs[pair_idx][i] << std::endl;
+    //   std::cout << i << " " << coeffs[pair_idx][i] << std::endl;
     }
   }
   

@@ -69,6 +69,8 @@ int main(int argc, char *argv[])
     int min_time_to_keep =
         max_transit_steps_between_dots(qds, c0, dt) +
         interpolation_order;
+    std::cout << "  Min time to keep: " << min_time_to_keep << std::endl;
+
     auto history = make_shared<Integrator::History<Eigen::Vector2cd>>(
         num_src, 22, num_timesteps, min_time_to_keep, 2, task_idx);
     history->fill(Eigen::Vector2cd::Zero());
