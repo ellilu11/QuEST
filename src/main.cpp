@@ -134,9 +134,7 @@ int main(int argc, char *argv[])
 
     // == FIELD INTERACTIONS ===============================================
 
-/*    *obs = *qds; // examine field at sources only
- 
-    std::vector<std::shared_ptr<InteractionBase>> interactions_fld{ 
+    /*std::vector<std::shared_ptr<InteractionBase>> interactions_fld{ 
         make_shared<PulseInteraction>(qds, obs, pulse1, interpolation_order, c0, dt, hbar, rotating),
         make_shared<DirectInteraction>(qds, obs, history, dyadic_self,
                                                     interpolation_order, c0, dt, omega, beta, hbar, rotating) };
@@ -147,8 +145,7 @@ int main(int argc, char *argv[])
         pairwise_fld = make_shared<DirectInteraction>(qds, obs, history, dyadic,
                                                       interpolation_order, c0, dt, omega, beta, hbar, rotating);
         interactions.push_back( pairwise_fld );
-    }
-*/
+    }*/
 
   return 0;
 }
