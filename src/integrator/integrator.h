@@ -65,7 +65,7 @@ template <class soltype>
 void Integrator::PredictorCorrector<soltype>::solve(
     const log_level_t log_level) const
 {
-  int num_outsteps = 40000;
+  int num_outsteps = 2000000;
   int outstep = time_idx_ubound / num_outsteps;
 
   int num_logsteps = 100;
