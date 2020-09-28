@@ -14,6 +14,7 @@
 #include "interactions/direct_interaction.h"
 #include "interactions/green_function.h"
 #include "interactions/pulse_interaction.h"
+#include "interactions/self_interaction.h"
 
 using namespace std;
 
@@ -65,11 +66,12 @@ int main(int argc, char *argv[])
     auto rhs_funcs = rhs_functions(*qds, omega, beta, rotating);
 
     // == HISTORY ====================================================
-
     int task_idx = atoi(argv[5]);
     int min_time_to_keep =
         max_transit_steps_between_dots(qds, c0, dt) +
         interpolation_order;
+    std::cout << "  Min time to keep: " << min_time_to_keep << std::endl;
+
     auto history = make_shared<Integrator::History<Eigen::Vector2cd>>(
         num_src, 22, num_timesteps, min_time_to_keep, 2, task_idx);
     history->fill(Eigen::Vector2cd::Zero());
@@ -89,10 +91,8 @@ int main(int argc, char *argv[])
         Propagation::RotatingEFIE dyadic(c0, propagation_constant, omega, beta, 0.0);
         Propagation::SelfRotatingEFIE dyadic_self(c0, propagation_constant, omega, beta);
 
-        cout << "Constructing self interaction" << endl;
-        selfwise = make_shared<DirectInteraction>(qds, history, dyadic_self,
+        selfwise = make_shared<SelfInteraction>(qds, history, dyadic_self,
                                                     interpolation_order, c0, dt, omega, rotating);
-        cout << "Constructing pair interaction" << endl;
         pairwise = make_shared<DirectInteraction>(qds, history, dyadic,
                                                       interpolation_order, c0, dt, omega, rotating);
     
@@ -100,7 +100,7 @@ int main(int argc, char *argv[])
         Propagation::EFIE<cmplx> dyadic(c0, propagation_constant, beta, 0.0);
         Propagation::SelfEFIE dyadic_self(c0, propagation_constant, beta);
        
-        selfwise = make_shared<DirectInteraction>(qds, history, dyadic_self,
+        selfwise = make_shared<SelfInteraction>(qds, history, dyadic_self,
                                                     interpolation_order, c0, dt, omega, rotating);
         pairwise = make_shared<DirectInteraction>(qds, history, dyadic,
                                                       interpolation_order, c0, dt, omega, rotating); 
@@ -114,7 +114,6 @@ int main(int argc, char *argv[])
       interactions.push_back( pairwise );
 
     // == INTEGRATOR =================================================
-  
     std::unique_ptr<Integrator::RHS<Eigen::Vector2cd>> bloch_rhs =
         std::make_unique<Integrator::BlochRHS>(
             dt, history, std::move(interactions), std::move(rhs_funcs));
@@ -138,6 +137,13 @@ int main(int argc, char *argv[])
 /*    *obs = *qds; // examine field at sources only
  
     std::vector<std::shared_ptr<InteractionBase>> interactions_fld{ 
+=======
+    cout << "Elapsed time: " << elapsed_time << "s" << std::endl;
+
+    // == FIELD INTERACTIONS ===============================================
+
+    /*std::vector<std::shared_ptr<InteractionBase>> interactions_fld{ 
+>>>>>>> selfint
         make_shared<PulseInteraction>(qds, obs, pulse1, interpolation_order, c0, dt, hbar, rotating),
         make_shared<DirectInteraction>(qds, obs, history, dyadic_self,
                                                     interpolation_order, c0, dt, omega, beta, hbar, rotating) };
@@ -148,6 +154,7 @@ int main(int argc, char *argv[])
         pairwise_fld = make_shared<DirectInteraction>(qds, obs, history, dyadic,
                                                       interpolation_order, c0, dt, omega, beta, hbar, rotating);
         interactions.push_back( pairwise_fld );
+<<<<<<< HEAD
     }
 */
 

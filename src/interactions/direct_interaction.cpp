@@ -17,7 +17,7 @@ DirectInteraction::DirectInteraction(
       omega(omega), 
       rotating(rotating),
       floor_delays(num_interactions),
-      coeffs(boost::extents[num_interactions+num_src][interp_order + 1])
+      coeffs(boost::extents[num_interactions][interp_order + 1])
 {
    build_coeff_table(kernel);
 }
@@ -54,22 +54,6 @@ void DirectInteraction::build_coeff_table(
     }
   }
   
-  // src self coefficients
-  for(int src = 0; src < num_src; ++src) {
-    lagrange.evaluate_derivative_table_at_x(0.0, dt);
-
-    std::vector<Eigen::Matrix3cd> interp_dyads_self(
-        kernel.coefficients(Eigen::Vector3d::Zero(), lagrange));
-
-    Eigen::Vector3d dip_src = (*dots)[src].dipole();
- 
-    // std::cout << "Self coeffs: " << std::endl;
-    for(int i = 0; i <= interp_order; ++i){
-       coeffs[num_interactions+src][i] = dip_src.dot( interp_dyads_self[i] * dip_src );
-       // std::cout << coeffs[num_interactions+src][i] << std::endl;
-    }
-
-  }
 }
 
 const InteractionBase::ResultArray &DirectInteraction::evaluate(
@@ -107,8 +91,6 @@ const InteractionBase::ResultArray &DirectInteraction::evaluate(
       }    
     }
    
-//    std::cout << past_terms_of_convolution[0] << " " << past_terms_of_convolution[1] << std::endl;
-
     const int s = std::max(time_idx - floor_delays[pair_idx], -history->window);
     rho_obs = (history->get_value(obs, s, 0))[RHO_01];
     rho_src = (history->get_value(src, s, 0))[RHO_01];
@@ -124,30 +106,6 @@ const InteractionBase::ResultArray &DirectInteraction::evaluate(
                       * std::exp( iu*omega*time0) ) * std::exp( -iu*omega*time0 );
     }    
   }
-  
-  // source self-interactions
-  for(int src = 0; src < num_src; ++src) {
-    for(int i = 1; i <= interp_order; ++i) {
-      const int s =
-          std::max(time_idx - i, -history->window);
-      rho_src = (history->get_value(src, s, 0))[RHO_01];
-
-      if ( !rotating )
-        past_terms_of_convolution[src] += 2.0 * std::real( rho_src * coeffs[num_interactions+src][i] );
-      else 
-        past_terms_of_convolution[src] += 2.0 * std::real( rho_src * coeffs[num_interactions+src][i] 
-                        * std::exp( iu*omega*time0) ) * std::exp( -iu*omega*time0 );
-    }
-
-    const int s = std::max(time_idx, -history->window);
-    rho_src = (history->get_value(src, s, 0))[RHO_01];
-
-    if ( !rotating )
-      results[src] += 2.0 * std::real( rho_src * coeffs[num_interactions+src][0] );
-    else 
-      results[src] += 2.0 * std::real( rho_src * coeffs[num_interactions+src][0] 
-                      * std::exp( iu*omega*time0) ) * std::exp( -iu*omega*time0 );
-  } 
   
   results += past_terms_of_convolution;
 
@@ -184,25 +142,10 @@ const InteractionBase::ResultArray &DirectInteraction::evaluate_present_field(
     }    
   }
  
-  // source self-interactions
-  for(int src = 0; src < num_src; ++src) {
-  
-    const int s = std::max(time_idx, -history->window);
-    rho_src = (history->get_value(src, s, 0))[RHO_01];
-
-    if ( !rotating )
-      results[src] += 2.0 * std::real( rho_src * coeffs[num_interactions+src][0] );
-    else 
-      results[src] += 2.0 * std::real( rho_src * coeffs[num_interactions+src][0] 
-                      * std::exp( iu*omega*time0) ) * std::exp( -iu*omega*time0 );
-  } 
-
   results += past_terms_of_convolution;
 
   return results;
 }
-
-
 
 int DirectInteraction::coord2idx(int row, int col)
 {

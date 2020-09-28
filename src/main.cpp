@@ -14,6 +14,7 @@
 #include "interactions/direct_interaction.h"
 #include "interactions/green_function.h"
 #include "interactions/pulse_interaction.h"
+#include "interactions/self_interaction.h"
 
 using namespace std;
 
@@ -90,7 +91,7 @@ int main(int argc, char *argv[])
         Propagation::RotatingEFIE dyadic(c0, propagation_constant, omega, beta, 0.0);
         Propagation::SelfRotatingEFIE dyadic_self(c0, propagation_constant, omega, beta);
 
-        selfwise = make_shared<DirectInteraction>(qds, history, dyadic_self,
+        selfwise = make_shared<SelfInteraction>(qds, history, dyadic_self,
                                                     interpolation_order, c0, dt, omega, rotating);
         pairwise = make_shared<DirectInteraction>(qds, history, dyadic,
                                                       interpolation_order, c0, dt, omega, rotating);
@@ -99,7 +100,7 @@ int main(int argc, char *argv[])
         Propagation::EFIE<cmplx> dyadic(c0, propagation_constant, beta, 0.0);
         Propagation::SelfEFIE dyadic_self(c0, propagation_constant, beta);
        
-        selfwise = make_shared<DirectInteraction>(qds, history, dyadic_self,
+        selfwise = make_shared<SelfInteraction>(qds, history, dyadic_self,
                                                     interpolation_order, c0, dt, omega, rotating);
         pairwise = make_shared<DirectInteraction>(qds, history, dyadic,
                                                       interpolation_order, c0, dt, omega, rotating); 
