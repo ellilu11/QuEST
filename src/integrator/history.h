@@ -148,7 +148,7 @@ Integrator::History<soltype>::prep_for_output(soltype element)
 template <class soltype>
 void Integrator::History<soltype>::write_step_to_file(const int timestep)
 {
-  for(int n = 0; n < std::min(5, num_particles); ++n){
+  for(int n = 0; n < num_particles; ++n){
     //outfile << prep_for_output(get_value(n, timestep, 0)) << " ";
     double rho01_real = (get_value(n, timestep, 0))[1].real();
     double rho01_imag = (get_value(n, timestep, 0))[1].imag();
