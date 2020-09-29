@@ -93,6 +93,36 @@ namespace AIM {
       std::array<double, 5> dt_coefs;
     };
 
+    class TimeDeriv2 : public RetardationBase {
+     public:
+      TimeDeriv2(const int history_length, const double dt)
+          : RetardationBase(history_length),
+            dt2_coefs(
+              {{15.0 / 4, -77.0 / 6, 107.0 / 6, -13.0, 61.0 / 12, -5.0 / 6}})
+      {
+        for(auto &coef : dt_coefs) {
+          coef /= dt;
+        }
+      };
+      Eigen::Vector3cd operator()(const spacetime::vector3d<cmplx> &obs,
+                                  const std::array<int, 4> &coord,
+                                  const Expansions::Expansion &e)
+      {
+        Eigen::Vector3cd total_field = Eigen::Vector3cd::Zero();
+
+        for(int h = 0; h < static_cast<int>(dt_coefs.size()); ++h) {
+          int w = wrap_index(std::max(coord[0] - h, 0));
+          Eigen::Map<const Eigen::Vector3cd> field(
+              &obs[w][coord[1]][coord[2]][coord[3]][0]);
+          total_field += dt2_coefs[h] * e.d0 * field;
+        }
+        return total_field;
+      }
+
+     private:
+      std::array<double, 5> dt2_coefs;
+    };
+
     class Oper : public RetardationBase {
      public:
       Oper(int history_length) : RetardationBase(history_length){};
