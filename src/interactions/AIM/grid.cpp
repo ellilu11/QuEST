@@ -56,6 +56,7 @@ std::array<int, 4> AIM::Grid::circulant_shape(const double c,
 
 std::vector<const_DotRange> AIM::Grid::box_contents_map(
     const DotVector &dots) const
+// assign to each box the set of dots lying within it
 {
   std::vector<const_DotRange> boxes(num_gridpoints);
   for(size_t box_idx = 0; box_idx < boxes.size(); ++box_idx) {
@@ -72,6 +73,7 @@ std::vector<const_DotRange> AIM::Grid::box_contents_map(
 }
 
 std::vector<size_t> AIM::Grid::expansion_indices(const int grid_index) const
+// assign an index to each expansion point of the expansion region around any gridpoint
 {
   Eigen::Vector3i origin = idx_to_coord(grid_index);
   std::vector<size_t> indices(std::pow(expansion_order + 1, 3));

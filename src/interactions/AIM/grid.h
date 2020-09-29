@@ -84,8 +84,8 @@ class AIM::Grid {
  private:
   Eigen::Array3d spacing;
   int expansion_order;
-  BoundsArray bounds;
-  Eigen::Array3i dimensions;
+  BoundsArray bounds; // min and max in units of grid spacing containing all dots
+  Eigen::Array3i dimensions; // dimensions of grid in units of grid spacing
   size_t num_gridpoints;
   void sort_points_on_boxidx(DotVector &) const;
 };
