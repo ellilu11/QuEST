@@ -8,6 +8,7 @@ AIM::Farfield::Farfield(
     const double dt,
     std::shared_ptr<const Grid> grid,
     std::shared_ptr<const Expansions::ExpansionTable> expansion_table,
+    std::shared_ptr<const Expansions::ExpansionTable> fdtd_expansion_table,
     Expansions::ExpansionFunction expansion_function,
     Normalization::SpatialNorm normalization)
     : AimBase(dots,
@@ -17,6 +18,7 @@ AIM::Farfield::Farfield(
               dt,
               grid,
               expansion_table,
+              fdtd_expansion_table,
               expansion_function,
               normalization),
       table_dimensions_{grid->circulant_shape(c0, dt, interp_order)},
@@ -66,7 +68,7 @@ void AIM::Farfield::fill_source_table(const int step)
 void AIM::Farfield::propagate(const int step)
 {
   const auto wrapped_step = step % table_dimensions_[0];
-  const auto nb = 8 * grid->size();
+  const auto nb = 8 * grid->size(); // = table_dimensions_[1] * table_dimensions_[2] * table_dimensions_[3]
   const std::array<int, 5> front = {{wrapped_step, 0, 0, 0, 0}};
 
   const auto s_ptr = &source_table_(front);
@@ -105,8 +107,31 @@ void AIM::Farfield::fill_results_table(const int step)
       const Expansions::Expansion &e =
           (*expansion_table)[dot_idx][expansion_idx];
       Eigen::Vector3i coord = grid->idx_to_coord(e.index);
-      total_field += expansion_function(
-          obs_table_, {{step, coord(0), coord(1), coord(2)}}, e);
+
+      Eigen::Array3Xi coords(27);
+      std::vector<Expansions::Expansion> &e_array(27);
+     
+      Eigen::Vector3i origin = idx_to_delta(expansion_idx,box_order); // pass box_order to this function!
+
+      size_t fd_idx = 0;
+
+      for (int nx = 0; nx < 3; ++nx) {
+        for (int ny = 0; ny < 3; ++ny) {
+          for (int nz = 0; nz < 3; ++nz) {
+            Eigen::Vector3i delta = Eigen::Vector3i(grid_sequence(nx),grid_sequence(ny),grid_sequence(nz));
+
+            coords(fd_idx) = coord + delta;
+
+            Eigen::Vector3i shifted_delta = origin + delta;
+            e_array[fd_idx++] = (*fdtd_expansion_table)[dot_idx][delta_to_idx(shifted_delta,box_order+2)];
+
+          }
+        }
+      }
+
+      // Elliot: For FDTD, need coordinates & expansions of 19 grid points around dot_idx/expansion_idx
+      // Then pass all 19 grid points to expansion_function where FDTD is computed 
+     total_field += expansion_function(obs_table_, step, coords, e_vec);
       // Don't use a _wrapped_ step here; the expansion_function needs knowledge
       // of where it's being called in the complete timeline to accommodate
       // boundary conditions

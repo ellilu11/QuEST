@@ -51,7 +51,7 @@ namespace AIM {
       int wrap_index(int t) const { return t % history_length; };
     };
 
-    class Retardation : public RetardationBase {
+    /*class Retardation : public RetardationBase {
      public:
       Retardation(int history_length) : RetardationBase(history_length){};
       Eigen::Vector3cd operator()(const spacetime::vector3d<cmplx> &obs,
@@ -62,9 +62,9 @@ namespace AIM {
             &obs[wrap_index(coord[0])][coord[1]][coord[2]][coord[3]][0]);
         return e.d0 * field;
       }
-    };
+    };*/
 
-    class TimeDerivative : public RetardationBase {
+    /*class TimeDerivative : public RetardationBase {
      public:
       TimeDerivative(const int history_length, const double dt)
           : RetardationBase(history_length),
@@ -91,38 +91,9 @@ namespace AIM {
 
      private:
       std::array<double, 5> dt_coefs;
-    };
+    };*/
 
-    class TimeDeriv2 : public RetardationBase {
-     public:
-      TimeDeriv2(const int history_length, const double dt)
-          : RetardationBase(history_length),
-            dt2_coefs(
-              {{15.0 / 4, -77.0 / 6, 107.0 / 6, -13.0, 61.0 / 12, -5.0 / 6}})
-      {
-        for(auto &coef : dt_coefs) {
-          coef /= dt;
-        }
-      };
-      Eigen::Vector3cd operator()(const spacetime::vector3d<cmplx> &obs,
-                                  const std::array<int, 4> &coord,
-                                  const Expansions::Expansion &e)
-      {
-        Eigen::Vector3cd total_field = Eigen::Vector3cd::Zero();
-
-        for(int h = 0; h < static_cast<int>(dt_coefs.size()); ++h) {
-          int w = wrap_index(std::max(coord[0] - h, 0));
-          Eigen::Map<const Eigen::Vector3cd> field(
-              &obs[w][coord[1]][coord[2]][coord[3]][0]);
-          total_field += dt2_coefs[h] * e.d0 * field;
-        }
-        return total_field;
-      }
-
-     private:
-      std::array<double, 5> dt2_coefs;
-    };
-
+/*
     class Oper : public RetardationBase {
      public:
       Oper(int history_length) : RetardationBase(history_length){};
@@ -150,7 +121,7 @@ namespace AIM {
         return e.del_sq * field;
       }
     };
-
+*/
     class EFIE : public RetardationBase {
      public:
       EFIE(int history_length, double c, double dt)
@@ -187,6 +158,79 @@ namespace AIM {
       std::array<double, 6> dt2_coefs;
       double c;
     };
+
+    class EFIE_FDTD : public RetardationBase {
+     public:
+      EFIE(int history_length, double c, double dt)
+          : RetardationBase(history_length),
+            dt2_coefs(
+                {{15.0 / 4, -77.0 / 6, 107.0 / 6, -13.0, 61.0 / 12, -5.0 / 6}}),
+            c(c)
+      {
+        for(auto &coef : dt2_coefs) {
+          coef /= std::pow(dt, 2);
+        }
+      };
+
+      Eigen::Vector3cd operator()(const spacetime::vector3d<cmplx> &obs,
+                                  const int step,
+                                  const Eigen::Array3Xi coords,
+                                  const std::vector<Expansions::Expansion> &e_array)
+      {
+        Eigen::Vector3cd dt2 = Eigen::Vector3cd::Zero();
+        for(int h = 0; h < static_cast<int>(dt2_coefs.size()); ++h) {
+          int w = wrap_index(std::max(coord[0] - h, 0));
+          Eigen::Map<const Eigen::Vector3cd> field(
+              &obs[w][coords[0][1]][coords[0][2]][coords[0][3]][0]);
+          dt2 += dt2_coefs[h] * (e_array[0]).d0 * field;
+        }
+
+        Eigen::Matrix3d del_sq;
+
+        // Elliot: 18 of these total (27 minus 1 origin and 8 vertex points)
+        size_t xp = delta_to_idx({{1, 0, 0}}, 3);
+        size_t xm = delta_to_idx({{-1, 0, 0}}, 3);
+        size_t yp = delta_to_idx({{0, 1, 0}}, 3);
+        size_t ym = delta_to_idx({{0, -1, 0}}, 3);
+        size_t zp = delta_to_idx({{0, 0, 1}}, 3);
+        size_t zm = delta_to_idx({{0, 0, -1}}, 3);
+
+        size_t xypp = delta_to_idx({{1, 1, 0}}, 3);
+        size_t xymp = delta_to_idx({{-1, 1, 0}}, 3);
+        size_t xypm = delta_to_idx({{1, -1, 0}}, 3);
+        size_t xymm = delta_to_idx({{-1, -1, 0}}, 3);
+        
+        size_t xzpp = delta_to_idx({{1, 0, 1}}, 3);
+        size_t xzmp = delta_to_idx({{-1, 0, 1}}, 3);
+        size_t xzpm = delta_to_idx({{1, 0, -1}}, 3);
+        size_t xzmm = delta_to_idx({{-1, 0, -1}}, 3);
+ 
+        size_t yzpp = delta_to_idx({{0, 1, 1}}, 3);
+        size_t yzmp = delta_to_idx({{0, -1, 1}}, 3);
+        size_t yzpm = delta_to_idx({{0, 1, -1}}, 3);
+        size_t yzmm = delta_to_idx({{0, -1, -1}}, 3);
+
+        // Elliot: These are vector quantities! Need to extract the scalar part, multiply by e.d0, then 
+        // multiply the vector part back
+        Eigen::Map<const Eigen::Vector3cd> field_0(
+              &obs[wrap_index(step)][coords[0][1]][coords[0][2]][coords[0][3]][0]);
+        Eigen::Map<const Eigen::Vector3cd> field_xp(
+              &obs[wrap_index(step)][coords[xp][1]][coords[xp][2]][coords[xp][3]][0]);
+        Eigen::Map<const Eigen::Vector3cd> field_xm(
+              &obs[wrap_index(step)][coords[xm][1]][coords[xm][2]][coords[xm][3]][0]);
+        // etc...
+
+        del_sq(0,0) = (e_array[xp]).d0*field_xp - 2*(e_array[0]).d0*field_x0 + (e_array[mp]).d0*field_xm
+        // etc...
+        
+        return -dt2 + std::pow(c, 2) * del_sq * dip;
+      }
+
+     private:
+      std::array<double, 6> dt2_coefs;
+      double c;
+    };
+
 
     class RotatingEFIE : public RetardationBase {
      public:
@@ -250,8 +294,11 @@ class AIM::Expansions::LeastSquaresExpansionSolver {
 
  private:
   LeastSquaresExpansionSolver(const int box_order, const Grid &grid)
-      : box_order(box_order), num_pts(std::pow(box_order + 1, 3)), grid(grid){};
-  const int box_order, num_pts;
+      : box_order(box_order), 
+        num_pts(std::pow(box_order + 1, 3)), 
+        // num_pts(std::pow(box_order + 3, 3)), // augment the expansion region by grid points used to compute FDTD
+        grid(grid){};
+  const int box_order, num_expand_pts, num_pts;
   const Grid &grid;
 };
 

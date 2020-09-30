@@ -73,7 +73,7 @@ std::vector<const_DotRange> AIM::Grid::box_contents_map(
 }
 
 std::vector<size_t> AIM::Grid::expansion_indices(const int grid_index) const
-// assign an index to each expansion point of the expansion region around any gridpoint
+// assign an index (relative to whole grid) to every expansion point of a given expansion region
 {
   Eigen::Vector3i origin = idx_to_coord(grid_index);
   std::vector<size_t> indices(std::pow(expansion_order + 1, 3));
