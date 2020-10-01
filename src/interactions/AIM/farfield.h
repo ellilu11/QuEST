@@ -18,6 +18,7 @@ class AIM::Farfield final : public AimBase {
            std::shared_ptr<const Grid>,
            std::shared_ptr<const Expansions::ExpansionTable>,
            Expansions::ExpansionFunction,
+           Expansions::ExpansionFunction,
            Normalization::SpatialNorm);
   ~Farfield() = default;
 
@@ -46,6 +47,7 @@ class AIM::Farfield final : public AimBase {
   void propagate(const int);
   void fill_results_table(const int);
 
+  Eigen::Vector3cd FDTD_Del_Del( const Eigen::Array3Xcd )
   void fill_gmatrix_table(spacetime::vector<cmplx> &) const;
   TransformPair spatial_fft_plans();
 };

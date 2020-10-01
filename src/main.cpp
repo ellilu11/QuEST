@@ -34,6 +34,7 @@ int main(int argc, char *argv[])
     const int interpolation_order = 4;
     const bool interacting = atoi(argv[3]);
     const bool rotating = atoi(argv[4]);
+    const bool solve_type = 1;
 
     // constants
     const double c0 = 299.792458, hbar = 0.65821193, mu0 = 2.0133545e-04;
@@ -87,25 +88,58 @@ int main(int argc, char *argv[])
     std::shared_ptr<InteractionBase> selfwise;
     std::shared_ptr<InteractionBase> pairwise;
 
-    if (rotating) {
-        Propagation::RotatingEFIE dyadic(c0, propagation_constant, omega, beta, 0.0);
-        Propagation::SelfRotatingEFIE dyadic_self(c0, propagation_constant, omega, beta);
+    if (solve_type) {
+      if (rotating) {
+        AIM::Grid grid(grid_spacing, expansion_order, *qds); 
+        const int transit_steps = grid.max_transit_steps(c0, dt) + 
+                                    interpolation_order;
 
-        selfwise = make_shared<SelfInteraction>(qds, history, dyadic_self,
-                                                    interpolation_order, c0, dt, omega, rotating);
-        pairwise = make_shared<DirectInteraction>(qds, history, dyadic,
+       if (rotating) {
+          Propagation::RotatingEFIE dyadic(c0, propagation_constant, omega, beta, 0.0);
+          Propagation::SelfRotatingEFIE dyadic_self(c0, propagation_constant, omega, beta);
+
+          selfwise = make_shared<SelfInteraction>(qds, history, dyadic_self,
                                                       interpolation_order, c0, dt, omega, rotating);
-    
+          // make pairwise rotating interaction later
+
+      } else {
+          Propagation::EFIE<cmplx> dyadic(c0, propagation_constant, beta, 0.0);
+          Propagation::SelfEFIE dyadic_self(c0, propagation_constant, beta);
+         
+          selfwise = make_shared<SelfInteraction>(qds, history, dyadic_self,
+                                                      interpolation_order, c0, dt, omega, rotating);
+          pairwise = make_shared<AIM::Interaction>(
+              qds, history, dyadic, grid_spacing, 
+              interpolation_order, expansion_order, border,
+              c0, dt, 
+              AIM::Expansions::EFIE_TimeDeriv2(transit_steps, c0, dt), // "analytic" expansion function
+              AIM::Expansions::EFIE_Retardation(transit_steps, c0), // fdtd expansion function
+              AIM::Normalization::Laplace(propagation_constant),
+              );
+      }
+
     } else {
-        Propagation::EFIE<cmplx> dyadic(c0, propagation_constant, beta, 0.0);
-        Propagation::SelfEFIE dyadic_self(c0, propagation_constant, beta);
-       
-        selfwise = make_shared<SelfInteraction>(qds, history, dyadic_self,
-                                                    interpolation_order, c0, dt, omega, rotating);
-        pairwise = make_shared<DirectInteraction>(qds, history, dyadic,
-                                                      interpolation_order, c0, dt, omega, rotating); 
-    }
+      if (rotating) {
+          Propagation::RotatingEFIE dyadic(c0, propagation_constant, omega, beta, 0.0);
+          Propagation::SelfRotatingEFIE dyadic_self(c0, propagation_constant, omega, beta);
+
+          selfwise = make_shared<SelfInteraction>(qds, history, dyadic_self,
+                                                      interpolation_order, c0, dt, omega, rotating);
+          pairwise = make_shared<DirectInteraction>(qds, history, dyadic,
+                                                        interpolation_order, c0, dt, omega, rotating);
+      
+      } else {
+          Propagation::EFIE<cmplx> dyadic(c0, propagation_constant, beta, 0.0);
+          Propagation::SelfEFIE dyadic_self(c0, propagation_constant, beta);
+         
+          selfwise = make_shared<SelfInteraction>(qds, history, dyadic_self,
+                                                      interpolation_order, c0, dt, omega, rotating);
+          pairwise = make_shared<DirectInteraction>(qds, history, dyadic,
+                                                        interpolation_order, c0, dt, omega, rotating); 
+      }
  
+    }
+
     std::vector<std::shared_ptr<InteractionBase>> interactions{ 
       make_shared<PulseInteraction>(qds, pulse1, interpolation_order, c0, dt, hbar, rotating),
       selfwise} ;

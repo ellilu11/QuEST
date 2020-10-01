@@ -19,11 +19,13 @@ namespace AIM {
             std::shared_ptr<const Grid> grid,
             std::shared_ptr<const Expansions::ExpansionTable> expansion_table,
             Expansions::ExpansionFunction expansion_function,
+            Expansions::ExpansionFunction expansion_function_fdtd,
             Normalization::SpatialNorm normalization)
         : HistoryInteraction(dots, history, interp_order, c0, dt),
           grid(std::move(grid)),
           expansion_table(std::move(expansion_table)),
           expansion_function(std::move(expansion_function)),
+          expansion_function_fdtd(std::move(expansion_function_fdtd)),
           normalization(std::move(normalization))
     {
     }
@@ -32,6 +34,7 @@ namespace AIM {
     std::shared_ptr<const Grid> grid;
     std::shared_ptr<const Expansions::ExpansionTable> expansion_table;
     Expansions::ExpansionFunction expansion_function;
+    Expansions::ExpansionFunction expansion_function_fdtd;
     Normalization::SpatialNorm normalization;
   };
 }

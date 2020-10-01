@@ -34,6 +34,8 @@ namespace AIM {
     };
 
     using ExpansionTable = boost::multi_array<Expansion, 2>;
+    using ObssTable = boost::multi_array<Eigen::Vector3d, 2>;
+
     class LeastSquaresExpansionSolver;
 
     using ExpansionFunction =
@@ -93,41 +95,7 @@ namespace AIM {
       std::array<double, 5> dt_coefs;
     };
 
-    class EFIE_TimeDeriv2 : public RetardationBase {
-     public:
-      EFIE_TimeDeriv2(int history_length, double c, double dt)
-          : RetardationBase(history_length),
-            dt2_coefs(
-                {{15.0 / 4, -77.0 / 6, 107.0 / 6, -13.0, 61.0 / 12, -5.0 / 6}}),
-            c(c)
-      {
-        for(auto &coef : dt2_coefs) {
-          coef /= std::pow(dt, 2);
-        }
-      };
 
-      Eigen::Vector3cd operator()(const spacetime::vector3d<cmplx> &obs,
-                                  const std::array<int, 4> &coord,
-                                  const Expansions::Expansion &e)
-      {
-        Eigen::Vector3cd dt2 = Eigen::Vector3cd::Zero();
-        for(int h = 0; h < static_cast<int>(dt2_coefs.size()); ++h) {
-          int w = wrap_index(std::max(coord[0] - h, 0));
-          Eigen::Map<const Eigen::Vector3cd> field(
-              &obs[w][coord[1]][coord[2]][coord[3]][0]);
-          dt2 += dt2_coefs[h] * e.d0 * field;
-        }
-
-        return -dt2;
-      }
-
-     private:
-      std::array<double, 6> dt2_coefs;
-      double c;
-    };
-
-
-/*
     class Oper : public RetardationBase {
      public:
       Oper(int history_length) : RetardationBase(history_length){};
@@ -155,7 +123,7 @@ namespace AIM {
         return e.del_sq * field;
       }
     };
-*/
+
     class EFIE : public RetardationBase {
      public:
       EFIE(int history_length, double c, double dt)
@@ -192,6 +160,57 @@ namespace AIM {
       std::array<double, 6> dt2_coefs;
       double c;
     };
+
+    class EFIE_TimeDeriv2 : public RetardationBase {
+     public:
+      EFIE_TimeDeriv2(int history_length, double c, double dt)
+          : RetardationBase(history_length),
+            dt2_coefs(
+                {{15.0 / 4, -77.0 / 6, 107.0 / 6, -13.0, 61.0 / 12, -5.0 / 6}}),
+            c(c)
+      {
+        for(auto &coef : dt2_coefs) {
+          coef /= std::pow(dt, 2);
+        }
+      };
+
+      Eigen::Vector3cd operator()(const spacetime::vector3d<cmplx> &obs,
+                                  const std::array<int, 4> &coord,
+                                  const Expansions::Expansion &e)
+      {
+        Eigen::Vector3cd dt2 = Eigen::Vector3cd::Zero();
+        for(int h = 0; h < static_cast<int>(dt2_coefs.size()); ++h) {
+          int w = wrap_index(std::max(coord[0] - h, 0));
+          Eigen::Map<const Eigen::Vector3cd> field(
+              &obs[w][coord[1]][coord[2]][coord[3]][0]);
+          dt2 += dt2_coefs[h] * e.d0 * field;
+        }
+
+        return -dt2;
+      }
+
+     private:
+      std::array<double, 6> dt2_coefs;
+      double c;
+    };
+
+    class EFIE_Retardation : public RetardationBase {
+     public:
+      EFIE_Retardation(int history_length, double c) 
+        : RetardationBase(history_length), c(c){};
+      Eigen::Vector3cd operator()(const spacetime::vector3d<cmplx> &obs,
+                                  const std::array<int, 4> &coord,
+                                  const Expansions::Expansion &e)
+      {
+        Eigen::Map<const Eigen::Vector3cd> field(
+            &obs[wrap_index(coord[0])][coord[1]][coord[2]][coord[3]][0]);
+        return std::pow(c,2) * e.d0 * field;
+      }
+
+     private:
+      double c;
+    };
+
 
     /*class EFIE_FDTD : public RetardationBase {
      public:
@@ -244,9 +263,7 @@ namespace AIM {
         size_t yzpm = delta_to_idx({{0, 1, -1}}, 3);
         size_t yzmm = delta_to_idx({{0, -1, -1}}, 3);
 
-        // Elliot: These are vector quantities! Need to extract the scalar part, multiply by e.d0, then 
-        // multiply the vector part back
-        Eigen::Map<const Eigen::Vector3cd> field_0(
+       Eigen::Map<const Eigen::Vector3cd> field_0(
               &obs[wrap_index(step)][coords[0][1]][coords[0][2]][coords[0][3]][0]);
         Eigen::Map<const Eigen::Vector3cd> field_xp(
               &obs[wrap_index(step)][coords[xp][1]][coords[xp][2]][coords[xp][3]][0]);
@@ -264,7 +281,6 @@ namespace AIM {
       std::array<double, 6> dt2_coefs;
       double c;
     };*/
-
 
     class RotatingEFIE : public RetardationBase {
      public:
@@ -322,7 +338,7 @@ class AIM::Expansions::LeastSquaresExpansionSolver {
   static ExpansionTable get_expansions(const int,
                                        const Grid &,
                                        const std::vector<QuantumDot> &);
-  ExpansionTable table(const std::array<double,3> &) const;
+  ExpansionTable table(const std::vector<QuantumDot> &, double) const;
   Eigen::VectorXd q_vector(const std::array<int, 3> & = {{0, 0, 0}}) const;
   Eigen::MatrixXd w_matrix(const Eigen::Vector3d &) const;
 
@@ -330,7 +346,6 @@ class AIM::Expansions::LeastSquaresExpansionSolver {
   LeastSquaresExpansionSolver(const int box_order, const Grid &grid)
       : box_order(box_order), 
         num_pts(std::pow(box_order + 1, 3)), 
-        // num_pts(std::pow(box_order + 3, 3)), // augment the expansion region by grid points used to compute FDTD
         grid(grid){};
   const int box_order, num_expand_pts, num_pts;
   const Grid &grid;

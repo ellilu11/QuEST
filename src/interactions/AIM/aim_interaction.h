@@ -22,6 +22,7 @@ class AIM::Interaction final : public InteractionBase {
               const double c0,
               const double dt,
               Expansions::ExpansionFunction expansion_function,
+              Expansions::ExpansionFunction expansion_function_fdtd,
               Normalization::SpatialNorm normalization,
               const double omega = 0)
       : InteractionBase(dots, dt),
@@ -40,6 +41,7 @@ class AIM::Interaction final : public InteractionBase {
            grid,
            expansion_table,
            expansion_function,
+           expansion_function_fdtd,
            normalization),
 
         nf(dots,
@@ -69,7 +71,7 @@ class AIM::Interaction final : public InteractionBase {
     return results;
   }
 
-  const ResultArray &evaluatefld(const int t);
+  // const ResultArray &evaluatefld(const int t);
 
  private:
   std::shared_ptr<Grid> grid;

@@ -1,4 +1,5 @@
 #include "expansion.h"
+#include "../../math_utils.h"
 
 AIM::Expansions::ExpansionTable
 AIM::Expansions::LeastSquaresExpansionSolver::get_expansions(
@@ -9,8 +10,7 @@ AIM::Expansions::LeastSquaresExpansionSolver::get_expansions(
 
 AIM::Expansions::ExpansionTable
 AIM::Expansions::LeastSquaresExpansionSolver::table(
-    const std::array<double,3> obss) const
-    // const std::vector<QuantumDot> &dots) const
+    const std::vector<QuantumDot> &dots, double h) const
 {
   using namespace enums;
   using DerivArray = Eigen::Array<double, NUM_DERIVS, Eigen::Dynamic>;
@@ -19,14 +19,16 @@ AIM::Expansions::LeastSquaresExpansionSolver::table(
 
   for(auto dot_idx = 0u; dot_idx < dots.size(); ++dot_idx) {
     for(auto obs_idx = 0u; obs_idx < 27; ++obs_idx) {
-      const auto &pos = obss[dot_idx][obs_idx]; //dots.at(dot_idx).position();
+      Eigen::Vector3i delta = idx_to_delta( obs_idx, 3 );
+
+      const auto &pos = dots.at(dot_idx).position() + delta*h;
       Eigen::FullPivLU<Eigen::MatrixXd> lu(w_matrix(pos));
 
       DerivArray weights(NUM_DERIVS, num_pts);
       weights.row(D_0) = lu.solve(q_vector({{0, 0, 0}}));
 
 //    If using FDTD these are not needed!
-/*    weights.row(D_X) = lu.solve(q_vector({{1, 0, 0}}));
+      weights.row(D_X) = lu.solve(q_vector({{1, 0, 0}}));
       weights.row(D_Y) = lu.solve(q_vector({{0, 1, 0}}));
       weights.row(D_Z) = lu.solve(q_vector({{0, 0, 1}}));
       weights.row(D_XX) = lu.solve(q_vector({{2, 0, 0}}));
@@ -35,21 +37,33 @@ AIM::Expansions::LeastSquaresExpansionSolver::table(
       weights.row(D_YY) = lu.solve(q_vector({{0, 2, 0}}));
       weights.row(D_YZ) = weights.row(D_ZY) = lu.solve(q_vector({{0, 1, 1}}));
       weights.row(D_ZZ) = lu.solve(q_vector({{0, 0, 2}}));
-*/
+
       const auto indices = grid.expansion_indices(pos);
-      // int tbl_idx = dot_idx*19+obs_idx;
 
       for(auto w = 0; w < num_pts; ++w) {
         table[dot_idx][obs_idx][w].index = indices[w];
 
         table[dot_idx][obs_idx][w].d0 = weights(0, w);
-        // table[tbl_idx][w].del = weights.block(D_X, w, 3, 1);
-        // table[tbl_idx][w].del_sq = Eigen::Map<Eigen::Matrix3d>(&weights(D_XX, w));
+        table[dot_idx][obs_idx][w].del = weights.block(D_X, w, 3, 1);
+        table[dot_idx][obs_idx][w].del_sq = Eigen::Map<Eigen::Matrix3d>(&weights(D_XX, w));
       }
   }
 
   return table;
 }
+
+/*
+ObssTable AIM::Expansions::make_obss( 
+    const std::vector<QuantumDot> &dots, double h ) const
+{
+  AIM::Expansions::ObssTable obss_table(boost::extents[num_dots][27]);
+
+  for(auto dot_idx = 0u; dot_idx < dots.size(); ++dot_idx){
+    for(auto obs_idx
+
+  }
+
+}*/
 
 Eigen::VectorXd AIM::Expansions::LeastSquaresExpansionSolver::q_vector(
     const std::array<int, 3> &derivatives) const

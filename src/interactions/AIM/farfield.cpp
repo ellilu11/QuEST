@@ -2,7 +2,6 @@
 
 AIM::Farfield::Farfield(
     const std::shared_ptr<const DotVector> dots,
-    const std::array<double,3> obss,
     const std::shared_ptr<const Integrator::History<Eigen::Vector2cd>> history,
     const int interp_order,
     const double c0,
@@ -102,10 +101,9 @@ void AIM::Farfield::fill_results_table(const int step)
   results = 0;
 
   for(auto dot_idx = 0u; dot_idx < expansion_table->shape()[0]; ++dot_idx) {
-    
-
-    Eigen::Vector3cd field = Eigen::Vector3cd::Zero();
+ 
     // calculate non-FDTD (e.g. time derivative) field first
+    Eigen::Vector3cd field = Eigen::Vector3cd::Zero();
     for(auto expansion_idx = 0u; expansion_idx < expansion_table->shape()[2];
         ++expansion_idx) {
       const Expansions::Expansion &e =
@@ -119,7 +117,7 @@ void AIM::Farfield::fill_results_table(const int step)
     }
 
     // then calculate FDTD (e.g. spatial derivative) field 
-    std::vector<Eigen::Vector3cd> fld_stencil(27); 
+    Eigen::Array3Xcd fld_stencil(27); 
     fld_stencil[0] = field;
 
     for(auto obs_idx = 1u; obs_idx < 27; ++ obs_idx) { 
@@ -130,7 +128,8 @@ void AIM::Farfield::fill_results_table(const int step)
         const Expansions::Expansion &e =
             (*expansion_table)[dot_idx][obs_idx][expansion_idx];
         Eigen::Vector3i coord = grid->idx_to_coord(e.index);
-        fld_stencil[obs_idx] += expansion_function_fdtd(
+        fld_stencil[obs_idx] += 
+          expansion_function_fdtd(
             obs_table_, {{step, coord(0), coord(1), coord(2)}}, e);
  
         /*Eigen::Array3Xi coords(27);
@@ -161,8 +160,10 @@ void AIM::Farfield::fill_results_table(const int step)
   }
 }
 
-Eigen::Vector3cd AIM::Farfield::FDTD_Del_Del( const std::vector<Eigen::Vector3cd> stencil )
+Eigen::Vector3cd AIM::Farfield::FDTD_Del_Del( const Eigen::Array3Xcd stencil )
 {
+  constexpr int O = 0;
+  
   constexpr int XP = 9;
   constexpr int XM = 18; 
   constexpr int YP = 3
@@ -185,8 +186,27 @@ Eigen::Vector3cd AIM::Farfield::FDTD_Del_Del( const std::vector<Eigen::Vector3cd
   constexpr int YZPM = 5;
   constexpr int YZMM = 8;
 
+  std::vector<cmplx> D_XX(3);
+  std::vector<cmplx> D_YY(3);
+  std::vector<cmplx> D_ZZ(3);
 
+  for(int i=0; i < 3; ++i){
+    D_XX[i] = stencil[XP][i] - 2.0*stencil[O][i] + stencil[XM][i];
+    D_YY[i] = stencil[YP][i] - 2.0*stencil[O][i] + stencil[YM][i];
+    D_ZZ[i] = stencil[ZP][i] - 2.0*stencil[O][i] + stencil[ZM][i];
 
+    D_XY[i] = stencil[XYPP][i] - stencil[XYMP][i] - stencil[XYPM][i] + stencil[XYMM][i];
+    D_XZ[i] = stencil[XZPP][i] - stencil[XZMP][i] - stencil[XZPM][i] + stencil[XZMM][i];
+    D_YZ[i] = stencil[YZPP][i] - stencil[YZMP][i] - stencil[YZPM][i] + stencil[YZMM][i];
+  }
+
+  cmplx E_X = D_XX[0] + D_XY[1] + D_XZ[2];
+  cmplx E_Y = D_XY[0] + D_YY[1] + D_YZ[2];
+  cmplx E_Z = D_XZ[0] + D_YZ[1] + D_ZZ[2];
+
+  Eigen::Vector3cd field(E_X, E_Y, E_Z);
+
+  return field;
 }
 
 spacetime::vector<cmplx> AIM::Farfield::make_propagation_table() const

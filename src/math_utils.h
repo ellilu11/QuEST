@@ -17,13 +17,12 @@ double gaussian(const double);
 double skew_gaussian(const double, const double);
 
 int grid_sequence(const size_t);
-size_t inv_grid_sequence(const int);
-
 Eigen::Vector3i idx_to_coord(const size_t, int);
-size_t coord_to_idx(const Eigen::Vector3i &, int);
-
 Eigen::Vector3i idx_to_delta(const size_t, int);
-size_t delta_to_idx(const Eigen::Vector3i &, int);
+
+//size_t coord_to_idx(const Eigen::Vector3i &, int);
+//size_t inv_grid_sequence(const int);
+//size_t delta_to_idx(const Eigen::Vector3i &, int);
 
 std::pair<int, double> split_double(const double);
 double falling_factorial(const double, int);
