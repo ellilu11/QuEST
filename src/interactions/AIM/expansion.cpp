@@ -20,7 +20,7 @@ AIM::Expansions::LeastSquaresExpansionSolver::table(
   for(auto dot_idx = 0u; dot_idx < dots.size(); ++dot_idx) {
     for(auto obs_idx = 0u; obs_idx < 27; ++obs_idx) {
       Eigen::Vector3i delta_i = idx_to_delta( obs_idx, 3 );
-//    How to cast Vector3i to Vector3d? (Splendid job on your documentation, Eigen team)
+//    How to cast Vector3i to Vector3d?
       Eigen::Vector3d delta(delta_i[0], delta_i[1], delta_i[2]);
 
       const auto &pos = dots.at(dot_idx).position() + delta*h;

@@ -159,10 +159,10 @@ void AIM::Farfield::fill_results_table(const int step)
     }
 
     // use fields at stencil points to calculate FDTD
-    Eigen::Vector3cd fdtd_field = FDTD_Del_Del( fld_stencil ); 
+    Eigen::Vector3cd deldel_field = FDTD_Del_Del( fld_stencil ); 
   
     // finally sum fields and calculate Rabi freq
-    results(dot_idx) += (field+fdtd_field).dot((*dots)[dot_idx].dipole());
+    results(dot_idx) += (field+deldel_field).dot((*dots)[dot_idx].dipole());
   }
 }
 
