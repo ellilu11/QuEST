@@ -51,7 +51,7 @@ namespace AIM {
       int wrap_index(int t) const { return t % history_length; };
     };
 
-    /*class Retardation : public RetardationBase {
+    class Retardation : public RetardationBase {
      public:
       Retardation(int history_length) : RetardationBase(history_length){};
       Eigen::Vector3cd operator()(const spacetime::vector3d<cmplx> &obs,
@@ -62,9 +62,9 @@ namespace AIM {
             &obs[wrap_index(coord[0])][coord[1]][coord[2]][coord[3]][0]);
         return e.d0 * field;
       }
-    };*/
+    };
 
-    /*class TimeDerivative : public RetardationBase {
+    class TimeDerivative : public RetardationBase {
      public:
       TimeDerivative(const int history_length, const double dt)
           : RetardationBase(history_length),
@@ -91,7 +91,41 @@ namespace AIM {
 
      private:
       std::array<double, 5> dt_coefs;
-    };*/
+    };
+
+    class EFIE_TimeDeriv2 : public RetardationBase {
+     public:
+      EFIE_TimeDeriv2(int history_length, double c, double dt)
+          : RetardationBase(history_length),
+            dt2_coefs(
+                {{15.0 / 4, -77.0 / 6, 107.0 / 6, -13.0, 61.0 / 12, -5.0 / 6}}),
+            c(c)
+      {
+        for(auto &coef : dt2_coefs) {
+          coef /= std::pow(dt, 2);
+        }
+      };
+
+      Eigen::Vector3cd operator()(const spacetime::vector3d<cmplx> &obs,
+                                  const std::array<int, 4> &coord,
+                                  const Expansions::Expansion &e)
+      {
+        Eigen::Vector3cd dt2 = Eigen::Vector3cd::Zero();
+        for(int h = 0; h < static_cast<int>(dt2_coefs.size()); ++h) {
+          int w = wrap_index(std::max(coord[0] - h, 0));
+          Eigen::Map<const Eigen::Vector3cd> field(
+              &obs[w][coord[1]][coord[2]][coord[3]][0]);
+          dt2 += dt2_coefs[h] * e.d0 * field;
+        }
+
+        return -dt2;
+      }
+
+     private:
+      std::array<double, 6> dt2_coefs;
+      double c;
+    };
+
 
 /*
     class Oper : public RetardationBase {
@@ -159,7 +193,7 @@ namespace AIM {
       double c;
     };
 
-    class EFIE_FDTD : public RetardationBase {
+    /*class EFIE_FDTD : public RetardationBase {
      public:
       EFIE(int history_length, double c, double dt)
           : RetardationBase(history_length),
@@ -229,7 +263,7 @@ namespace AIM {
      private:
       std::array<double, 6> dt2_coefs;
       double c;
-    };
+    };*/
 
 
     class RotatingEFIE : public RetardationBase {
@@ -288,7 +322,7 @@ class AIM::Expansions::LeastSquaresExpansionSolver {
   static ExpansionTable get_expansions(const int,
                                        const Grid &,
                                        const std::vector<QuantumDot> &);
-  ExpansionTable table(const std::vector<QuantumDot> &) const;
+  ExpansionTable table(const std::array<double,3> &) const;
   Eigen::VectorXd q_vector(const std::array<int, 3> & = {{0, 0, 0}}) const;
   Eigen::MatrixXd w_matrix(const Eigen::Vector3d &) const;
 

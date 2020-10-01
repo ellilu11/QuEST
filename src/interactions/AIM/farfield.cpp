@@ -2,14 +2,15 @@
 
 AIM::Farfield::Farfield(
     const std::shared_ptr<const DotVector> dots,
+    const std::array<double,3> obss,
     const std::shared_ptr<const Integrator::History<Eigen::Vector2cd>> history,
     const int interp_order,
     const double c0,
     const double dt,
     std::shared_ptr<const Grid> grid,
     std::shared_ptr<const Expansions::ExpansionTable> expansion_table,
-    std::shared_ptr<const Expansions::ExpansionTable> fdtd_expansion_table,
     Expansions::ExpansionFunction expansion_function,
+    Expansions::ExpansionFunction expansion_function_fdtd,
     Normalization::SpatialNorm normalization)
     : AimBase(dots,
               history,
@@ -18,8 +19,8 @@ AIM::Farfield::Farfield(
               dt,
               grid,
               expansion_table,
-              fdtd_expansion_table,
               expansion_function,
+              expansion_function_fdtd,
               normalization),
       table_dimensions_{grid->circulant_shape(c0, dt, interp_order)},
       propagation_table_{make_propagation_table()},
@@ -101,43 +102,91 @@ void AIM::Farfield::fill_results_table(const int step)
   results = 0;
 
   for(auto dot_idx = 0u; dot_idx < expansion_table->shape()[0]; ++dot_idx) {
-    Eigen::Vector3cd total_field = Eigen::Vector3cd::Zero();
-    for(auto expansion_idx = 0u; expansion_idx < expansion_table->shape()[1];
+    
+
+    Eigen::Vector3cd field = Eigen::Vector3cd::Zero();
+    // calculate non-FDTD (e.g. time derivative) field first
+    for(auto expansion_idx = 0u; expansion_idx < expansion_table->shape()[2];
         ++expansion_idx) {
       const Expansions::Expansion &e =
-          (*expansion_table)[dot_idx][expansion_idx];
+          (*expansion_table)[dot_idx][0][expansion_idx];
       Eigen::Vector3i coord = grid->idx_to_coord(e.index);
-
-      Eigen::Array3Xi coords(27);
-      std::vector<Expansions::Expansion> &e_array(27);
-     
-      Eigen::Vector3i origin = idx_to_delta(expansion_idx,box_order); // pass box_order to this function!
-
-      size_t fd_idx = 0;
-
-      for (int nx = 0; nx < 3; ++nx) {
-        for (int ny = 0; ny < 3; ++ny) {
-          for (int nz = 0; nz < 3; ++nz) {
-            Eigen::Vector3i delta = Eigen::Vector3i(grid_sequence(nx),grid_sequence(ny),grid_sequence(nz));
-
-            coords(fd_idx) = coord + delta;
-
-            Eigen::Vector3i shifted_delta = origin + delta;
-            e_array[fd_idx++] = (*fdtd_expansion_table)[dot_idx][delta_to_idx(shifted_delta,box_order+2)];
-
-          }
-        }
-      }
-
-      // Elliot: For FDTD, need coordinates & expansions of 19 grid points around dot_idx/expansion_idx
-      // Then pass all 19 grid points to expansion_function where FDTD is computed 
-     total_field += expansion_function(obs_table_, step, coords, e_vec);
+      field += 
+        expansion_function(obs_table_, {{step, coord(0), coord(1), coord(2)}}, e);
       // Don't use a _wrapped_ step here; the expansion_function needs knowledge
       // of where it's being called in the complete timeline to accommodate
       // boundary conditions
     }
-    results(dot_idx) += total_field.dot((*dots)[dot_idx].dipole());
+
+    // then calculate FDTD (e.g. spatial derivative) field 
+    std::vector<Eigen::Vector3cd> fld_stencil(27); 
+    fld_stencil[0] = field;
+
+    for(auto obs_idx = 1u; obs_idx < 27; ++ obs_idx) { 
+      fld_stencil[obs_idx] = Eigen::Vector3cd::Zero();
+
+      for(auto expansion_idx = 0u; expansion_idx < expansion_table->shape()[2];
+          ++expansion_idx) {
+        const Expansions::Expansion &e =
+            (*expansion_table)[dot_idx][obs_idx][expansion_idx];
+        Eigen::Vector3i coord = grid->idx_to_coord(e.index);
+        fld_stencil[obs_idx] += expansion_function_fdtd(
+            obs_table_, {{step, coord(0), coord(1), coord(2)}}, e);
+ 
+        /*Eigen::Array3Xi coords(27);
+        std::vector<Expansions::Expansion> &e_array(27);
+       
+        Eigen::Vector3i origin = idx_to_delta(expansion_idx,box_order); // pass box_order to this function!
+
+        constexpr int fd_idx = 0;
+        for (int nx = 0; nx < 3; ++nx) {
+          for (int ny = 0; ny < 3; ++ny) {
+            for (int nz = 0; nz < 3; ++nz) {
+              Eigen::Vector3i delta = Eigen::Vector3i(grid_sequence(nx),grid_sequence(ny),grid_sequence(nz));
+              coords(fd_idx) = coord + delta;
+              Eigen::Vector3i shifted_delta = origin + delta;
+              e_array[fd_idx++] = (*fdtd_expansion_table)[dot_idx][delta_to_idx(shifted_delta,box_order+2)];
+
+            }
+          }
+        }*/
+      }
+    }
+
+    // use fields at stencil points to calculate FDTD
+    Eigen::Vector3cd fdtd_field = FDTD_Del_Del( fld_stencil ); 
+  
+    // finally sum fields and calculate Rabi freq
+    results(dot_idx) += (field+fdtd_field).dot((*dots)[dot_idx].dipole());
   }
+}
+
+Eigen::Vector3cd AIM::Farfield::FDTD_Del_Del( const std::vector<Eigen::Vector3cd> stencil )
+{
+  constexpr int XP = 9;
+  constexpr int XM = 18; 
+  constexpr int YP = 3
+  constexpr int YM = 6;
+  constexpr int ZP = 1;
+  constexpr int ZM = 2;
+
+  constexpr int XYPP = 12;
+  constexpr int XYMP = 21;
+  constexpr int XYPM = 15;
+  constexpr int XYMM = 24;
+  
+  constexpr int XZPP = 10;
+  constexpr int XZMP = 19;
+  constexpr int XZPM = 11;
+  constexpr int XZMM = 20;
+
+  constexpr int YZPP = 4;
+  constexpr int YZMP = 7;
+  constexpr int YZPM = 5;
+  constexpr int YZMM = 8;
+
+
+
 }
 
 spacetime::vector<cmplx> AIM::Farfield::make_propagation_table() const
