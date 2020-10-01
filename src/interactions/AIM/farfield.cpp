@@ -48,7 +48,7 @@ void AIM::Farfield::fill_source_table(const int step)
     for(auto expansion_idx = 0u; expansion_idx < expansion_table->shape()[1];
         ++expansion_idx) {
       const Expansions::Expansion &e =
-          (*expansion_table)[dot_idx][expansion_idx];
+          (*expansion_table)[dot_idx][0][expansion_idx];
       Eigen::Vector3i coord = grid->idx_to_coord(e.index);
 
       Eigen::Map<Eigen::Vector3cd> grid_field(
@@ -117,10 +117,10 @@ void AIM::Farfield::fill_results_table(const int step)
     }
 
     // then calculate FDTD (e.g. spatial derivative) field 
-    Eigen::Array3Xcd fld_stencil(27); 
+    std::vector<Eigen::Vector3cd> fld_stencil(27); 
     fld_stencil[0] = field;
 
-    for(auto obs_idx = 1u; obs_idx < 27; ++ obs_idx) { 
+    for(auto obs_idx = 1u; obs_idx < 27; ++obs_idx) { 
       fld_stencil[obs_idx] = Eigen::Vector3cd::Zero();
 
       for(auto expansion_idx = 0u; expansion_idx < expansion_table->shape()[2];
@@ -160,13 +160,13 @@ void AIM::Farfield::fill_results_table(const int step)
   }
 }
 
-Eigen::Vector3cd AIM::Farfield::FDTD_Del_Del( const Eigen::Array3Xcd stencil )
+Eigen::Vector3cd AIM::Farfield::FDTD_Del_Del( const std::vector<Eigen::Vector3cd> stencil )
 {
   constexpr int O = 0;
   
   constexpr int XP = 9;
   constexpr int XM = 18; 
-  constexpr int YP = 3
+  constexpr int YP = 3;
   constexpr int YM = 6;
   constexpr int ZP = 1;
   constexpr int ZM = 2;
@@ -189,15 +189,18 @@ Eigen::Vector3cd AIM::Farfield::FDTD_Del_Del( const Eigen::Array3Xcd stencil )
   std::vector<cmplx> D_XX(3);
   std::vector<cmplx> D_YY(3);
   std::vector<cmplx> D_ZZ(3);
+  std::vector<cmplx> D_XY(3);
+  std::vector<cmplx> D_XZ(3);
+  std::vector<cmplx> D_YZ(3);
 
   for(int i=0; i < 3; ++i){
-    D_XX[i] = stencil[XP][i] - 2.0*stencil[O][i] + stencil[XM][i];
-    D_YY[i] = stencil[YP][i] - 2.0*stencil[O][i] + stencil[YM][i];
-    D_ZZ[i] = stencil[ZP][i] - 2.0*stencil[O][i] + stencil[ZM][i];
+    D_XX[i] = (stencil[XP])[i] - 2.0*(stencil[O])[i] + (stencil[XM])[i];
+    D_YY[i] = (stencil[YP])[i] - 2.0*(stencil[O])[i] + (stencil[YM])[i];
+    D_ZZ[i] = (stencil[ZP])[i] - 2.0*(stencil[O])[i] + (stencil[ZM])[i];
 
-    D_XY[i] = stencil[XYPP][i] - stencil[XYMP][i] - stencil[XYPM][i] + stencil[XYMM][i];
-    D_XZ[i] = stencil[XZPP][i] - stencil[XZMP][i] - stencil[XZPM][i] + stencil[XZMM][i];
-    D_YZ[i] = stencil[YZPP][i] - stencil[YZMP][i] - stencil[YZPM][i] + stencil[YZMM][i];
+    D_XY[i] = (stencil[XYPP])[i] - (stencil[XYMP])[i] - (stencil[XYPM])[i] + (stencil[XYMM])[i];
+    D_XZ[i] = (stencil[XZPP])[i] - (stencil[XZMP])[i] - (stencil[XZPM])[i] + (stencil[XZMM])[i];
+    D_YZ[i] = (stencil[YZPP])[i] - (stencil[YZMP])[i] - (stencil[YZPM])[i] + (stencil[YZMM])[i];
   }
 
   cmplx E_X = D_XX[0] + D_XY[1] + D_XZ[2];

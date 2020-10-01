@@ -22,7 +22,7 @@ class InteractionBase {
   virtual const ResultArray &evaluate_present_field(const int) = 0;
   virtual ~InteractionBase(){};
 
-  virtual boost::multi_array<cmplx, 2> &coefficients() = 0;
+//  virtual boost::multi_array<cmplx, 2> &coefficients() = 0;
 //  boost::multi_array<cmplx, 2> coeffs;
  
  protected:

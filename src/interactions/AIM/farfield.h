@@ -30,7 +30,12 @@ class AIM::Farfield final : public AimBase {
 
     return results;
   }
- 
+
+  const ResultArray &evaluate_present_field(const int step) final
+  {
+    return results;
+  }
+
  private:
   std::array<int, 4> table_dimensions_;
 
@@ -47,7 +52,7 @@ class AIM::Farfield final : public AimBase {
   void propagate(const int);
   void fill_results_table(const int);
 
-  Eigen::Vector3cd FDTD_Del_Del( const Eigen::Array3Xcd )
+  Eigen::Vector3cd FDTD_Del_Del( const std::vector<Eigen::Vector3cd> );
   void fill_gmatrix_table(spacetime::vector<cmplx> &) const;
   TransformPair spatial_fft_plans();
 };

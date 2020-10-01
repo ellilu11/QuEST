@@ -9,6 +9,7 @@ AIM::Nearfield::Nearfield(
     std::shared_ptr<const Grid> grid,
     std::shared_ptr<const Expansions::ExpansionTable> expansion_table,
     Expansions::ExpansionFunction expansion_function,
+    Expansions::ExpansionFunction expansion_function_fdtd,
     Normalization::SpatialNorm normalization,
     std::shared_ptr<const std::vector<Grid::ipair_t>> interaction_pairs,
     const double omega)
@@ -20,6 +21,7 @@ AIM::Nearfield::Nearfield(
               grid,
               expansion_table,
               expansion_function,
+              expansion_function_fdtd,
               normalization),
       omega_{omega},
       interaction_pairs_{std::move(interaction_pairs)},
@@ -75,11 +77,11 @@ boost::multi_array<cmplx, 3> AIM::Nearfield::coefficient_table()
     const auto &pair = (*interaction_pairs_)[pair_idx];
     const auto &dot0 = (*dots)[pair.first], &dot1 = (*dots)[pair.second];
 
-    for(size_t i = 0; i < expansion_table->shape()[1]; ++i) {
-      const auto &e0 = (*expansion_table)[pair.first][i];
+    for(size_t i = 0; i < expansion_table->shape()[2]; ++i) {
+      const auto &e0 = (*expansion_table)[pair.first][0][i];
 
-      for(size_t j = 0; j < expansion_table->shape()[1]; ++j) {
-        const auto &e1 = (*expansion_table)[pair.second][j];
+      for(size_t j = 0; j < expansion_table->shape()[2]; ++j) {
+        const auto &e1 = (*expansion_table)[pair.second][0][j];
 
         if(e0.index == e1.index) continue;
 

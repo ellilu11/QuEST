@@ -65,7 +65,7 @@ int grid_sequence(const size_t n)
   return (1 - std::pow(-1, n) * (1 + 2 * n)) / 4;
 }
 
-Eigen::Vector3i idx_to_coord(const size_t idx, int dim)
+Eigen::Vector3i idx_to_coord(size_t idx, int dim)
 {
   int dimsq = pow(dim,2);
   const int x = idx / dimsq;
@@ -78,12 +78,12 @@ Eigen::Vector3i idx_to_coord(const size_t idx, int dim)
   return coord;
 }
 
-Eigen::Vector3i idx_to_delta(const size_t idx, int dim)
+Eigen::Vector3i idx_to_delta(size_t idx, int dim)
 {
   Eigen::Vector3i coord = idx_to_coord(idx, dim);
-  Eigen::Vector3i delta(grid_sequence(coord[0]), 
-                        grid_sequence(coord[1]),
-                        grid_sequence(coord[2]))
+  Eigen::Vector3i delta( grid_sequence(coord[0]), 
+                         grid_sequence(coord[1]),
+                         grid_sequence(coord[2]) );
 
   return delta;
 }

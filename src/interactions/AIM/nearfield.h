@@ -18,12 +18,18 @@ class AIM::Nearfield final : public AimBase {
             std::shared_ptr<const Grid>,
             std::shared_ptr<const Expansions::ExpansionTable>,
             Expansions::ExpansionFunction,
+            Expansions::ExpansionFunction,
             Normalization::SpatialNorm,
             std::shared_ptr<const std::vector<Grid::ipair_t>>,
             const double = 0);
   ~Nearfield() = default;
 
   const ResultArray &evaluate(const int) final;
+
+  const ResultArray &evaluate_present_field(const int step) final
+  {
+    return results;
+  }
 
  private:
   struct support_range_t {

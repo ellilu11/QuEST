@@ -17,8 +17,8 @@ double gaussian(const double);
 double skew_gaussian(const double, const double);
 
 int grid_sequence(const size_t);
-Eigen::Vector3i idx_to_coord(const size_t, int);
-Eigen::Vector3i idx_to_delta(const size_t, int);
+Eigen::Vector3i idx_to_coord(size_t, int);
+Eigen::Vector3i idx_to_delta(size_t, int);
 
 //size_t coord_to_idx(const Eigen::Vector3i &, int);
 //size_t inv_grid_sequence(const int);

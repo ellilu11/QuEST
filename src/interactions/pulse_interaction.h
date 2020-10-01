@@ -16,7 +16,7 @@ class PulseInteraction : public InteractionBase {
   {
     return evaluate(time_idx);
   }
-  boost::multi_array<cmplx, 2> &coefficients() final { return coeffs; }
+//  boost::multi_array<cmplx, 2> &coefficients() final { return coeffs; }
 
 //  const Eigen::MatrixXd &evaluateJ(const int, const int);
 

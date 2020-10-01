@@ -3,23 +3,25 @@
 
 AIM::Expansions::ExpansionTable
 AIM::Expansions::LeastSquaresExpansionSolver::get_expansions(
-    const int box_order, const Grid &grid, const std::vector<QuantumDot> &dots)
+    const int box_order, const double h, const Grid &grid, const std::vector<QuantumDot> &dots)
 {
-  return LeastSquaresExpansionSolver(box_order, grid).table(dots);
+  return LeastSquaresExpansionSolver(box_order, grid).table(dots, h);
 }
 
 AIM::Expansions::ExpansionTable
 AIM::Expansions::LeastSquaresExpansionSolver::table(
-    const std::vector<QuantumDot> &dots, double h) const
+    const std::vector<QuantumDot> &dots, const double h) const
 {
   using namespace enums;
   using DerivArray = Eigen::Array<double, NUM_DERIVS, Eigen::Dynamic>;
   
-  AIM::Expansions::ExpansionTable table(boost::extents[num_dots][27][num_pts]);
+  AIM::Expansions::ExpansionTable table(boost::extents[dots.size()][27][num_pts]);
 
   for(auto dot_idx = 0u; dot_idx < dots.size(); ++dot_idx) {
     for(auto obs_idx = 0u; obs_idx < 27; ++obs_idx) {
-      Eigen::Vector3i delta = idx_to_delta( obs_idx, 3 );
+      Eigen::Vector3i delta_i = idx_to_delta( obs_idx, 3 );
+//    How to cast Vector3i to Vector3d? (Splendid job on your documentation, Eigen team)
+      Eigen::Vector3d delta(delta_i[0], delta_i[1], delta_i[2]);
 
       const auto &pos = dots.at(dot_idx).position() + delta*h;
       Eigen::FullPivLU<Eigen::MatrixXd> lu(w_matrix(pos));
@@ -47,6 +49,7 @@ AIM::Expansions::LeastSquaresExpansionSolver::table(
         table[dot_idx][obs_idx][w].del = weights.block(D_X, w, 3, 1);
         table[dot_idx][obs_idx][w].del_sq = Eigen::Map<Eigen::Matrix3d>(&weights(D_XX, w));
       }
+    }
   }
 
   return table;

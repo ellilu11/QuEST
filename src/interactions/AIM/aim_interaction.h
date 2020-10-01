@@ -21,6 +21,7 @@ class AIM::Interaction final : public InteractionBase {
               const int border,
               const double c0,
               const double dt,
+              const double h,
               Expansions::ExpansionFunction expansion_function,
               Expansions::ExpansionFunction expansion_function_fdtd,
               Normalization::SpatialNorm normalization,
@@ -29,7 +30,7 @@ class AIM::Interaction final : public InteractionBase {
         grid{std::make_shared<Grid>(spacing, expansion_order, *dots)},
         expansion_table{std::make_shared<Expansions::ExpansionTable>(
             Expansions::LeastSquaresExpansionSolver::get_expansions(
-                expansion_order, *grid, *dots))},
+                expansion_order, h, *grid, *dots))},
         nearfield_pairs{std::make_shared<std::vector<Grid::ipair_t>>(
             grid->nearfield_point_pairs(border, *dots))},
 
@@ -52,6 +53,7 @@ class AIM::Interaction final : public InteractionBase {
            grid,
            expansion_table,
            nullptr,
+           nullptr,
            normalization,
            nearfield_pairs,
            omega),
@@ -71,7 +73,10 @@ class AIM::Interaction final : public InteractionBase {
     return results;
   }
 
-  // const ResultArray &evaluatefld(const int t);
+  const ResultArray &evaluate_present_field(const int t)
+  {
+    return results;
+  }
 
  private:
   std::shared_ptr<Grid> grid;

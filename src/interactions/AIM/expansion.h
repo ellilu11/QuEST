@@ -33,8 +33,8 @@ namespace AIM {
       Eigen::Matrix3d del_sq;
     };
 
-    using ExpansionTable = boost::multi_array<Expansion, 2>;
-    using ObssTable = boost::multi_array<Eigen::Vector3d, 2>;
+    using ExpansionTable = boost::multi_array<Expansion, 3>;
+    // using ObssTable = boost::multi_array<Eigen::Vector3d, 2>;
 
     class LeastSquaresExpansionSolver;
 
@@ -336,9 +336,10 @@ namespace AIM {
 class AIM::Expansions::LeastSquaresExpansionSolver {
  public:
   static ExpansionTable get_expansions(const int,
+                                       const double,
                                        const Grid &,
                                        const std::vector<QuantumDot> &);
-  ExpansionTable table(const std::vector<QuantumDot> &, double) const;
+  ExpansionTable table(const std::vector<QuantumDot> &, const double) const;
   Eigen::VectorXd q_vector(const std::array<int, 3> & = {{0, 0, 0}}) const;
   Eigen::MatrixXd w_matrix(const Eigen::Vector3d &) const;
 
@@ -347,7 +348,7 @@ class AIM::Expansions::LeastSquaresExpansionSolver {
       : box_order(box_order), 
         num_pts(std::pow(box_order + 1, 3)), 
         grid(grid){};
-  const int box_order, num_expand_pts, num_pts;
+  const int box_order, num_pts;
   const Grid &grid;
 };
 
