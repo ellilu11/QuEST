@@ -121,8 +121,12 @@ void AIM::Farfield::fill_results_table(const int step)
     fld_stencil[0] = field;
 
     for(auto obs_idx = 1u; obs_idx < 27; ++obs_idx) { 
-      fld_stencil[obs_idx] = Eigen::Vector3cd::Zero();
+      if ( obs_idx == 13 || obs_idx == 14 || obs_idx == 16 || obs_idx == 17 )
+        continue;
+      if ( obs_idx == 22 || obs_idx == 23 || obs_idx == 25 || obs_idx == 26 )
+        continue;
 
+      fld_stencil[obs_idx] = Eigen::Vector3cd::Zero();
       for(auto expansion_idx = 0u; expansion_idx < expansion_table->shape()[2];
           ++expansion_idx) {
         const Expansions::Expansion &e =
@@ -131,7 +135,9 @@ void AIM::Farfield::fill_results_table(const int step)
         fld_stencil[obs_idx] += 
           expansion_function_fdtd(
             obs_table_, {{step, coord(0), coord(1), coord(2)}}, e);
- 
+        // Issue:: field data here is taken from grid point nearest observer point! 
+        // Need to interpolate the field at the observer point
+
         /*Eigen::Array3Xi coords(27);
         std::vector<Expansions::Expansion> &e_array(27);
        
@@ -186,14 +192,16 @@ Eigen::Vector3cd AIM::Farfield::FDTD_Del_Del( const std::vector<Eigen::Vector3cd
   constexpr int YZPM = 5;
   constexpr int YZMM = 8;
 
-  std::vector<cmplx> D_XX(3);
-  std::vector<cmplx> D_YY(3);
-  std::vector<cmplx> D_ZZ(3);
-  std::vector<cmplx> D_XY(3);
-  std::vector<cmplx> D_XZ(3);
-  std::vector<cmplx> D_YZ(3);
+  Eigen::Vector3cd D_XX, D_YY, D_ZZ, D_XY, D_XZ, D_YZ;
+  D_XX = stencil[XP] - 2.0*stencil[O] + stencil[XM];
+  D_YY = stencil[YP] - 2.0*stencil[O] + stencil[YM];
+  D_ZZ = stencil[ZP] - 2.0*stencil[O] + stencil[ZM];
 
-  for(int i=0; i < 3; ++i){
+  D_XY = stencil[XYPP] - stencil[XYMP] - stencil[XYPM] + stencil[XYMM];
+  D_XZ = stencil[XZPP] - stencil[XZMP] - stencil[XZPM] + stencil[XZMM];
+  D_YZ = stencil[YZPP] - stencil[YZMP] - stencil[YZPM] + stencil[YZMM];
+ 
+/*  for(int i=0; i < 3; ++i){
     D_XX[i] = (stencil[XP])[i] - 2.0*(stencil[O])[i] + (stencil[XM])[i];
     D_YY[i] = (stencil[YP])[i] - 2.0*(stencil[O])[i] + (stencil[YM])[i];
     D_ZZ[i] = (stencil[ZP])[i] - 2.0*(stencil[O])[i] + (stencil[ZM])[i];
@@ -202,7 +210,7 @@ Eigen::Vector3cd AIM::Farfield::FDTD_Del_Del( const std::vector<Eigen::Vector3cd
     D_XZ[i] = (stencil[XZPP])[i] - (stencil[XZMP])[i] - (stencil[XZPM])[i] + (stencil[XZMM])[i];
     D_YZ[i] = (stencil[YZPP])[i] - (stencil[YZMP])[i] - (stencil[YZPM])[i] + (stencil[YZMM])[i];
   }
-
+*/
   cmplx E_X = D_XX[0] + D_XY[1] + D_XZ[2];
   cmplx E_Y = D_XY[0] + D_YY[1] + D_YZ[2];
   cmplx E_Z = D_XZ[0] + D_YZ[1] + D_ZZ[2];

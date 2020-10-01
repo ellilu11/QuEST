@@ -161,6 +161,23 @@ namespace AIM {
       double c;
     };
 
+    class EFIE_Retardation : public RetardationBase {
+     public:
+      EFIE_Retardation(int history_length, double c) 
+        : RetardationBase(history_length), c(c){};
+      Eigen::Vector3cd operator()(const spacetime::vector3d<cmplx> &obs,
+                                  const std::array<int, 4> &coord,
+                                  const Expansions::Expansion &e)
+      {
+        Eigen::Map<const Eigen::Vector3cd> field(
+            &obs[wrap_index(coord[0])][coord[1]][coord[2]][coord[3]][0]);
+        return std::pow(c,2) * e.d0 * field;
+      }
+
+     private:
+      double c;
+    };
+
     class EFIE_TimeDeriv2 : public RetardationBase {
      public:
       EFIE_TimeDeriv2(int history_length, double c, double dt)
@@ -193,24 +210,6 @@ namespace AIM {
       std::array<double, 6> dt2_coefs;
       double c;
     };
-
-    class EFIE_Retardation : public RetardationBase {
-     public:
-      EFIE_Retardation(int history_length, double c) 
-        : RetardationBase(history_length), c(c){};
-      Eigen::Vector3cd operator()(const spacetime::vector3d<cmplx> &obs,
-                                  const std::array<int, 4> &coord,
-                                  const Expansions::Expansion &e)
-      {
-        Eigen::Map<const Eigen::Vector3cd> field(
-            &obs[wrap_index(coord[0])][coord[1]][coord[2]][coord[3]][0]);
-        return std::pow(c,2) * e.d0 * field;
-      }
-
-     private:
-      double c;
-    };
-
 
     /*class EFIE_FDTD : public RetardationBase {
      public:
