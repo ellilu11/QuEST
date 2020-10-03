@@ -16,6 +16,7 @@ namespace AIM {
             const int interp_order,
             const double c0,
             const double dt,
+            const double h,
             std::shared_ptr<const Grid> grid,
             std::shared_ptr<const Expansions::ExpansionTable> expansion_table,
             Expansions::ExpansionFunction expansion_function,
@@ -26,7 +27,8 @@ namespace AIM {
           expansion_table(std::move(expansion_table)),
           expansion_function(std::move(expansion_function)),
           expansion_function_fdtd(std::move(expansion_function_fdtd)),
-          normalization(std::move(normalization))
+          normalization(std::move(normalization)),
+          h_(h)
     {
     }
 
@@ -36,6 +38,9 @@ namespace AIM {
     Expansions::ExpansionFunction expansion_function;
     Expansions::ExpansionFunction expansion_function_fdtd;
     Normalization::SpatialNorm normalization;
+ 
+    const Eigen::Vector3cd FDTD_Del_Del( const std::vector<Eigen::Vector3cd> );
+    const double h_;
   };
 }
 

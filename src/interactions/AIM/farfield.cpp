@@ -6,6 +6,7 @@ AIM::Farfield::Farfield(
     const int interp_order,
     const double c0,
     const double dt,
+    const double h,
     std::shared_ptr<const Grid> grid,
     std::shared_ptr<const Expansions::ExpansionTable> expansion_table,
     Expansions::ExpansionFunction expansion_function,
@@ -16,6 +17,7 @@ AIM::Farfield::Farfield(
               interp_order,
               c0,
               dt,
+              h,
               grid,
               expansion_table,
               expansion_function,
@@ -135,8 +137,6 @@ void AIM::Farfield::fill_results_table(const int step)
         fld_stencil[obs_idx] += 
           expansion_function_fdtd(
             obs_table_, {{step, coord(0), coord(1), coord(2)}}, e);
-        // Issue:: field data here is taken from grid point nearest observer point! 
-        // Need to interpolate the field at the observer point
 
         /*Eigen::Array3Xi coords(27);
         std::vector<Expansions::Expansion> &e_array(27);
@@ -166,7 +166,7 @@ void AIM::Farfield::fill_results_table(const int step)
   }
 }
 
-Eigen::Vector3cd AIM::Farfield::FDTD_Del_Del( const std::vector<Eigen::Vector3cd> stencil )
+/*Eigen::Vector3cd AIM::Farfield::FDTD_Del_Del( const std::vector<Eigen::Vector3cd> stencil )
 {
   constexpr int O = 0;
   
@@ -201,7 +201,7 @@ Eigen::Vector3cd AIM::Farfield::FDTD_Del_Del( const std::vector<Eigen::Vector3cd
   D_XZ = stencil[XZPP] - stencil[XZMP] - stencil[XZPM] + stencil[XZMM];
   D_YZ = stencil[YZPP] - stencil[YZMP] - stencil[YZPM] + stencil[YZMM];
  
-/*  for(int i=0; i < 3; ++i){
+  for(int i=0; i < 3; ++i){
     D_XX[i] = (stencil[XP])[i] - 2.0*(stencil[O])[i] + (stencil[XM])[i];
     D_YY[i] = (stencil[YP])[i] - 2.0*(stencil[O])[i] + (stencil[YM])[i];
     D_ZZ[i] = (stencil[ZP])[i] - 2.0*(stencil[O])[i] + (stencil[ZM])[i];
@@ -210,15 +210,15 @@ Eigen::Vector3cd AIM::Farfield::FDTD_Del_Del( const std::vector<Eigen::Vector3cd
     D_XZ[i] = (stencil[XZPP])[i] - (stencil[XZMP])[i] - (stencil[XZPM])[i] + (stencil[XZMM])[i];
     D_YZ[i] = (stencil[YZPP])[i] - (stencil[YZMP])[i] - (stencil[YZPM])[i] + (stencil[YZMM])[i];
   }
-*/
-  cmplx E_X = D_XX[0] + D_XY[1] + D_XZ[2];
-  cmplx E_Y = D_XY[0] + D_YY[1] + D_YZ[2];
-  cmplx E_Z = D_XZ[0] + D_YZ[1] + D_ZZ[2];
+
+  cmplx E_X = ( D_XX[0] + D_XY[1] + D_XZ[2] ) / pow(h_, 2);
+  cmplx E_Y = ( D_XY[0] + D_YY[1] + D_YZ[2] ) / pow(h_, 2);
+  cmplx E_Z = ( D_XZ[0] + D_YZ[1] + D_ZZ[2] ) / pow(h_, 2);
 
   Eigen::Vector3cd field(E_X, E_Y, E_Z);
 
   return field;
-}
+}*/
 
 spacetime::vector<cmplx> AIM::Farfield::make_propagation_table() const
 {

@@ -19,9 +19,9 @@ AIM::Expansions::LeastSquaresExpansionSolver::table(
 
   for(auto dot_idx = 0u; dot_idx < dots.size(); ++dot_idx) {
     for(auto obs_idx = 0u; obs_idx < 27; ++obs_idx) {
-      Eigen::Vector3i delta_i = idx_to_delta( obs_idx, 3 );
+      Eigen::Vector3d delta = idx_to_delta(obs_idx, 3).array().cast<double>();
 //    How to cast Vector3i to Vector3d?
-      Eigen::Vector3d delta(delta_i[0], delta_i[1], delta_i[2]);
+//      Eigen::Vector3d delta(delta_i[0], delta_i[1], delta_i[2]);
 
       const auto &pos = dots.at(dot_idx).position() + delta*h;
       Eigen::FullPivLU<Eigen::MatrixXd> lu(w_matrix(pos));

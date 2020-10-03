@@ -15,6 +15,7 @@ class AIM::Nearfield final : public AimBase {
             const int,
             const double,
             const double,
+            const double,
             std::shared_ptr<const Grid>,
             std::shared_ptr<const Expansions::ExpansionTable>,
             Expansions::ExpansionFunction,
@@ -40,6 +41,7 @@ class AIM::Nearfield final : public AimBase {
   std::shared_ptr<const std::vector<Grid::ipair_t>> interaction_pairs_;
   std::array<int, 3> shape_;
   std::vector<support_range_t> support_;
+  std::vector<int> floor_delays;
   boost::multi_array<cmplx, 3> coefficients_;
 
   boost::multi_array<cmplx, 3> coefficient_table();
