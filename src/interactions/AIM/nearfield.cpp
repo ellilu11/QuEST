@@ -43,6 +43,7 @@ const InteractionBase::ResultArray &AIM::Nearfield::evaluate(const int time_idx)
 {
   results.setZero();
   constexpr int RHO_01 = 1;
+  cmplx rho0, rho1;
 
   for(int pair_idx = 0; pair_idx < shape_[0]; ++pair_idx) {
     const auto &pair = (*interaction_pairs_)[pair_idx];
@@ -51,11 +52,12 @@ const InteractionBase::ResultArray &AIM::Nearfield::evaluate(const int time_idx)
       const int s = std::max(
           time_idx - t, -history->window);
 
-      results[pair.first] += (history->get_value(pair.second, s, 0))[RHO_01] *
-                             coefficients_[pair_idx][t][0];
+      rho1 = (history->get_value(pair.second, s, 0))[RHO_01];
+      rho0 = (history->get_value(pair.first, s, 0))[RHO_01];
 
-      results[pair.second] += (history->get_value(pair.first, s, 0))[RHO_01] *
-                              coefficients_[pair_idx][t][1];
+      results[pair.first] += 2.0 * std::real( rho1 * coefficients_[pair_idx][t][0] );
+      results[pair.second] += 2.0 * std::real( rho0 * coefficients_[pair_idx][t][1] );
+    
     }
   }
 
@@ -93,15 +95,15 @@ boost::multi_array<cmplx, 3> AIM::Nearfield::coefficient_table()
         // == Retardation quantities ==
 
         const double arg = dr.norm() / (c0 * dt);
-        const auto split_arg = split_double(arg);
-        floor_delays[pair_idx] = split_arg.first;
+        const auto delay = split_double(arg);
+        floor_delays[pair_idx] = delay.first;
 
         support_[pair_idx].begin =
-            std::min(support_[pair_idx].begin, split_arg.first);
+            std::min(support_[pair_idx].begin, delay.first);
         support_[pair_idx].end = std::max(
-            support_[pair_idx].end, split_arg.first + lagrange.order() + 1);
+            support_[pair_idx].end, delay.first + lagrange.order() + 1);
 
-        lagrange.evaluate_derivative_table_at_x(split_arg.second);
+        lagrange.evaluate_derivative_table_at_x(delay.second);
 
         // == Expansion quantities ==
 
@@ -115,7 +117,7 @@ boost::multi_array<cmplx, 3> AIM::Nearfield::coefficient_table()
                 dot1.dipole().dot(e1.del_sq * e0.d0 * dot0.dipole())};
 
         for(int poly = 0; poly < lagrange.order() + 1; ++poly) {
-          const int convolution_idx = split_arg.first + poly;
+          const int convolution_idx = delay.first + poly;
           const cmplx time =
               ( omega_ ?
                 (lagrange.evaluations[2][poly] +

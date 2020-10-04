@@ -162,7 +162,7 @@ void AIM::Farfield::fill_results_table(const int step)
     Eigen::Vector3cd deldel_field = FDTD_Del_Del( fld_stencil ); 
   
     // finally sum fields and calculate Rabi freq
-    results(dot_idx) += (field+deldel_field).dot((*dots)[dot_idx].dipole());
+    results(dot_idx) += 2.0 * std::real( (field+deldel_field).dot((*dots)[dot_idx].dipole()) );
   }
 }
 

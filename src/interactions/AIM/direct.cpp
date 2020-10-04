@@ -21,6 +21,8 @@ const InteractionBase::ResultArray &AIM::DirectInteraction::evaluate(
     const int time_idx)
 {
   results.setZero();
+  constexpr int RHO_01 = 1;
+  cmplx rho0, rho1;
 
   for(int pair_idx = 0; pair_idx < shape_[0]; ++pair_idx) {
     const auto &pair = (*interaction_pairs_)[pair_idx];
@@ -29,12 +31,11 @@ const InteractionBase::ResultArray &AIM::DirectInteraction::evaluate(
       const int s =
           std::max(time_idx - floor_delays_[pair_idx] - i, -history->window);
 
-      constexpr int RHO_01 = 1;
-
-      results[pair.first] += (history->get_value(pair.second, s, 0))[RHO_01] *
-                             coefficients_[pair_idx][i];
-      results[pair.second] += (history->get_value(pair.first, s, 0))[RHO_01] *
-                              coefficients_[pair_idx][i];
+      rho1 = (history->get_value(pair.second, s, 0))[RHO_01];
+      rho0 = (history->get_value(pair.first, s, 0))[RHO_01];
+      
+      results[pair.first] += 2.0 * std::real( rho1 * coefficients_[pair_idx][i] );
+      results[pair.second] += 2.0 * std::real( rho0 * coefficients_[pair_idx][i] );
     }
   }
 
