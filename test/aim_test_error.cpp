@@ -102,20 +102,20 @@ int main(int argc, char *argv[]){
     const double h = 0.5*ds;
 
     std::shared_ptr<InteractionBase> pairwise_aim;
-    //if ( fdtd )
+    if ( fdtd )
       pairwise_aim = std::make_shared<AIM::Interaction>(
         dots, history, propagator, dsvec, interp, expansion, border, c0, dt, h,
         AIM::Expansions::EFIE_TimeDeriv2(transit_steps, c0, dt), 
         AIM::Expansions::EFIE_Retardation(transit_steps, c0),
         AIM::Normalization::Laplace(prop_constant)
         );
-    /*else
+    else
       pairwise_aim = std::make_shared<AIM::Interaction>(
         dots, history, propagator, dsvec, interp, expansion, border, c0, dt, h,
         AIM::Expansions::EFIE(transit_steps, c0, dt), 
-        NULL,
+        AIM::Expansions::Zero(transit_steps),
         AIM::Normalization::Laplace(prop_constant)
-        );*/
+        );
  
     std::cout << "  AIM expansion order: " << expansion << std::endl;
     std::cout << "  ds/lambda: " << ds/lambda << std::endl;

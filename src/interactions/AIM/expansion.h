@@ -53,6 +53,19 @@ namespace AIM {
       int wrap_index(int t) const { return t % history_length; };
     };
 
+    class Zero : public RetardationBase {
+     public:
+      Zero(int history_length) : RetardationBase(history_length){};
+      Eigen::Vector3cd operator()(const spacetime::vector3d<cmplx> &obs,
+                                  const std::array<int, 4> &coord,
+                                  const Expansions::Expansion &e)
+      {
+        Eigen::Map<const Eigen::Vector3cd> field(
+            &obs[wrap_index(coord[0])][coord[1]][coord[2]][coord[3]][0]);
+        return 0.0 * field;
+      }
+    };
+
     class Retardation : public RetardationBase {
      public:
       Retardation(int history_length) : RetardationBase(history_length){};
