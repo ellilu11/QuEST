@@ -14,13 +14,20 @@ AIM::Grid::Grid(const Eigen::Array3d &spacing,
 
 AIM::Grid::Grid(const Eigen::Array3d &spacing,
                 const int expansion_order,
+                const double h,
                 DotVector &dots)
     : spacing(spacing),
       expansion_order(expansion_order),
+      h_int(std::ceil(h/spacing[0])), // change this later!!
       bounds(calculate_bounds(dots)),
       dimensions(bounds.col(1) - bounds.col(0) + 1),
       num_gridpoints(dimensions.prod())
 {
+
+//  std::cout << bounds.col(0) << std::endl;
+//  std::cout << bounds.col(1) << std::endl;
+
+//  std::cout << h_int << std::endl;
   sort_points_on_boxidx(dots);
 }
 
@@ -37,8 +44,8 @@ AIM::Grid::BoundsArray AIM::Grid::calculate_bounds(const DotVector &dots) const
     b.col(1) = grid_coord.array().max(b.col(1));
   }
 
-  b.col(0) -= expansion_order / 2;
-  b.col(1) += (expansion_order + 1) / 2;
+  b.col(0) -= expansion_order / 2 + 1;
+  b.col(1) += (expansion_order + 1) / 2 + 1;
 
   return b;
 }
@@ -49,7 +56,9 @@ std::array<int, 4> AIM::Grid::circulant_shape(const double c,
 {
   std::array<int, 4> dims;
   dims[0] = max_transit_steps(c, dt) + pad;
-  for(int i = 1; i < 4; ++i) dims[i] = 2 * dimensions(i - 1);
+  for(int i = 1; i < 4; ++i) {
+    dims[i] = 2 * dimensions(i - 1);
+  }
 
   return dims;
 }
@@ -143,8 +152,8 @@ std::vector<AIM::Grid::ipair_t> AIM::Grid::nearfield_point_pairs(
       for(auto dot2 = begin2; dot2 != end2; ++dot2) {
         auto idx2{std::distance(dots.begin(), dot2)};
 
-        if(idx1 <= idx2) particle_pairs.emplace_back(idx1, idx2);
-        // if(idx1 <= idx2)
+        if(idx1 < idx2) particle_pairs.emplace_back(idx1, idx2);
+        // if(idx1 <= idx2) counts self "pairs" as nearfield pairs!
       }
     }
   }

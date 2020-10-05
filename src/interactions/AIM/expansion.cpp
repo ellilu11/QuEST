@@ -17,13 +17,19 @@ AIM::Expansions::LeastSquaresExpansionSolver::table(
   
   AIM::Expansions::ExpansionTable table(boost::extents[dots.size()][27][num_pts]);
 
+/*  for(auto i = 0u; i < 27; ++i)
+    std::cout << i << " " 
+              << (idx_to_delta(i, 3))[0] << " " 
+              << (idx_to_delta(i, 3))[1] << " " 
+              << (idx_to_delta(i, 3))[2] << std::endl;
+*/
+
   for(auto dot_idx = 0u; dot_idx < dots.size(); ++dot_idx) {
     for(auto obs_idx = 0u; obs_idx < 27; ++obs_idx) {
       Eigen::Vector3d delta = idx_to_delta(obs_idx, 3).array().cast<double>();
-//    How to cast Vector3i to Vector3d?
-//      Eigen::Vector3d delta(delta_i[0], delta_i[1], delta_i[2]);
 
       const auto &pos = dots.at(dot_idx).position() + delta*h;
+//      std::cout << pos << std::endl;
       Eigen::FullPivLU<Eigen::MatrixXd> lu(w_matrix(pos));
 
       DerivArray weights(NUM_DERIVS, num_pts);
@@ -41,6 +47,7 @@ AIM::Expansions::LeastSquaresExpansionSolver::table(
       weights.row(D_ZZ) = lu.solve(q_vector({{0, 0, 2}}));
 
       const auto indices = grid.expansion_indices(pos);
+//      std::cout << dot_idx << " " << obs_idx << " " << indices << std::endl;
 
       for(auto w = 0; w < num_pts; ++w) {
         table[dot_idx][obs_idx][w].index = indices[w];

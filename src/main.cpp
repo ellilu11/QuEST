@@ -62,6 +62,7 @@ int main(int argc, char *argv[])
 
     string idstr(argv[5]);
     auto qds = make_shared<DotVector>(import_dots("./dots/dots"+idstr+".cfg"));
+//    cout << (*qds).size() << std::endl;
     qds->resize(num_src);
     auto rhs_funcs = rhs_functions(*qds, omega, beta, rotating);
 
@@ -88,7 +89,7 @@ int main(int argc, char *argv[])
     std::shared_ptr<InteractionBase> pairwise;
 
     if (solve_type) {
-      AIM::Grid grid(grid_spacing, expansion_order, *qds); 
+      AIM::Grid grid(grid_spacing, expansion_order, h, *qds); 
       const int transit_steps = grid.max_transit_steps(c0, dt) + 
                                   interpolation_order;
 

@@ -71,7 +71,7 @@ boost::multi_array<cmplx, 3> AIM::Nearfield::coefficient_table()
             coefficients.data() + coefficients.num_elements(), cmplx(0, 0));
 
   Interpolation::DerivFive lagrange(dt);
-  std::cout << "# Nearfield pairs: " << shape_[0] << std::endl;
+  std::cout << "    # Nearfield pairs: " << shape_[0] << std::endl;
   
   for(int pair_idx = 0; pair_idx < shape_[0]; ++pair_idx) {
 
@@ -126,24 +126,27 @@ boost::multi_array<cmplx, 3> AIM::Nearfield::coefficient_table()
                 lagrange.evaluations[2][poly] ) *
               innerprod * normalization(dr);
 
-          if ( !expansion_function_fdtd ) {
             coefficients[pair_idx][convolution_idx][0] +=
-                -time + dyad[0] * lagrange.evaluations[0][poly];
+                -time + (h_ ? 0.0 : dyad[0] * lagrange.evaluations[0][poly]);
 
             if(pair.first == pair.second) continue;
 
             coefficients[pair_idx][convolution_idx][1] +=
-                -time + dyad[1] * lagrange.evaluations[0][poly];
-          }
+                -time + (h_ ? 0.0 : dyad[1] * lagrange.evaluations[0][poly]);
         }
       } // j
     } // i
+
+    for(int t = support_[pair_idx].begin; t < support_[pair_idx].end; ++t)
+      std::cout << pair_idx << " " << t << " " 
+                << coefficients_[pair_idx][t][0] << " " 
+                << coefficients_[pair_idx][t][1] << std::endl; 
 
     // FDTD del_sq
 
     // First dot0 (src) -> dot1 (obs)
     for(size_t i = 0; i < expansion_table->shape()[2]; ++i) { // src expansion pt
-      if ( !expansion_function_fdtd ) break;
+      if ( h_ == 0 ) break;
       const auto &e0 = (*expansion_table)[pair.first][0][i];
       std::vector<Eigen::Vector3cd> fld_stencil(27);
 
@@ -169,7 +172,7 @@ boost::multi_array<cmplx, 3> AIM::Nearfield::coefficient_table()
 
     // Then dot1 (src) -> dot0 (obs)
     for(size_t i = 0; i < expansion_table->shape()[2]; ++i) { // src expansion pt
-      if ( !expansion_function_fdtd ) break;
+      if ( h_ == 0 ) break;
       const auto &e1 = (*expansion_table)[pair.second][0][i];
       std::vector<Eigen::Vector3cd> fld_stencil(27);
 

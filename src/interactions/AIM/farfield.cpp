@@ -29,6 +29,10 @@ AIM::Farfield::Farfield(
       obs_table_{spacetime::make_vector3d<cmplx>(table_dimensions_)},
       spatial_vector_transforms_{spatial_fft_plans()}
 {
+/*  std::cout << table_dimensions_[1] << " " 
+            << table_dimensions_[2] << " "
+            << table_dimensions_[3] << std::endl;
+*/
   auto clear = [](auto &table) {
     std::fill(table.data(), table.data() + table.num_elements(), cmplx(0, 0));
   };
@@ -123,6 +127,7 @@ void AIM::Farfield::fill_results_table(const int step)
     fld_stencil[0] = field;
 
     for(auto obs_idx = 1u; obs_idx < 27; ++obs_idx) { 
+      if ( h_ == 0 ) break;
       if ( obs_idx == 13 || obs_idx == 14 || obs_idx == 16 || obs_idx == 17 )
         continue;
       if ( obs_idx == 22 || obs_idx == 23 || obs_idx == 25 || obs_idx == 26 )
@@ -159,10 +164,11 @@ void AIM::Farfield::fill_results_table(const int step)
     }
 
     // use fields at stencil points to calculate FDTD
-    Eigen::Vector3cd deldel_field = FDTD_Del_Del( fld_stencil ); 
+    Eigen::Vector3cd deldel_field = h_ ? FDTD_Del_Del( fld_stencil ) : Eigen::Vector3cd::Zero(); 
   
     // finally sum fields and calculate Rabi freq
     results(dot_idx) += 2.0 * std::real( (field+deldel_field).dot((*dots)[dot_idx].dipole()) );
+    // results(dot_idx) += 2.0 * std::real( field.dot((*dots)[dot_idx].dipole()) );
   }
 }
 
@@ -222,6 +228,7 @@ void AIM::Farfield::fill_results_table(const int step)
 
 spacetime::vector<cmplx> AIM::Farfield::make_propagation_table() const
 {
+
   spacetime::vector<cmplx> g_mat(table_dimensions_);
 
   const int num_gridpts =
@@ -238,7 +245,7 @@ spacetime::vector<cmplx> AIM::Farfield::make_propagation_table() const
 
   // Transform the circulant vectors into their equivalently-diagonal
   // representation. Buckle up.
-
+  
   fftw_execute(circulant_plan.forward);
 
   // This accounts for FFTW's *un*normalized transform -- it takes the least

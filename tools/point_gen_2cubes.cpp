@@ -13,7 +13,7 @@
 using std::cout;
 using std::endl;
 
-typedef std::array<double, 12> Qdot;
+typedef std::array<double, 9> Qdot;
 
 std::ostream &operator<<(std::ostream &out, const Qdot &qd)
 {
@@ -78,7 +78,7 @@ int main(int argc, char *argv[])
       ydist(-ylen / 2 + y0, ylen / 2 + y0), zdist(-zlen / 2 + z0, zlen / 2 + z0);
   for(int i = 0; i < num_dots/2; ++i) {
     Qdot qd = {{xdist(generator), ydist(generator), zdist(generator), omega,
-                T1, T2, dipx, dipy, dipz, 0.0, 0.0, 0.0}};
+                T1, T2, dipx, dipy, dipz}};
      dots.push_back(qd);
   }
 
@@ -89,7 +89,7 @@ int main(int argc, char *argv[])
       ydist1(-ylen / 2 + y1, ylen / 2 + y1), zdist1(-zlen / 2 + z1, zlen / 2 + z1);
   for(int i = 0; i < num_dots/2; ++i) {
    Qdot qd1 = {{xdist1(generator1), ydist1(generator1), zdist1(generator1), omega,
-                T1, T2, dipx, dipy, dipz, 0.0, 0.0, 0.0}};
+                T1, T2, dipx, dipy, dipz}};
     dots.push_back(qd1);
   } 
 
@@ -100,7 +100,7 @@ int main(int argc, char *argv[])
 
   min_dist(dots);
 
-  std::ofstream fd("dots.cfg");
+  std::ofstream fd("dots_aimtest.cfg");
   fd << std::setprecision(12);
 
   for(const auto &d : dots) {

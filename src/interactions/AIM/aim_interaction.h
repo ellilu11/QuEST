@@ -27,7 +27,7 @@ class AIM::Interaction final : public InteractionBase {
               Normalization::SpatialNorm normalization,
               const double omega = 0)
       : InteractionBase(dots, dt),
-        grid{std::make_shared<Grid>(spacing, expansion_order, *dots)},
+        grid{std::make_shared<Grid>(spacing, expansion_order, h, *dots)},
         expansion_table{std::make_shared<Expansions::ExpansionTable>(
             Expansions::LeastSquaresExpansionSolver::get_expansions(
                 expansion_order, h, *grid, *dots))},
@@ -70,6 +70,8 @@ class AIM::Interaction final : public InteractionBase {
   const ResultArray &evaluate(const int t)
   {
     // I DON'T KNOW WHY THAT NEEDS A CONJUGATE!!!
+    //results = 
+    //     -nf.evaluate(t) + direct.evaluate(t);
     results = 
          (ff.evaluate(t).conjugate() - nf.evaluate(t)) + direct.evaluate(t);
     return results;
