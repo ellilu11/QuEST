@@ -41,7 +41,7 @@ class AIM::Nearfield final : public AimBase {
   std::shared_ptr<const std::vector<Grid::ipair_t>> interaction_pairs_;
   std::array<int, 3> shape_;
   std::vector<support_range_t> support_;
-  std::vector<int> floor_delays;
+  boost::multi_array<std::pair<int,int>, 3> delays_;
   boost::multi_array<cmplx, 3> coefficients_;
 
   boost::multi_array<cmplx, 3> coefficient_table();

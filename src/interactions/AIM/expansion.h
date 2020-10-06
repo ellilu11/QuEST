@@ -166,6 +166,10 @@ namespace AIM {
             &obs[wrap_index(coord[0])][coord[1]][coord[2]][coord[3]][0]);
         Eigen::Vector3cd del_sq = e.del_sq * field;
 
+        //if ( coord[0] == 50 )
+          //  std::cout << "e.d0: " << e.d0 << std::endl << " e.del_sq: " << e.del_sq << std::endl;
+          //  std::cout << -dt2.transpose() << " " << std::pow(c, 2) * del_sq.transpose() << std::endl;
+
         return -dt2 + std::pow(c, 2) * del_sq;
       }
 

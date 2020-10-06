@@ -44,7 +44,7 @@ AIM::Grid::BoundsArray AIM::Grid::calculate_bounds(const DotVector &dots) const
     b.col(1) = grid_coord.array().max(b.col(1));
   }
 
-  b.col(0) -= expansion_order / 2 + 1;
+  b.col(0) -= expansion_order / 2 + 1; // also change this later!!
   b.col(1) += (expansion_order + 1) / 2 + 1;
 
   return b;
@@ -152,7 +152,7 @@ std::vector<AIM::Grid::ipair_t> AIM::Grid::nearfield_point_pairs(
       for(auto dot2 = begin2; dot2 != end2; ++dot2) {
         auto idx2{std::distance(dots.begin(), dot2)};
 
-        if(idx1 < idx2) particle_pairs.emplace_back(idx1, idx2);
+        if(idx1 <= idx2) particle_pairs.emplace_back(idx1, idx2);
         // if(idx1 <= idx2) counts self "pairs" as nearfield pairs!
       }
     }

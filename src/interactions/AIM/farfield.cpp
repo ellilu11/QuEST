@@ -51,7 +51,7 @@ void AIM::Farfield::fill_source_table(const int step)
   std::fill(p, p + 3 * 8 * grid->size(), cmplx(0, 0));
 
   for(auto dot_idx = 0u; dot_idx < expansion_table->shape()[0]; ++dot_idx) {
-    for(auto expansion_idx = 0u; expansion_idx < expansion_table->shape()[1];
+    for(auto expansion_idx = 0u; expansion_idx < expansion_table->shape()[2];
         ++expansion_idx) {
       const Expansions::Expansion &e =
           (*expansion_table)[dot_idx][0][expansion_idx];
@@ -67,8 +67,14 @@ void AIM::Farfield::fill_source_table(const int step)
       Eigen::Vector3cd source_field = e.d0 * (*dots)[dot_idx].dipole() *
                                       (history->get_value(dot_idx, step, 0))[RHO_01];
       grid_field += source_field;
+
+      /*if ( step == 50 )
+        std::cout << dot_idx << " " << expansion_idx << " " <<
+          coord.transpose() << " " << grid_field.transpose() << std::endl;*/
     }
   }
+  //if ( step == 50 )
+  //  std::cout << std::endl;
 }
 
 void AIM::Farfield::propagate(const int step)
@@ -120,8 +126,15 @@ void AIM::Farfield::fill_results_table(const int step)
       // Don't use a _wrapped_ step here; the expansion_function needs knowledge
       // of where it's being called in the complete timeline to accommodate
       // boundary conditions
+      /*if ( step == 50 ) {
+        int wrapped_step = step % table_dimensions_[0];
+        Eigen::Map<Eigen::Vector3cd> obs_vec(&obs_table_[wrapped_step][coord(0)][coord(1)][coord(2)][0], 1);
+      
+        std::cout << dot_idx << " " << expansion_idx << " " <<
+            coord.transpose() << " " << obs_vec.transpose() << std::endl;
+      }*/
     }
-
+    
     // then calculate FDTD (e.g. spatial derivative) field 
     std::vector<Eigen::Vector3cd> fld_stencil(27); 
     fld_stencil[0] = field;
@@ -143,70 +156,22 @@ void AIM::Farfield::fill_results_table(const int step)
           expansion_function_fdtd(
             obs_table_, {{step, coord(0), coord(1), coord(2)}}, e);
 
-        /*Eigen::Array3Xi coords(27);
-        std::vector<Expansions::Expansion> &e_array(27);
-       
-        Eigen::Vector3i origin = idx_to_delta(expansion_idx,box_order); // pass box_order to this function!
-
-        constexpr int fd_idx = 0;
-        for (int nx = 0; nx < 3; ++nx) {
-          for (int ny = 0; ny < 3; ++ny) {
-            for (int nz = 0; nz < 3; ++nz) {
-              Eigen::Vector3i delta = Eigen::Vector3i(grid_sequence(nx),grid_sequence(ny),grid_sequence(nz));
-              coords(fd_idx) = coord + delta;
-              Eigen::Vector3i shifted_delta = origin + delta;
-              e_array[fd_idx++] = (*fdtd_expansion_table)[dot_idx][delta_to_idx(shifted_delta,box_order+2)];
-
-            }
-          }
-        }*/
       }
     }
 
     // use fields at stencil points to calculate FDTD
     Eigen::Vector3cd deldel_field = h_ ? FDTD_Del_Del( fld_stencil ) : Eigen::Vector3cd::Zero(); 
-  
+ 
+    if ( step == 50 )
+      std::cout << dot_idx << " " << field.transpose() << " " << deldel_field.transpose() << std::endl;
+
     // finally sum fields and calculate Rabi freq
     results(dot_idx) += 2.0 * std::real( (field+deldel_field).dot((*dots)[dot_idx].dipole()) );
     // results(dot_idx) += 2.0 * std::real( field.dot((*dots)[dot_idx].dipole()) );
   }
 }
 
-/*Eigen::Vector3cd AIM::Farfield::FDTD_Del_Del( const std::vector<Eigen::Vector3cd> stencil )
-{
-  constexpr int O = 0;
-  
-  constexpr int XP = 9;
-  constexpr int XM = 18; 
-  constexpr int YP = 3;
-  constexpr int YM = 6;
-  constexpr int ZP = 1;
-  constexpr int ZM = 2;
-
-  constexpr int XYPP = 12;
-  constexpr int XYMP = 21;
-  constexpr int XYPM = 15;
-  constexpr int XYMM = 24;
-  
-  constexpr int XZPP = 10;
-  constexpr int XZMP = 19;
-  constexpr int XZPM = 11;
-  constexpr int XZMM = 20;
-
-  constexpr int YZPP = 4;
-  constexpr int YZMP = 7;
-  constexpr int YZPM = 5;
-  constexpr int YZMM = 8;
-
-  Eigen::Vector3cd D_XX, D_YY, D_ZZ, D_XY, D_XZ, D_YZ;
-  D_XX = stencil[XP] - 2.0*stencil[O] + stencil[XM];
-  D_YY = stencil[YP] - 2.0*stencil[O] + stencil[YM];
-  D_ZZ = stencil[ZP] - 2.0*stencil[O] + stencil[ZM];
-
-  D_XY = stencil[XYPP] - stencil[XYMP] - stencil[XYPM] + stencil[XYMM];
-  D_XZ = stencil[XZPP] - stencil[XZMP] - stencil[XZPM] + stencil[XZMM];
-  D_YZ = stencil[YZPP] - stencil[YZMP] - stencil[YZPM] + stencil[YZMM];
- 
+/* 
   for(int i=0; i < 3; ++i){
     D_XX[i] = (stencil[XP])[i] - 2.0*(stencil[O])[i] + (stencil[XM])[i];
     D_YY[i] = (stencil[YP])[i] - 2.0*(stencil[O])[i] + (stencil[YM])[i];
@@ -216,15 +181,7 @@ void AIM::Farfield::fill_results_table(const int step)
     D_XZ[i] = (stencil[XZPP])[i] - (stencil[XZMP])[i] - (stencil[XZPM])[i] + (stencil[XZMM])[i];
     D_YZ[i] = (stencil[YZPP])[i] - (stencil[YZMP])[i] - (stencil[YZPM])[i] + (stencil[YZMM])[i];
   }
-
-  cmplx E_X = ( D_XX[0] + D_XY[1] + D_XZ[2] ) / pow(h_, 2);
-  cmplx E_Y = ( D_XY[0] + D_YY[1] + D_YZ[2] ) / pow(h_, 2);
-  cmplx E_Z = ( D_XZ[0] + D_YZ[1] + D_ZZ[2] ) / pow(h_, 2);
-
-  Eigen::Vector3cd field(E_X, E_Y, E_Z);
-
-  return field;
-}*/
+*/
 
 spacetime::vector<cmplx> AIM::Farfield::make_propagation_table() const
 {
@@ -307,8 +264,8 @@ TransformPair AIM::Farfield::spatial_fft_plans()
   // the I_0 source), the advanced FFTW interface allows them to stride forward
   // to equivalently transform the source currents at every timestep.
 
-  constexpr int num_transforms = 3;
-  constexpr int transform_rank = 3;
+  constexpr int num_transforms = 3; 
+  constexpr int transform_rank = 3; // # of dimensions to transform
   constexpr int dist_between_elements = 3;
   constexpr int dist_between_transforms = 1;
 

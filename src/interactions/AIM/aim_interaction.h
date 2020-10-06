@@ -70,10 +70,10 @@ class AIM::Interaction final : public InteractionBase {
   const ResultArray &evaluate(const int t)
   {
     // I DON'T KNOW WHY THAT NEEDS A CONJUGATE!!!
-    //results = 
-    //     -nf.evaluate(t) + direct.evaluate(t);
     results = 
-         (ff.evaluate(t).conjugate() - nf.evaluate(t)) + direct.evaluate(t);
+         ff.evaluate(t).conjugate() + 0.0*direct.evaluate(t);
+    //results = 
+    //     (ff.evaluate(t).conjugate() - nf.evaluate(t)) + direct.evaluate(t);
     return results;
   }
 

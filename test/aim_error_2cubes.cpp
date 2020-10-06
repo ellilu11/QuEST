@@ -85,8 +85,8 @@ int main(int argc, char *argv[]){
     auto dots = std::make_shared<DotVector>(import_dots("dots_aimtest.cfg"));
     const int ndots = (*dots).size();
     cout << "  Setting up " << ndots << " dots" << endl;
-    const int nsrcs = ndots/2;
-    const int nobss = ndots - nsrcs;
+    const int nsrcs = ndots;
+    // const int nobss = ndots - nsrcs;
  
     int min_time_to_keep = steps + window - 10; // for this test, just make the history array store all timedata
     auto history = std::make_shared<Integrator::History<Eigen::Vector2cd>>(
@@ -107,7 +107,7 @@ int main(int argc, char *argv[]){
     const int ds_n = 10;
     const double ds = ds_base * pow( 2, atoi(argv[2])/(double)ds_n );
     Eigen::Vector3d dsvec(ds, ds, ds); 
-    const double h = 0.1*ds*atoi(argv[3]);
+    const double h = 0.5*ds*atoi(argv[3]);
     AIM::Grid grid(dsvec, expansion, h, *dots);
  
     cout << "  Setting up direct interaction" << endl;
@@ -138,6 +138,7 @@ int main(int argc, char *argv[]){
  
     std::cout << "    AIM expansion order: " << expansion << std::endl;
     std::cout << "    ds/lambda: " << ds/lambda << std::endl;
+    std::cout << "    h/ds: " << h/ds << std::endl;
 
     cout << "  Calculating and writing solutions" << endl;
  
@@ -170,7 +171,8 @@ int main(int argc, char *argv[]){
       //  fld_aim = array_aim[nsrcs+iobs];
         fld_anl = 0;
 
-        for (int isrc = 0; isrc < nsrcs; ++isrc) {
+        for (int isrc = 0; isrc < ndots; ++isrc) {
+        //for (int isrc = 0; isrc < nsrcs; ++isrc) {
           if ( isrc == idot ) continue;
           Eigen::Vector3d dr(separation( (*dots)[idot], (*dots)[isrc] ));
           double dist = dr.norm();
@@ -205,9 +207,9 @@ int main(int argc, char *argv[]){
 
     std::cout << "  Elapsed time: " << (std::clock() - start_time) / (double) CLOCKS_PER_SEC << "s" << std::endl;
    
-    std::cout << "  Direct interaction err: " << sqrt(err_dir / (steps*nobss)) << std::endl;
-    std::cout << "  AIM interaction err: " << sqrt(err_aim / (steps*nobss)) << std::endl;
-    std::cout << "  AIM-Direct interaction err: " << sqrt(err_aimdir / (steps*nobss)) << std::endl;
+    std::cout << "  Direct interaction err: " << sqrt(err_dir / (steps*ndots)) << std::endl;
+    std::cout << "  AIM interaction err: " << sqrt(err_aim / (steps*ndots)) << std::endl;
+    std::cout << "  AIM-Direct interaction err: " << sqrt(err_aimdir / (steps*ndots)) << std::endl;
 /*    outfile3 << expansion << " " << ds/lambda 
         << " " << sqrt(normdiff_dir / (steps*ntrgs)) 
         << " " << sqrt(normdiff_aim / (steps*ntrgs)) 
