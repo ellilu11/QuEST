@@ -12,7 +12,7 @@ if(${Boost_FOUND})
     PUBLIC
     #"${CMAKE_CURRENT_LIST_DIR}/test.cpp"
     #"${CMAKE_CURRENT_LIST_DIR}/derivtest.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/aim_error_2cubes.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/aimfdtd_error.cpp"
  
     )
 

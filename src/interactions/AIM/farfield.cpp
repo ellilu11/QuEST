@@ -137,9 +137,8 @@ void AIM::Farfield::fill_results_table(const int step)
     
     // then calculate FDTD (e.g. spatial derivative) field 
     std::vector<Eigen::Vector3cd> fld_stencil(27); 
-    fld_stencil[0] = field;
 
-    for(auto obs_idx = 1u; obs_idx < 27; ++obs_idx) { 
+    for(auto obs_idx = 0u; obs_idx < 27; ++obs_idx) { 
       if ( h_ == 0 ) break;
       if ( obs_idx == 13 || obs_idx == 14 || obs_idx == 16 || obs_idx == 17 )
         continue;
@@ -155,19 +154,21 @@ void AIM::Farfield::fill_results_table(const int step)
         fld_stencil[obs_idx] += 
           expansion_function_fdtd(
             obs_table_, {{step, coord(0), coord(1), coord(2)}}, e);
-
       }
-    }
+
+     // if ( step == 50 )
+     //   std::cout << dot_idx << " " << obs_idx << " " << (fld_stencil[obs_idx]).transpose() << std::endl;
+ 
+   }
 
     // use fields at stencil points to calculate FDTD
     Eigen::Vector3cd deldel_field = h_ ? FDTD_Del_Del( fld_stencil ) : Eigen::Vector3cd::Zero(); 
  
-    if ( step == 50 )
-      std::cout << dot_idx << " " << field.transpose() << " " << deldel_field.transpose() << std::endl;
+//    if ( step == 50 )
+//      std::cout << dot_idx << " " << field.transpose() << " " << deldel_field.transpose() << std::endl;
 
     // finally sum fields and calculate Rabi freq
     results(dot_idx) += 2.0 * std::real( (field+deldel_field).dot((*dots)[dot_idx].dipole()) );
-    // results(dot_idx) += 2.0 * std::real( field.dot((*dots)[dot_idx].dipole()) );
   }
 }
 

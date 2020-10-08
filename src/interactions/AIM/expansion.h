@@ -356,7 +356,8 @@ class AIM::Expansions::LeastSquaresExpansionSolver {
                                        const Grid &,
                                        const std::vector<QuantumDot> &);
   ExpansionTable table(const std::vector<QuantumDot> &, const double) const;
-  Eigen::VectorXd q_vector(const std::array<int, 3> & = {{0, 0, 0}}) const;
+  Eigen::VectorXd q_vector(const std::array<int, 3> & = {{0, 0, 0}}, 
+                           const Eigen::Vector3d & = Eigen::Vector3d::Zero()) const;
   Eigen::MatrixXd w_matrix(const Eigen::Vector3d &) const;
 
  private:

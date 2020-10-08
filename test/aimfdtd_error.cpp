@@ -10,9 +10,6 @@
 #include "../src/interactions/direct_interaction.h"
 #include "../src/interactions/green_function.h"
 #include "../src/interactions/AIM/aim_interaction.h"
-//#include "../src/interactions/AIM/expansion.h"
-//#include "../src/interactions/AIM/grid.h"
-//#include "../src/interactions/AIM/normalization.h"
 
 using namespace std;
 
@@ -101,58 +98,60 @@ int main(int argc, char *argv[]){
     }
  
     cout << "  Setting up AIM grid" << endl;
-    const int expansion = atoi(argv[1]);
     const int border = 1;
     const double ds_base = 0.025 * lambda;
-    const int ds_n = 10;
-    const double ds = ds_base * pow( 2, atoi(argv[2])/(double)ds_n );
+    const double ds = 0.050 * lambda;
     Eigen::Vector3d dsvec(ds, ds, ds); 
-    const double h = 0.5*ds*atoi(argv[3]);
+    std::cout << "    ds/lambda: " << ds/lambda << std::endl;
+     
+    const int n_h = 10;
+    const double h = 0.05*ds*pow( 2, atoi(argv[1])/(double)n_h );;
+
+    const int expansion = 5;
     AIM::Grid grid(dsvec, expansion, h, *dots);
- 
+    const int transit_steps = grid.max_transit_steps(c0, dt) + interp;
+  
     cout << "  Setting up direct interaction" << endl;
     // Propagation::Laplace<cmplx> propagator(prop_constant);
     Propagation::EFIE<cmplx> propagator(c0, prop_constant, 0.0, 0.0);
     auto pairwise_dir = std::make_shared<DirectInteraction>(
         dots, history, propagator, interp, c0, dt, 0.0, 0);
 
+    std::shared_ptr<InteractionBase> pairwise_aim, pairwise_fdtd;
     cout << "  Setting up AIM interaction" << endl;
-    const int transit_steps = grid.max_transit_steps(c0, dt) + interp;
-    std::shared_ptr<InteractionBase> pairwise_aim;
- 
-    if ( h != 0 )
-      pairwise_aim = std::make_shared<AIM::Interaction>(
-        dots, history, propagator, dsvec, interp, expansion, border, c0, dt, h,
-        AIM::Expansions::EFIE_TimeDeriv2(transit_steps, c0, dt), 
-        AIM::Expansions::EFIE_Retardation(transit_steps, c0),
-        AIM::Normalization::Laplace(prop_constant)
-        );
-    else
-      pairwise_aim = std::make_shared<AIM::Interaction>(
-        dots, history, propagator, dsvec, interp, expansion, border, c0, dt, h,
+    std::cout << "    AIM expansion order: " << expansion << std::endl;
+    pairwise_aim = std::make_shared<AIM::Interaction>(
+        dots, history, propagator, dsvec, interp, expansion, border, c0, dt, 0,
         AIM::Expansions::EFIE(transit_steps, c0, dt), 
         // AIM::Expansions::Retardation(transit_steps),
         AIM::Expansions::Zero(transit_steps),
         AIM::Normalization::Laplace(prop_constant)
         );
  
+    expansion = 5;
+    AIM::Grid grid(dsvec, expansion, h, *dots);
+    transit_steps = grid.max_transit_steps(c0, dt) + interp;
+    cout << "  Setting up AIM-FDTD interaction" << endl;
     std::cout << "    AIM expansion order: " << expansion << std::endl;
-    std::cout << "    ds/lambda: " << ds/lambda << std::endl;
     std::cout << "    h/ds: " << h/ds << std::endl;
+    pairwise_fdtd = std::make_shared<AIM::Interaction>(
+        dots, history, propagator, dsvec, interp, expansion, border, c0, dt, h,
+        AIM::Expansions::EFIE_TimeDeriv2(transit_steps, c0, dt), 
+        AIM::Expansions::EFIE_Retardation(transit_steps, c0),
+        AIM::Normalization::Laplace(prop_constant)
+        );
 
     cout << "  Calculating and writing solutions" << endl;
  
-    cmplx fld_dir, fld_aim, fld_anl;
+    cmplx fld_dir, fld_aim, fld_fdtd, fld_anl;
 
-    std::ofstream outfile1, outfile2, outfile3;
-    outfile1.open("out/aimtest/out_dir.dat");
-    outfile1 << std::scientific << std::setprecision(15);
-    outfile2.open("out/aimtest/out_aim.dat");
-    outfile2 << std::scientific << std::setprecision(15);
-    outfile3.open("out/aimtest/out_anl.dat");
-    outfile3 << std::scientific << std::setprecision(15);
+    std::ofstream outfile, errfile;
+    outfile.open("out/out.dat");
+    outfile << std::scientific << std::setprecision(15);
+    errfile.open("out/err.dat", std::ios_base::app);
+    errfile << std::scientific << std::setprecision(15);
 
-    double err_dir, err_aim, err_aimdir;
+    double err_dir, err_aim, err_aimdir, err_fdtd;
 
     clock_t start_time;
     start_time = std::clock();
@@ -161,14 +160,12 @@ int main(int argc, char *argv[]){
 
       const InteractionBase::ResultArray array_dir = pairwise_dir->evaluate(step);
       const InteractionBase::ResultArray array_aim = pairwise_aim->evaluate(step); 
-
+      const InteractionBase::ResultArray array_fdtd = pairwise_fdtd->evaluate(step); 
+    
       for (int idot = 0; idot < ndots; ++idot) {
         fld_dir = array_dir[idot];
         fld_aim = array_aim[idot];
- 
-      // for (int iobs = 0; iobs < nobss; ++iobs) {
-      //  fld_dir = array_dir[nsrcs+iobs];
-      //  fld_aim = array_aim[nsrcs+iobs];
+        fld_fdtd = array_fdtd[idot];
         fld_anl = 0;
 
         for (int isrc = 0; isrc < ndots; ++isrc) {
@@ -190,33 +187,29 @@ int main(int argc, char *argv[]){
 
         double fld_dir_abs = abs(fld_dir);
         double fld_aim_abs = abs(fld_aim);
+        double fld_fdtd_abs = abs(fld_fdtd);
         double fld_anl_abs = abs(fld_anl);
 
-        outfile1 << real(fld_dir) << " " << imag(fld_dir) << " " << fld_dir_abs << " ";
-        outfile2 << real(fld_aim) << " " << imag(fld_aim) << " " << fld_aim_abs << " ";
-        outfile3 << fld_dir_abs << " " << fld_aim_abs << " " << fld_anl_abs << " " << fld_aim_abs / fld_anl_abs << " ";
+        outfile << fld_dir_abs << " " << fld_aim_abs << " " << fld_fdtd_abs << " " << fld_anl_abs << " ";
+        // errfile << fld_fdtd_abs / fld_aim_abs << " ";
 
         err_dir += pow( fld_dir_abs - fld_anl_abs, 2 );
         err_aim += pow( fld_aim_abs - fld_anl_abs, 2 );
         err_aimdir += pow( fld_aim_abs - fld_dir_abs, 2 );
+        err_fdtd += pow( fld_aim_abs - fld_fdtd_abs, 2 );
       }
-      outfile1 << endl;
-      outfile2 << endl;
-      outfile3 << endl;
+      outfile << endl;
     }
 
     std::cout << "  Elapsed time: " << (std::clock() - start_time) / (double) CLOCKS_PER_SEC << "s" << std::endl;
    
-    std::cout << "  Direct interaction err: " << sqrt(err_dir / (steps*ndots)) << std::endl;
-    std::cout << "  AIM interaction err: " << sqrt(err_aim / (steps*ndots)) << std::endl;
-    std::cout << "  AIM-Direct interaction err: " << sqrt(err_aimdir / (steps*ndots)) << std::endl;
-/*    outfile3 << expansion << " " << ds/lambda 
-        << " " << sqrt(normdiff_dir / (steps*ntrgs)) 
-        << " " << sqrt(normdiff_aim / (steps*ntrgs)) 
-        << " " << sqrt(normdiff_aimdir / (steps*ntrgs)) << std::endl;
-*/
-    outfile1.close();
-    outfile2.close();    
-    outfile3.close();
+    std::cout << "  Direct err: " << sqrt(err_dir / (steps*ndots)) << std::endl;
+    std::cout << "  AIM err: " << sqrt(err_aim / (steps*ndots)) << std::endl;
+    std::cout << "  AIM-Direct err: " << sqrt(err_aimdir / (steps*ndots)) << std::endl;
+    std::cout << "  AIM-FDTD err: " << sqrt(err_fdtd / (steps*ndots)) << std::endl;
 
+    errfile << expansion << " " << h/ds
+        << " " << sqrt(err_fdtd / (steps*ndots))  << std::endl;
+    outfile.close();
+    errfile.close();
 }

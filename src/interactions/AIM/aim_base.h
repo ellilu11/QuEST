@@ -28,7 +28,8 @@ namespace AIM {
           expansion_function(std::move(expansion_function)),
           expansion_function_fdtd(std::move(expansion_function_fdtd)),
           normalization(std::move(normalization)),
-          h_(h)
+          h_(h),
+          fdtd( h_? 1 : 0 )
     {
     }
 
@@ -41,6 +42,7 @@ namespace AIM {
  
     const Eigen::Vector3cd FDTD_Del_Del( const std::vector<Eigen::Vector3cd> );
     const double h_;
+    const bool fdtd;
   };
 }
 

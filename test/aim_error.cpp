@@ -48,6 +48,12 @@ Eigen::Vector3d efld_d2_source(double t, double mu, double sigsqr){
   return vec;
 }
 
+Eigen::Vector3d analytic_Laplace_evaluate(Eigen::Vector3d &efld_d0,
+                                       Eigen::Vector3d &dr,
+                                       double dist){
+  return prop_constant * hbar * efld_d0 / dist;
+}
+
 Eigen::Vector3d analytic_EFIE_evaluate(Eigen::Vector3d &efld_d0,
                                        Eigen::Vector3d &efld_d1,
                                        Eigen::Vector3d &efld_d2,
@@ -79,13 +85,15 @@ int main(int argc, char *argv[]){
     auto dots = std::make_shared<DotVector>(import_dots("dots_aimtest.cfg"));
     const int ndots = (*dots).size();
     cout << "  Setting up " << ndots << " dots" << endl;
+    const int nsrcs = ndots;
+    // const int nobss = ndots - nsrcs;
  
     int min_time_to_keep = steps + window - 10; // for this test, just make the history array store all timedata
     auto history = std::make_shared<Integrator::History<Eigen::Vector2cd>>(
         ndots, window, steps, min_time_to_keep, 2, 0); 
     history->fill(Eigen::Vector2cd::Zero());
     for (int i = -window; i < steps; ++i) {
-      for (int n = 0; n < ndots; ++n){
+      for (int n = 0; n < nsrcs; ++n){
         history->set_value(n, i, 0) = source(i * dt, mu, sigsqr) / (*dots)[n].dipole().norm() / 2.0;
 //        cout << i << " " << history->get_value(n,i,0)[1] << " ";
       }
@@ -95,52 +103,53 @@ int main(int argc, char *argv[]){
     cout << "  Setting up AIM grid" << endl;
     const int expansion = atoi(argv[1]);
     const int border = 1;
-    const double ds_base = 0.0025 * lambda;
+    const double ds_base = 0.025 * lambda;
     const int ds_n = 10;
-
+    const double ds = ds_base * pow( 2, atoi(argv[2])/(double)ds_n );
+    Eigen::Vector3d dsvec(ds, ds, ds); 
+    const double h = 0.01*ds*atoi(argv[3]);
+    AIM::Grid grid(dsvec, expansion, h, *dots);
+ 
     cout << "  Setting up direct interaction" << endl;
+    // Propagation::Laplace<cmplx> propagator(prop_constant);
     Propagation::EFIE<cmplx> propagator(c0, prop_constant, 0.0, 0.0);
     auto pairwise_dir = std::make_shared<DirectInteraction>(
         dots, history, propagator, interp, c0, dt, 0.0, 0);
 
-    const double ds = ds_base * pow( 2, atoi(argv[2])/(double)ds_n );
-    Eigen::Vector3d dsvec(ds, ds, ds); 
-    AIM::Grid grid(dsvec, expansion, *dots);
- 
     cout << "  Setting up AIM interaction" << endl;
     const int transit_steps = grid.max_transit_steps(c0, dt) + interp;
-    const double h = 0.5*ds*atoi(argv[3]);
-
     std::shared_ptr<InteractionBase> pairwise_aim;
  
-/*    if ( h != 0 )
+    if ( h != 0 )
       pairwise_aim = std::make_shared<AIM::Interaction>(
         dots, history, propagator, dsvec, interp, expansion, border, c0, dt, h,
         AIM::Expansions::EFIE_TimeDeriv2(transit_steps, c0, dt), 
         AIM::Expansions::EFIE_Retardation(transit_steps, c0),
         AIM::Normalization::Laplace(prop_constant)
         );
-    else*/
+    else
       pairwise_aim = std::make_shared<AIM::Interaction>(
         dots, history, propagator, dsvec, interp, expansion, border, c0, dt, h,
         AIM::Expansions::EFIE(transit_steps, c0, dt), 
+        // AIM::Expansions::Retardation(transit_steps),
         AIM::Expansions::Zero(transit_steps),
         AIM::Normalization::Laplace(prop_constant)
         );
  
     std::cout << "    AIM expansion order: " << expansion << std::endl;
     std::cout << "    ds/lambda: " << ds/lambda << std::endl;
+    std::cout << "    h/ds: " << h/ds << std::endl;
 
     cout << "  Calculating and writing solutions" << endl;
  
     cmplx fld_dir, fld_aim, fld_anl;
 
     std::ofstream outfile1, outfile2, outfile3;
-    outfile1.open("out/aimtest/out_dir.dat");
+    outfile1.open("out/out_dir.dat");
     outfile1 << std::scientific << std::setprecision(15);
-    outfile2.open("out/aimtest/out_aim.dat");
+    outfile2.open("out/out_aim.dat");
     outfile2 << std::scientific << std::setprecision(15);
-    outfile3.open("out/aimtest/out_anl.dat");
+    outfile3.open("out/out_anl.dat");
     outfile3 << std::scientific << std::setprecision(15);
 
     double err_dir, err_aim, err_aimdir;
@@ -153,14 +162,19 @@ int main(int argc, char *argv[]){
       const InteractionBase::ResultArray array_dir = pairwise_dir->evaluate(step);
       const InteractionBase::ResultArray array_aim = pairwise_aim->evaluate(step); 
 
-      for (int i = 0; i < ndots; ++i) {
-        fld_dir = array_dir[i];
-        fld_aim = array_aim[i];
+      for (int idot = 0; idot < ndots; ++idot) {
+        fld_dir = array_dir[idot];
+        fld_aim = array_aim[idot];
+ 
+      // for (int iobs = 0; iobs < nobss; ++iobs) {
+      //  fld_dir = array_dir[nsrcs+iobs];
+      //  fld_aim = array_aim[nsrcs+iobs];
         fld_anl = 0;
 
-        for (int j = 0; j < ndots; ++j) {
-          if ( i == j ) continue;
-          Eigen::Vector3d dr(separation( (*dots)[i], (*dots)[j] ));
+        for (int isrc = 0; isrc < ndots; ++isrc) {
+        //for (int isrc = 0; isrc < nsrcs; ++isrc) {
+          if ( isrc == idot ) continue;
+          Eigen::Vector3d dr(separation( (*dots)[idot], (*dots)[isrc] ));
           double dist = dr.norm();
           double delay = dist / c0;
 
@@ -169,7 +183,9 @@ int main(int argc, char *argv[]){
           Eigen::Vector3d efld_d2 = efld_d2_source( step*dt, mu+delay, sigsqr );
 
           fld_anl += analytic_EFIE_evaluate(efld_d0, efld_d1, efld_d2, dr, c0, dist).dot(
-                                (*dots)[i].dipole() ) / hbar;
+                                (*dots)[idot].dipole() ) / hbar;
+          //fld_anl += analytic_Laplace_evaluate(efld_d0, dr, dist).dot(
+          //                      (*dots)[idot].dipole() ) / hbar;
         }
 
         double fld_dir_abs = abs(fld_dir);
