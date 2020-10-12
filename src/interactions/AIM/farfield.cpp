@@ -136,7 +136,8 @@ void AIM::Farfield::fill_results_table(const int step)
     }
     
     // then calculate FDTD (e.g. spatial derivative) field 
-    std::vector<Eigen::Vector3cd> fld_stencil(27); 
+    //std::vector<Eigen::Vector3cd> fld_stencil(27); 
+    boost::multi_array<Eigen::Vector3cd, 1> fld_stencil(boost::extents[27]);
 
     for(auto obs_idx = 0u; obs_idx < 27; ++obs_idx) { 
       if ( h_ == 0 ) break;

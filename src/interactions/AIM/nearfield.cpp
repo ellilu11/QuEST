@@ -71,11 +71,12 @@ boost::multi_array<cmplx, 3> AIM::Nearfield::coefficient_table()
 
   Interpolation::DerivFive lagrange(dt);
   std::cout << "    # Nearfield pairs: " << shape_[0] << std::endl;
-  
+
   for(int pair_idx = 0; pair_idx < shape_[0]; ++pair_idx) {
 
     const auto &pair = (*interaction_pairs_)[pair_idx];
     const auto &dot0 = (*dots)[pair.first], &dot1 = (*dots)[pair.second];
+
 
     for(size_t i = 0; i < expansion_table->shape()[2]; ++i) {
       const auto &e0 = (*expansion_table)[pair.first][0][i];
@@ -131,95 +132,69 @@ boost::multi_array<cmplx, 3> AIM::Nearfield::coefficient_table()
         }
       } // j
     } // i
+     
+       boost::multi_array<Eigen::Vector3cd, 2> stencil0(
+          boost::extents[lagrange.order()+1][expansion_table->shape()[1]]);
+        boost::multi_array<Eigen::Vector3cd, 2> stencil1(
+          boost::extents[lagrange.order()+1][expansion_table->shape()[1]]);
 
-    // FDTD del_sq
-    // First dot0 (src) -> dot1 (obs)
-    for(size_t i = 0; i < expansion_table->shape()[2]; ++i) { // src expansion pt
-      if (pair.first == pair.second) break;
+    for(size_t i = 0; i < expansion_table->shape()[2]; ++i) {
       if ( h_ == 0 ) break;
       const auto &e0 = (*expansion_table)[pair.first][0][i];
-      std::vector<Eigen::Vector3cd> stencil(expansion_table->shape()[1]);
-      double delay_first0;
+      for(size_t j = 0; j < expansion_table->shape()[2]; ++j) {
+        const auto &e1 = (*expansion_table)[pair.second][0][j];
 
-      for(int poly = 0; poly < lagrange.order() + 1; ++poly) { // move this loop inside later
+        if(e0.index == e1.index) continue;
+
+        // Assume that h is small enough that e1.index is the same for all obs pts of observer dot
+        Eigen::Vector3d dr(grid->spatial_coord_of_box(e1.index) -
+                           grid->spatial_coord_of_box(e0.index));
+
+        const double arg = dr.norm() / (c0 * dt);
+        const auto delay = split_double(arg);
+        const double delay_first0 = delay.first;
+        lagrange.evaluate_derivative_table_at_x(delay.second);
+        const cmplx norm = normalization(dr);
 
         for(int obs = 0; obs < expansion_table->shape()[1]; ++obs){ // obs pt
-          stencil[obs] = Eigen::Vector3cd::Zero();
+          if ( obs == 13 || obs == 14 || obs == 16 || obs == 17 )
+            continue;
+          if ( obs == 22 || obs == 23 || obs == 25 || obs == 26 )
+            continue;
 
-          for(size_t j = 0; j < expansion_table->shape()[2]; ++j) { // expansion pt of obs pt
-            const auto &e1 = (*expansion_table)[pair.second][obs][j];
+          const auto &e0_obs = (*expansion_table)[pair.first][obs][i];
+          const auto &e1_obs = (*expansion_table)[pair.second][obs][j];
 
-            if(e0.index == e1.index) continue;
+          // std::cout << obs << " " << e0_obs.index << std::endl;
+          // std::cout << obs << " " <<  << " " << e0_obs.d0 << std::endl;
 
-            Eigen::Vector3d dr(grid->spatial_coord_of_box(e1.index) -
-                               grid->spatial_coord_of_box(e0.index));
+          const Eigen::Vector3cd time0 = e0_obs.d0 * e1.d0 * dot1.dipole();
+          const Eigen::Vector3cd time1 = e1_obs.d0 * e0.d0 * dot0.dipole();
 
-            const double arg = dr.norm() / (c0 * dt);
-            const auto delay = split_double(arg);
-            if ( obs == 0 ) delay_first0 = delay.first;
-            lagrange.evaluate_derivative_table_at_x(delay.second);
+          for(int poly = 0; poly < lagrange.order() + 1; ++poly){
+            stencil0[poly][obs] += time0 * norm * lagrange.evaluations[0][poly];
+            if ( pair.first != pair.second)
+              stencil1[poly][obs] += time1 * norm * lagrange.evaluations[0][poly];
+          }
+        }
+       } // j
 
-            const Eigen::Vector3cd innerprod = 
-              e1.d0 * e0.d0 * dot0.dipole();
-
-            stencil[obs] += 
-              innerprod * normalization(dr) * lagrange.evaluations[0][poly];
-          } // j
-        } // obs
-        // Since each observer pt used to form the FDTD may have a different associated delay, 
-        // just apply the delay at the center observer (dot location), assuming h << c0*dt
-        const int convolution_idx = delay_first0 + poly; 
-        coefficients[pair_idx][convolution_idx][1] += 
-          std::pow(c0,2) * dot1.dipole().dot( FDTD_Del_Del(stencil) );
-      } // poly
     } // i
-
-    // Then dot1 (src) -> dot0 (obs)
-    for(size_t i = 0; i < expansion_table->shape()[2]; ++i) { // src expansion pt
-     if ( h_ == 0 ) break;
-      const auto &e1 = (*expansion_table)[pair.second][0][i];
-      std::vector<Eigen::Vector3cd> stencil(expansion_table->shape()[1]);
-      double delay_first0;
-
       for(int poly = 0; poly < lagrange.order() + 1; ++poly) {
-
-        for(int obs = 0; obs < expansion_table->shape()[1]; ++obs){ // obs pt
-          stencil[obs] = Eigen::Vector3cd::Zero();
-
-          for(size_t j = 0; j < expansion_table->shape()[2]; ++j) { // expansion pt of obs pt
-            const auto &e0 = (*expansion_table)[pair.first][obs][j];
-
-            if(e0.index == e1.index) continue;
-
-            Eigen::Vector3d dr(grid->spatial_coord_of_box(e1.index) -
-                               grid->spatial_coord_of_box(e0.index));
-
-            const double arg = dr.norm() / (c0 * dt);
-            const auto delay = split_double(arg);
-            if ( obs == 0 ) delay_first0 = delay.first;
-            lagrange.evaluate_derivative_table_at_x(delay.second);
-
-            const Eigen::Vector3cd innerprod = 
-              e0.d0 * e1.d0 * dot1.dipole();
-
-            stencil[obs] += 
-              innerprod * normalization(dr) * lagrange.evaluations[0][poly];
-          } // j
-        } // obs
-        const int convolution_idx = delay_first0 + poly; 
-        coefficients[pair_idx][convolution_idx][0] += 
-          std::pow(c0,2) * dot0.dipole().dot( FDTD_Del_Del(stencil) );
-
-      } // poly
-    } // i
-
-    /*for(int t = support_[pair_idx].begin; t < support_[pair_idx].end; ++t)
+        if ( h_ == 0 ) break;
+          const int convolution_idx = 0 + poly; 
+          coefficients[pair_idx][convolution_idx][0] += 
+            std::pow(c0,2) * dot0.dipole().dot( FDTD_Del_Del(stencil0[poly]) );
+          coefficients[pair_idx][convolution_idx][1] += 
+            std::pow(c0,2) * dot1.dipole().dot( FDTD_Del_Del(stencil1[poly]) );
+      }
+ 
+/*    for(int t = support_[pair_idx].begin; t < support_[pair_idx].end; ++t)
       std::cout << pair_idx << " " << t << " " 
                 << coefficients_[pair_idx][t][0] << " " 
                 << coefficients_[pair_idx][t][1] << std::endl; 
-    */
-//    std::cout << std::endl;
-  } // pair_idx 
+*/ 
+ } // pair_idx 
 
   return coefficients;
 }

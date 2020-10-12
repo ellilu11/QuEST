@@ -40,7 +40,8 @@ namespace AIM {
     Expansions::ExpansionFunction expansion_function_fdtd;
     Normalization::SpatialNorm normalization;
  
-    const Eigen::Vector3cd FDTD_Del_Del( const std::vector<Eigen::Vector3cd> );
+    const Eigen::Vector3cd FDTD_Del_Del( // const std::vector<Eigen::Vector3cd> );
+                                         const boost::multi_array<Eigen::Vector3cd, 1> );
     const double h_;
     const bool fdtd;
   };

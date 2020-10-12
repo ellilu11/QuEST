@@ -228,76 +228,6 @@ namespace AIM {
       double c;
     };
 
-    /*class EFIE_FDTD : public RetardationBase {
-     public:
-      EFIE(int history_length, double c, double dt)
-          : RetardationBase(history_length),
-            dt2_coefs(
-                {{15.0 / 4, -77.0 / 6, 107.0 / 6, -13.0, 61.0 / 12, -5.0 / 6}}),
-            c(c)
-      {
-        for(auto &coef : dt2_coefs) {
-          coef /= std::pow(dt, 2);
-        }
-      };
-
-      Eigen::Vector3cd operator()(const spacetime::vector3d<cmplx> &obs,
-                                  const int step,
-                                  const Eigen::Array3Xi coords,
-                                  const std::vector<Expansions::Expansion> &e_array)
-      {
-        Eigen::Vector3cd dt2 = Eigen::Vector3cd::Zero();
-        for(int h = 0; h < static_cast<int>(dt2_coefs.size()); ++h) {
-          int w = wrap_index(std::max(coord[0] - h, 0));
-          Eigen::Map<const Eigen::Vector3cd> field(
-              &obs[w][coords[0][1]][coords[0][2]][coords[0][3]][0]);
-          dt2 += dt2_coefs[h] * (e_array[0]).d0 * field;
-        }
-
-        Eigen::Matrix3d del_sq;
-
-        // Elliot: 18 of these total (27 minus 1 origin and 8 vertex points)
-        size_t xp = delta_to_idx({{1, 0, 0}}, 3);
-        size_t xm = delta_to_idx({{-1, 0, 0}}, 3);
-        size_t yp = delta_to_idx({{0, 1, 0}}, 3);
-        size_t ym = delta_to_idx({{0, -1, 0}}, 3);
-        size_t zp = delta_to_idx({{0, 0, 1}}, 3);
-        size_t zm = delta_to_idx({{0, 0, -1}}, 3);
-
-        size_t xypp = delta_to_idx({{1, 1, 0}}, 3);
-        size_t xymp = delta_to_idx({{-1, 1, 0}}, 3);
-        size_t xypm = delta_to_idx({{1, -1, 0}}, 3);
-        size_t xymm = delta_to_idx({{-1, -1, 0}}, 3);
-        
-        size_t xzpp = delta_to_idx({{1, 0, 1}}, 3);
-        size_t xzmp = delta_to_idx({{-1, 0, 1}}, 3);
-        size_t xzpm = delta_to_idx({{1, 0, -1}}, 3);
-        size_t xzmm = delta_to_idx({{-1, 0, -1}}, 3);
- 
-        size_t yzpp = delta_to_idx({{0, 1, 1}}, 3);
-        size_t yzmp = delta_to_idx({{0, -1, 1}}, 3);
-        size_t yzpm = delta_to_idx({{0, 1, -1}}, 3);
-        size_t yzmm = delta_to_idx({{0, -1, -1}}, 3);
-
-       Eigen::Map<const Eigen::Vector3cd> field_0(
-              &obs[wrap_index(step)][coords[0][1]][coords[0][2]][coords[0][3]][0]);
-        Eigen::Map<const Eigen::Vector3cd> field_xp(
-              &obs[wrap_index(step)][coords[xp][1]][coords[xp][2]][coords[xp][3]][0]);
-        Eigen::Map<const Eigen::Vector3cd> field_xm(
-              &obs[wrap_index(step)][coords[xm][1]][coords[xm][2]][coords[xm][3]][0]);
-        // etc...
-
-        del_sq(0,0) = (e_array[xp]).d0*field_xp - 2*(e_array[0]).d0*field_x0 + (e_array[mp]).d0*field_xm
-        // etc...
-        
-        return -dt2 + std::pow(c, 2) * del_sq * dip;
-      }
-
-     private:
-      std::array<double, 6> dt2_coefs;
-      double c;
-    };*/
-
     class RotatingEFIE : public RetardationBase {
      public:
       RotatingEFIE(int history_length, double c, double dt, double omega)
@@ -346,6 +276,55 @@ namespace AIM {
       std::array<double, 6> dt1_coefs, dt2_coefs;
       double c, omega;
     };
+
+    class RotatingEFIE_TimeDeriv2 : public RetardationBase {
+     public:
+      RotatingEFIE_TimeDeriv2(int history_length, double c, double dt, double omega)
+          : RetardationBase(history_length),
+            dt1_coefs({{137.0 / 60, -5.0, 5.0, -10.0 / 3, 5.0 / 4, -1.0 / 5}}),
+            dt2_coefs(
+                {{15.0 / 4, -77.0 / 6, 107.0 / 6, -13.0, 61.0 / 12, -5.0 / 6}}),
+            c(c),
+            omega(omega)
+      {
+        for(auto &coef : dt1_coefs) coef /= std::pow(dt, 1);
+        for(auto &coef : dt2_coefs) coef /= std::pow(dt, 2);
+      }
+
+      Eigen::Vector3cd operator()(const spacetime::vector3d<cmplx> &obs,
+                                  const std::array<int, 4> &coord,
+                                  const Expansions::Expansion &e)
+      {
+        Eigen::Matrix3cd deriv = Eigen::Matrix3cd::Zero();
+        Eigen::Map<const Eigen::Vector3cd> present_field(
+            &obs[wrap_index(coord[0])][coord[1]][coord[2]][coord[3]][0]);
+
+        deriv.col(0) = e.d0 * present_field;
+
+        for(int h = 0; h < static_cast<int>(dt2_coefs.size()); ++h) {
+          const int w = wrap_index(std::max(coord[0] - h, 0));
+          Eigen::Map<const Eigen::Vector3cd> past_field(
+              &obs[w][coord[1]][coord[2]][coord[3]][0]);
+          deriv.col(1) += dt1_coefs[h] * e.d0 * past_field;
+          deriv.col(2) += dt2_coefs[h] * e.d0 * past_field;
+        }
+
+        // Notice that this is just the derivative of E(t)exp(iwt), just
+        // without the exp(iwt) because it gets suppressed in doing RWA
+        // calculations. There is no exp(-ikr) factor here as that gets
+        // taken care of in the normalization class.
+
+        const auto time = deriv.col(2) + 2.0 * iu * omega * deriv.col(1) -
+                          std::pow(omega, 2) * deriv.col(0);
+
+        return -time;
+      }
+
+     private:
+      std::array<double, 6> dt1_coefs, dt2_coefs;
+      double c, omega;
+    };
+
   }
 }
 
