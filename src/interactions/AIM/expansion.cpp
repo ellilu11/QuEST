@@ -56,6 +56,9 @@ AIM::Expansions::LeastSquaresExpansionSolver::table(
         table[dot_idx][obs_idx][w].d0 = weights(0, w);
         table[dot_idx][obs_idx][w].del = weights.block(D_X, w, 3, 1);
         table[dot_idx][obs_idx][w].del_sq = Eigen::Map<Eigen::Matrix3d>(&weights(D_XX, w));
+
+			//	if ( obs_idx == 0 )
+			//		std::cout << dot_idx << " " << w << " " << weights(0, w) << std::endl;
       }
     }
   }

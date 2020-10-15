@@ -208,6 +208,7 @@ int main(int argc, char *argv[]){
     std::cout << "  FDAIM err: " << sqrt(err_fdtd / (steps*ndots)) << std::endl;
     std::cout << "  FDAIM-Direct err: " << sqrt(err_fdtd_dir / (steps*ndots)) << std::endl;
     std::cout << "  FDAIM-AIM err: " << sqrt(err_fdtd_aim / (steps*ndots)) << std::endl;
+    cout << endl;
 
     errfile << expansion << " " << h/ds
         << " " << sqrt(err_fdtd / (steps*ndots))

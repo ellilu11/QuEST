@@ -77,6 +77,10 @@ boost::multi_array<cmplx, 3> AIM::Nearfield::coefficient_table()
     const auto &pair = (*interaction_pairs_)[pair_idx];
     const auto &dot0 = (*dots)[pair.first], &dot1 = (*dots)[pair.second];
 
+    boost::multi_array<Eigen::Vector3cd, 2> stencil_coeffs0(
+      boost::extents[lagrange.order()+1][expansion_table->shape()[1]]);
+    boost::multi_array<Eigen::Vector3cd, 2> stencil_coeffs1(
+      boost::extents[lagrange.order()+1][expansion_table->shape()[1]]);
 
     for(size_t i = 0; i < expansion_table->shape()[2]; ++i) {
       const auto &e0 = (*expansion_table)[pair.first][0][i];
@@ -93,6 +97,7 @@ boost::multi_array<cmplx, 3> AIM::Nearfield::coefficient_table()
 
         const double arg = dr.norm() / (c0 * dt);
         const auto delay = split_double(arg);
+        const cmplx norm = normalization(dr);
 
         support_[pair_idx].begin =
             std::min(support_[pair_idx].begin, delay.first);
@@ -107,9 +112,9 @@ boost::multi_array<cmplx, 3> AIM::Nearfield::coefficient_table()
             dot1.dipole().dot(e1.d0 * e0.d0 * dot0.dipole());
 
         const std::array<cmplx, 2> dyad{
-            normalization(dr) * std::pow(c0, 2) *
+            norm * std::pow(c0, 2) *
                 dot0.dipole().dot(e0.del_sq * e1.d0 * dot1.dipole()),
-            normalization(dr) * std::pow(c0, 2) *
+            norm * std::pow(c0, 2) *
                 dot1.dipole().dot(e1.del_sq * e0.d0 * dot0.dipole())};
 
         for(int poly = 0; poly < lagrange.order() + 1; ++poly) {
@@ -120,43 +125,20 @@ boost::multi_array<cmplx, 3> AIM::Nearfield::coefficient_table()
                 2.0 * iu * omega_ * lagrange.evaluations[1][poly] -
                 std::pow(omega_, 2) * lagrange.evaluations[0][poly]) :
                 lagrange.evaluations[2][poly] ) *
-              innerprod * normalization(dr);
+              innerprod * norm;
 
             coefficients[pair_idx][convolution_idx][0] +=
-              -time + (h_ ? 0.0 : dyad[0] * lagrange.evaluations[0][poly]);
+							lagrange.evaluations[0][poly] * innerprod * norm; // Laplace/Helmholtz kernel
+              // -time + (h_ ? 0.0 : dyad[0] * lagrange.evaluations[0][poly]);
 
-            if(pair.first == pair.second) continue;
-
-            coefficients[pair_idx][convolution_idx][1] +=
-              -time + (h_ ? 0.0 : dyad[1] * lagrange.evaluations[0][poly]);
+            if(pair.first != pair.second)
+              coefficients[pair_idx][convolution_idx][1] +=
+								lagrange.evaluations[0][poly] * innerprod * norm; // Laplace/Helmholtz kernel
+              //  -time + (h_ ? 0.0 : dyad[1] * lagrange.evaluations[0][poly]);
         }
-      } // j
-    } // i
-     
-       boost::multi_array<Eigen::Vector3cd, 2> stencil0(
-          boost::extents[lagrange.order()+1][expansion_table->shape()[1]]);
-        boost::multi_array<Eigen::Vector3cd, 2> stencil1(
-          boost::extents[lagrange.order()+1][expansion_table->shape()[1]]);
-
-    for(size_t i = 0; i < expansion_table->shape()[2]; ++i) {
-      if ( h_ == 0 ) break;
-      const auto &e0 = (*expansion_table)[pair.first][0][i];
-      for(size_t j = 0; j < expansion_table->shape()[2]; ++j) {
-        const auto &e1 = (*expansion_table)[pair.second][0][j];
-
-        if(e0.index == e1.index) continue;
-
-        // Assume that h is small enough that e1.index is the same for all obs pts of observer dot
-        Eigen::Vector3d dr(grid->spatial_coord_of_box(e1.index) -
-                           grid->spatial_coord_of_box(e0.index));
-
-        const double arg = dr.norm() / (c0 * dt);
-        const auto delay = split_double(arg);
-        const double delay_first0 = delay.first;
-        lagrange.evaluate_derivative_table_at_x(delay.second);
-        const cmplx norm = normalization(dr);
 
         for(int obs = 0; obs < expansion_table->shape()[1]; ++obs){ // obs pt
+          if ( !h_ ) break;
           if ( obs == 13 || obs == 14 || obs == 16 || obs == 17 )
             continue;
           if ( obs == 22 || obs == 23 || obs == 25 || obs == 26 )
@@ -167,28 +149,31 @@ boost::multi_array<cmplx, 3> AIM::Nearfield::coefficient_table()
 
           // std::cout << obs << " " << e0_obs.index << std::endl;
           // std::cout << obs << " " <<  << " " << e0_obs.d0 << std::endl;
-
-          const Eigen::Vector3cd time0 = e0_obs.d0 * e1.d0 * dot1.dipole();
-          const Eigen::Vector3cd time1 = e1_obs.d0 * e0.d0 * dot0.dipole();
+					
+          const Eigen::Vector3cd stencil0 = 
+            e0_obs.d0 * e1.d0 * dot1.dipole() * std::pow(c0,2) * norm;
+          const Eigen::Vector3cd stencil1 = 
+            e1_obs.d0 * e0.d0 * dot0.dipole() * std::pow(c0,2) * norm;
 
           for(int poly = 0; poly < lagrange.order() + 1; ++poly){
-            stencil0[poly][obs] += time0 * norm * lagrange.evaluations[0][poly];
+            stencil_coeffs0[poly][obs] += lagrange.evaluations[0][poly] * stencil0;
             if ( pair.first != pair.second)
-              stencil1[poly][obs] += time1 * norm * lagrange.evaluations[0][poly];
+              stencil_coeffs1[poly][obs] += lagrange.evaluations[0][poly] * stencil1;
           }
         }
-       } // j
 
+      } // j
     } // i
-      for(int poly = 0; poly < lagrange.order() + 1; ++poly) {
-        if ( h_ == 0 ) break;
-          const int convolution_idx = 0 + poly; 
-          coefficients[pair_idx][convolution_idx][0] += 
-            std::pow(c0,2) * dot0.dipole().dot( FDTD_Del_Del(stencil0[poly]) );
-          coefficients[pair_idx][convolution_idx][1] += 
-            std::pow(c0,2) * dot1.dipole().dot( FDTD_Del_Del(stencil1[poly]) );
-      }
- 
+    
+    for(int poly = 0; poly < lagrange.order() + 1; ++poly) {
+      if ( !h_ ) break;
+        const int convolution_idx = 0 + poly; // assume dist between any two src/obs expansion points is << c0 * dt 
+        coefficients[pair_idx][convolution_idx][0] += 
+          dot0.dipole().dot( FDTD_Del_Del(stencil_coeffs0[poly]) );
+        coefficients[pair_idx][convolution_idx][1] += 
+          dot1.dipole().dot( FDTD_Del_Del(stencil_coeffs1[poly]) );
+    }
+    
 /*    for(int t = support_[pair_idx].begin; t < support_[pair_idx].end; ++t)
       std::cout << pair_idx << " " << t << " " 
                 << coefficients_[pair_idx][t][0] << " " 

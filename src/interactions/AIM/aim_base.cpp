@@ -39,18 +39,6 @@ const Eigen::Vector3cd AIM::AimBase::FDTD_Del_Del(
   D_XZ = stencil[XZPP] - stencil[XZMP] - stencil[XZPM] + stencil[XZMM];
   D_YZ = stencil[YZPP] - stencil[YZMP] - stencil[YZPM] + stencil[YZMM];
 
-   
-/*  for(int i=0; i < 3; ++i){
-    D_XX[i] = (stencil[XP])[i] - 2.0*(stencil[O])[i] + (stencil[XM])[i];
-    D_YY[i] = (stencil[YP])[i] - 2.0*(stencil[O])[i] + (stencil[YM])[i];
-    D_ZZ[i] = (stencil[ZP])[i] - 2.0*(stencil[O])[i] + (stencil[ZM])[i];
-
-    D_XY[i] = (stencil[XYPP])[i] - (stencil[XYMP])[i] - (stencil[XYPM])[i] + (stencil[XYMM])[i];
-    D_XZ[i] = (stencil[XZPP])[i] - (stencil[XZMP])[i] - (stencil[XZPM])[i] + (stencil[XZMM])[i];
-    D_YZ[i] = (stencil[YZPP])[i] - (stencil[YZMP])[i] - (stencil[YZPM])[i] + (stencil[YZMM])[i];
-  }
-*/
-
   cmplx E_X = ( D_XX[0] + D_XY[1] + D_XZ[2] ) / pow(h_, 2);
   cmplx E_Y = ( D_XY[0] + D_YY[1] + D_YZ[2] ) / pow(h_, 2);
   cmplx E_Z = ( D_XZ[0] + D_YZ[1] + D_ZZ[2] ) / pow(h_, 2);

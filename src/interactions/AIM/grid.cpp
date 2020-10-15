@@ -28,7 +28,7 @@ AIM::Grid::Grid(const Eigen::Array3d &spacing,
 //  std::cout << bounds.col(1) << std::endl;
 
 //  std::cout << h_int << std::endl;
-  sort_points_on_boxidx(dots);
+//  sort_points_on_boxidx(dots);
 }
 
 AIM::Grid::BoundsArray AIM::Grid::calculate_bounds(const DotVector &dots) const
@@ -44,8 +44,8 @@ AIM::Grid::BoundsArray AIM::Grid::calculate_bounds(const DotVector &dots) const
     b.col(1) = grid_coord.array().max(b.col(1));
   }
 
-  b.col(0) -= expansion_order / 2 + 1; // also change this later!!
-  b.col(1) += (expansion_order + 1) / 2 + 1;
+  b.col(0) -= expansion_order / 2; // also change this later!!
+  b.col(1) += (expansion_order + 1) / 2;
 
   return b;
 }
