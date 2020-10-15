@@ -128,13 +128,13 @@ boost::multi_array<cmplx, 3> AIM::Nearfield::coefficient_table()
               innerprod * norm;
 
             coefficients[pair_idx][convolution_idx][0] +=
-							lagrange.evaluations[0][poly] * innerprod * norm; // Laplace/Helmholtz kernel
-              // -time + (h_ ? 0.0 : dyad[0] * lagrange.evaluations[0][poly]);
+							// lagrange.evaluations[0][poly] * innerprod * norm; // Laplace/Helmholtz kernel
+              -time + (h_ ? 0.0 : dyad[0] * lagrange.evaluations[0][poly]);
 
             if(pair.first != pair.second)
               coefficients[pair_idx][convolution_idx][1] +=
-								lagrange.evaluations[0][poly] * innerprod * norm; // Laplace/Helmholtz kernel
-              //  -time + (h_ ? 0.0 : dyad[1] * lagrange.evaluations[0][poly]);
+								// lagrange.evaluations[0][poly] * innerprod * norm; // Laplace/Helmholtz kernel
+                -time + (h_ ? 0.0 : dyad[1] * lagrange.evaluations[0][poly]);
         }
 
         for(int obs = 0; obs < expansion_table->shape()[1]; ++obs){ // obs pt
