@@ -8,14 +8,12 @@ DirectInteraction::DirectInteraction(
     const int interp_order,
     const double c0,
     const double dt,
-    const double omega,
-    const bool rotating)
+    const double omega)
     : HistoryInteraction(
           std::move(dots), std::move(history), interp_order, c0, dt),
       num_src((this->dots)->size()),
       num_interactions( num_src * (num_src - 1) / 2 ),
       omega(omega), 
-      rotating(rotating),
       floor_delays(num_interactions),
       coeffs(boost::extents[num_interactions][interp_order + 1])
 {
@@ -79,31 +77,35 @@ const InteractionBase::ResultArray &DirectInteraction::evaluate(
       rho_obs = (history->get_value(obs, s, 0))[RHO_01];
       rho_src = (history->get_value(src, s, 0))[RHO_01];
 
-      if ( !rotating ){
+      if ( !omega ){
         past_terms_of_convolution[src] += 2.0 * std::real( rho_obs * coeffs[pair_idx][i] );
         past_terms_of_convolution[obs] += 2.0 * std::real( rho_src * coeffs[pair_idx][i] );
-      } else {
+      } 
+			else {
+				const auto phi = std::exp( iu*omega*time );
         past_terms_of_convolution[src] += 2.0 * std::real( rho_obs * coeffs[pair_idx][i] 
-                        * std::exp( iu*omega*time) ) * std::exp( -iu*omega*time );
+                        * phi ) * std::conj( phi );
                                                                                                       
         past_terms_of_convolution[obs] += 2.0 * std::real( rho_src * coeffs[pair_idx][i] 
-                        * std::exp( iu*omega*time) ) * std::exp( -iu*omega*time );
-      }    
+                        * phi ) * std::conj( phi );
+    	}    
     }
    
     const int s = std::max(time_idx - floor_delays[pair_idx], -history->window);
     rho_obs = (history->get_value(obs, s, 0))[RHO_01];
     rho_src = (history->get_value(src, s, 0))[RHO_01];
 
-    if ( !rotating ){
+    if ( !omega ){
       results[src] += 2.0 * std::real( rho_obs * coeffs[pair_idx][0] );
       results[obs] += 2.0 * std::real( rho_src * coeffs[pair_idx][0] );
     } else {
-      results[src] += 2.0 * std::real( rho_obs * coeffs[pair_idx][0] 
-                      * std::exp( iu*omega*time0) ) * std::exp( -iu*omega*time0 );
+  	  const auto phi0 = std::exp( iu*omega*time0 );
+     	results[src] += 2.0 * std::real( rho_obs * coeffs[pair_idx][0] 
+                      * phi0 ) * std::conj( phi0 );
                                                                                                     
       results[obs] += 2.0 * std::real( rho_src * coeffs[pair_idx][0] 
-                      * std::exp( iu*omega*time0) ) * std::exp( -iu*omega*time0 );
+                      * phi0 ) * std::conj( phi0 );
+      // if ( time_idx == 10 ) std::cout << phi0 << " " << std::conj( phi0 ) << std::endl;
     }    
   }
   
@@ -130,15 +132,16 @@ const InteractionBase::ResultArray &DirectInteraction::evaluate_present_field(
     rho_obs = (history->get_value(obs, s, 0))[RHO_01];
     rho_src = (history->get_value(src, s, 0))[RHO_01];
 
-    if ( !rotating ){
+    if ( !omega ){
       results[src] += 2.0 * std::real( rho_obs * coeffs[pair_idx][0] );
       results[obs] += 2.0 * std::real( rho_src * coeffs[pair_idx][0] );
     } else {
+	  	const auto phi0 = std::exp( iu*omega*time0 );
       results[src] += 2.0 * std::real( rho_obs * coeffs[pair_idx][0] 
-                      * std::exp( iu*omega*time0) ) * std::exp( -iu*omega*time0 );
+                      * phi0 ) * std::conj( phi0 );
                                                                                                     
       results[obs] += 2.0 * std::real( rho_src * coeffs[pair_idx][0] 
-                      * std::exp( iu*omega*time0) ) * std::exp( -iu*omega*time0 );
+                      * phi0 ) * std::conj( phi0 );
     }    
   }
  

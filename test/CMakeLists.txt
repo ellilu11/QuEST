@@ -10,9 +10,8 @@ if(${Boost_FOUND})
 
   target_sources(qtest-bin
     PUBLIC
-    #"${CMAKE_CURRENT_LIST_DIR}/test.cpp"
-    #"${CMAKE_CURRENT_LIST_DIR}/derivtest.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/aimfdtd_2cubes.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/test.cpp"
+    #"${CMAKE_CURRENT_LIST_DIR}/aimfdtd_2cubes.cpp"
  
     )
 

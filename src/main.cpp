@@ -109,7 +109,7 @@ int main(int argc, char *argv[])
         Propagation::SelfRotatingEFIE dyadic_self(c0, propagation_constant, omega, beta);
 
         selfwise = make_shared<SelfInteraction>(qds, history, dyadic_self,
-                                                    interpolation_order, c0, dt, omega, rotating);
+                                                    interpolation_order, c0, dt, omega);
         pairwise = make_shared<AIM::Interaction>(
             qds, history, dyadic, grid_spacing, 
             interpolation_order, expansion_order, border,
@@ -124,7 +124,7 @@ int main(int argc, char *argv[])
         Propagation::SelfEFIE dyadic_self(c0, propagation_constant, beta);
        
         selfwise = make_shared<SelfInteraction>(qds, history, dyadic_self,
-                                                    interpolation_order, c0, dt, omega, rotating);
+                                                    interpolation_order, c0, dt);
         pairwise = make_shared<AIM::Interaction>(
             qds, history, dyadic, grid_spacing, 
             interpolation_order, expansion_order, border,
@@ -143,18 +143,18 @@ int main(int argc, char *argv[])
           Propagation::SelfRotatingEFIE dyadic_self(c0, propagation_constant, omega, beta);
 
           selfwise = make_shared<SelfInteraction>(qds, history, dyadic_self,
-                                                      interpolation_order, c0, dt, omega, rotating);
+                                                      interpolation_order, c0, dt, omega);
           pairwise = make_shared<DirectInteraction>(qds, history, dyadic,
-                                                        interpolation_order, c0, dt, omega, rotating);
+                                                        interpolation_order, c0, dt, omega);
       
       } else {
           Propagation::EFIE<cmplx> dyadic(c0, propagation_constant, beta, 0.0);
           Propagation::SelfEFIE dyadic_self(c0, propagation_constant, beta);
          
           selfwise = make_shared<SelfInteraction>(qds, history, dyadic_self,
-                                                      interpolation_order, c0, dt, omega, rotating);
+                                                      interpolation_order, c0, dt);
           pairwise = make_shared<DirectInteraction>(qds, history, dyadic,
-                                                        interpolation_order, c0, dt, omega, rotating); 
+                                                        interpolation_order, c0, dt); 
       }
 
     }

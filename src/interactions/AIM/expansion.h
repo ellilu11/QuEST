@@ -232,6 +232,7 @@ namespace AIM {
             dt2_coefs(
                 {{15.0 / 4, -77.0 / 6, 107.0 / 6, -13.0, 61.0 / 12, -5.0 / 6}}),
             c(c),
+						dt(dt),
             omega(omega)
       {
         for(auto &coef : dt1_coefs) coef /= std::pow(dt, 1);
@@ -242,18 +243,27 @@ namespace AIM {
                                   const std::array<int, 4> &coord,
                                   const Expansions::Expansion &e)
       {
-        Eigen::Matrix3cd deriv = Eigen::Matrix3cd::Zero();
+        // Eigen::Matrix3cd deriv = Eigen::Matrix3cd::Zero();
         Eigen::Map<const Eigen::Vector3cd> present_field(
             &obs[wrap_index(coord[0])][coord[1]][coord[2]][coord[3]][0]);
 
-        deriv.col(0) = e.d0 * present_field;
+        const auto deriv0 = e.d0 * present_field;
 
+				const double t0 = coord[0] * dt;
+				const auto phi0 = std::exp( iu*omega*t0 );
+				Eigen::Vector3cd time = 
+						( -std::pow(omega, 2) * deriv0 * phi0 ).real() * std::conj(phi0);
+  
         for(int h = 0; h < static_cast<int>(dt2_coefs.size()); ++h) {
           const int w = wrap_index(std::max(coord[0] - h, 0));
+					const double t = t0 - h*dt;
+					const auto phi = std::exp( iu*omega*t );
+
           Eigen::Map<const Eigen::Vector3cd> past_field(
               &obs[w][coord[1]][coord[2]][coord[3]][0]);
-          deriv.col(1) += dt1_coefs[h] * e.d0 * past_field;
-          deriv.col(2) += dt2_coefs[h] * e.d0 * past_field;
+          const auto deriv1 = dt1_coefs[h] * e.d0 * past_field;
+          const auto deriv2 = dt2_coefs[h] * e.d0 * past_field;
+					time += ( ( deriv2 + 2.0 * iu * omega * deriv1 ) * phi ).real() * std::conj(phi);
         }
 
         // Notice that this is just the derivative of E(t)exp(iwt), just
@@ -261,16 +271,15 @@ namespace AIM {
         // calculations. There is no exp(-ikr) factor here as that gets
         // taken care of in the normalization class.
 
-        const auto time = deriv.col(2) + 2.0 * iu * omega * deriv.col(1) -
-                          std::pow(omega, 2) * deriv.col(0);
-        const auto space = e.del_sq * present_field;
+				const auto space = ( e.del_sq * present_field * phi0 ).real()
+														* std::conj(phi0);
 
         return -time + std::pow(c, 2) * space;
       }
 
      private:
       std::array<double, 6> dt1_coefs, dt2_coefs;
-      double c, omega;
+      double c, dt, omega;
     };
 
     class RotatingEFIE_TimeDeriv2 : public RetardationBase {

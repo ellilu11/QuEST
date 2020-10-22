@@ -171,11 +171,12 @@ void AIM::Farfield::fill_results_table(const int step)
 
     // finally sum fields and calculate Rabi freq
     // results(dot_idx) += 2.0 * std::real( (field+deldel_field).dot((*dots)[dot_idx].dipole()) );
-		if ( !omega_ )
-    	results(dot_idx) += 2.0 * std::real( field.dot((*dots)[dot_idx].dipole()) );
+		if ( omega_ )
+			results(dot_idx) += 2.0 * field.dot((*dots)[dot_idx].dipole());
 		else
-			results(dot_idx) += 2.0 * std::real( field.dot((*dots)[dot_idx].dipole()) *
-																	std::exp( iu*omega_*time) ) * std::exp( -iu*omega_*time );		
+			results(dot_idx) += 2.0 * std::real( field.dot((*dots)[dot_idx].dipole()) );
+			//results(dot_idx) += 2.0 * std::real( field.dot((*dots)[dot_idx].dipole()) *
+			//														std::exp( iu*omega_*time) ) * std::exp( -iu*omega_*time );		
   }
 }
 

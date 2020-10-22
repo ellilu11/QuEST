@@ -28,7 +28,7 @@ AIM::Grid::Grid(const Eigen::Array3d &spacing,
 //  std::cout << bounds.col(1) << std::endl;
 
 //  std::cout << h_int << std::endl;
-  sort_points_on_boxidx(dots);
+//  sort_points_on_boxidx(dots);
 }
 
 AIM::Grid::BoundsArray AIM::Grid::calculate_bounds(const DotVector &dots) const

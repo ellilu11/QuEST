@@ -13,8 +13,7 @@ class SelfInteraction final : public HistoryInteraction {
       const int,
       const double,
       const double,
-      const double,
-      const bool);
+      const double = 0);
 
   const ResultArray &evaluate(const int) final;
   const ResultArray &evaluate_present_field(const int) final;
@@ -25,7 +24,6 @@ class SelfInteraction final : public HistoryInteraction {
 
   boost::multi_array<cmplx, 2> coeffs;
   double omega;
-  bool rotating;
 
   void build_coeff_table(Propagation::Kernel<cmplx> &);
 

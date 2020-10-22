@@ -8,13 +8,11 @@ SelfInteraction::SelfInteraction(
     const int interp_order,
     const double c0,
     const double dt,
-    const double omega,
-    const bool rotating)
+    const double omega)
     : HistoryInteraction(
           std::move(dots), std::move(history), interp_order, c0, dt),
       num_src((this->dots)->size()),
       omega(omega), 
-      rotating(rotating),
       coeffs(boost::extents[num_src][interp_order + 1])
 {
    build_coeff_table(kernel);
@@ -57,21 +55,25 @@ const InteractionBase::ResultArray &SelfInteraction::evaluate(
           std::max(time_idx - i, -history->window);
       rho_src = (history->get_value(src, s, 0))[RHO_01];
 
-      if ( !rotating )
+      if ( !omega )
         past_terms_of_convolution[src] += 2.0 * std::real( rho_src * coeffs[src][i] );
-      else 
+      else { 
+				const auto phi0 = std::exp( iu*omega*time0 );
         past_terms_of_convolution[src] += 2.0 * std::real( rho_src * coeffs[src][i] 
-                        * std::exp( iu*omega*time0) ) * std::exp( -iu*omega*time0 );
+                        * phi0 ) * std::conj( phi0 );
+      }
     }
 
     const int s = std::max(time_idx, -history->window);
     rho_src = (history->get_value(src, s, 0))[RHO_01];
 
-    if ( !rotating )
+    if ( !omega )
       results[src] += 2.0 * std::real( rho_src * coeffs[src][0] );
-    else 
+    else { 
+			const auto phi0 = std::exp( iu*omega*time0 );
       results[src] += 2.0 * std::real( rho_src * coeffs[src][0] 
-                      * std::exp( iu*omega*time0) ) * std::exp( -iu*omega*time0 );
+                      * phi0 ) * std::conj( phi0 );
+		}
   } 
   
   results += past_terms_of_convolution;
@@ -94,11 +96,13 @@ const InteractionBase::ResultArray &SelfInteraction::evaluate_present_field(
     const int s = std::max(time_idx, -history->window);
     rho_src = (history->get_value(src, s, 0))[RHO_01];
 
-    if ( !rotating )
+    if ( !omega )
       results[src] += 2.0 * std::real( rho_src * coeffs[src][0] );
-    else 
+    else {
+  		const auto phi0 = std::exp( iu*omega*time0 );
       results[src] += 2.0 * std::real( rho_src * coeffs[src][0] 
-                      * std::exp( iu*omega*time0) ) * std::exp( -iu*omega*time0 );
+                      * phi0 ) * std::conj( phi0 );
+		}
   } 
 
   results += past_terms_of_convolution;
