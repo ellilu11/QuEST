@@ -137,7 +137,7 @@ void AIM::Farfield::fill_results_table(const int step)
     
     // then calculate FDTD (e.g. spatial derivative) field 
     //std::vector<Eigen::Vector3cd> fld_stencil(27); 
-    boost::multi_array<Eigen::Vector3cd, 1> fld_stencil(boost::extents[27]);
+/*    boost::multi_array<Eigen::Vector3cd, 1> fld_stencil(boost::extents[27]);
 
     for(auto obs_idx = 0u; obs_idx < 27; ++obs_idx) { 
       if ( h_ == 0 ) break;
@@ -164,26 +164,14 @@ void AIM::Farfield::fill_results_table(const int step)
 
     // use fields at stencil points to calculate FDTD
     Eigen::Vector3cd deldel_field = h_ ? FDTD_Del_Del( fld_stencil ) : Eigen::Vector3cd::Zero(); 
- 
-//    if ( step == 50 )
-//      std::cout << dot_idx << " " << field.transpose() << " " << deldel_field.transpose() << std::endl;
+*/ 
 
     // finally sum fields and calculate Rabi freq
-    results(dot_idx) += 2.0 * std::real( (field+deldel_field).dot((*dots)[dot_idx].dipole()) );
+    // results(dot_idx) += 2.0 * std::real( (field+deldel_field).dot((*dots)[dot_idx].dipole()) );
+    results(dot_idx) += 2.0 * std::real( field.dot((*dots)[dot_idx].dipole()) );
+
   }
 }
-
-/* 
-  for(int i=0; i < 3; ++i){
-    D_XX[i] = (stencil[XP])[i] - 2.0*(stencil[O])[i] + (stencil[XM])[i];
-    D_YY[i] = (stencil[YP])[i] - 2.0*(stencil[O])[i] + (stencil[YM])[i];
-    D_ZZ[i] = (stencil[ZP])[i] - 2.0*(stencil[O])[i] + (stencil[ZM])[i];
-
-    D_XY[i] = (stencil[XYPP])[i] - (stencil[XYMP])[i] - (stencil[XYPM])[i] + (stencil[XYMM])[i];
-    D_XZ[i] = (stencil[XZPP])[i] - (stencil[XZMP])[i] - (stencil[XZPM])[i] + (stencil[XZMM])[i];
-    D_YZ[i] = (stencil[YZPP])[i] - (stencil[YZMP])[i] - (stencil[YZPM])[i] + (stencil[YZMM])[i];
-  }
-*/
 
 spacetime::vector<cmplx> AIM::Farfield::make_propagation_table() const
 {

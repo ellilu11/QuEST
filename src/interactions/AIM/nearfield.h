@@ -27,18 +27,15 @@ class AIM::Nearfield final : public AimBase {
 
   const ResultArray &evaluate(const int) final;
 
-  const ResultArray &evaluate_present_field(const int step) final
-  {
-    return results;
-  }
+  const ResultArray &evaluate_present_field(const int step) final;
 
  private:
   struct support_range_t {
     int begin, end;
   };
 
-  double omega_;
-  std::shared_ptr<const std::vector<Grid::ipair_t>> interaction_pairs_;
+  const double omega_;
+	std::shared_ptr<const std::vector<Grid::ipair_t>> interaction_pairs_;
   std::array<int, 3> shape_;
   std::vector<support_range_t> support_;
   boost::multi_array<std::pair<int,int>, 3> delays_;

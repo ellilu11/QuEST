@@ -40,25 +40,91 @@ AIM::Nearfield::Nearfield(
 
 const InteractionBase::ResultArray &AIM::Nearfield::evaluate(const int time_idx)
 {
-  results.setZero();
-  constexpr int RHO_01 = 1;
+ 	constexpr int RHO_01 = 1;
+	const double time0 = time_idx * dt;
   cmplx rho0, rho1;
+
+  results.setZero();
+	past_terms_of_convolution.setZero(); 
 
   for(int pair_idx = 0; pair_idx < shape_[0]; ++pair_idx) {
     const auto &pair = (*interaction_pairs_)[pair_idx];
 
-    for(int t = support_[pair_idx].begin; t < support_[pair_idx].end; ++t) {
+    for(int t = support_[pair_idx].begin + 1; t < support_[pair_idx].end; ++t) {
       const int s = std::max(
           time_idx - t, -history->window);
+			const double time = time0 - t*dt;
 
       rho0 = (history->get_value(pair.first, s, 0))[RHO_01];
       rho1 = (history->get_value(pair.second, s, 0))[RHO_01];
 
+      if ( !omega_ ){
+      	past_terms_of_convolution[pair.first] += 2.0 * std::real( rho1 * coefficients_[pair_idx][t][0] );
+      	past_terms_of_convolution[pair.second] += 2.0 * std::real( rho0 * coefficients_[pair_idx][t][1] );
+      } else {
+        past_terms_of_convolution[pair.first] += 2.0 * std::real( rho1 * coefficients_[pair_idx][t][0] 
+                        * std::exp( iu*omega_*time) ) * std::exp( -iu*omega_*time );
+                                                                                                      
+        past_terms_of_convolution[pair.second] += 2.0 * std::real( rho0 * coefficients_[pair_idx][t][1] 
+                        * std::exp( iu*omega_*time) ) * std::exp( -iu*omega_*time );
+      }    
+    }
+   
+		const int t = support_[pair_idx].begin;
+    const int s = std::max(time_idx - t, -history->window);
+    rho1 = (history->get_value(pair.second, s, 0))[RHO_01];
+    rho0 = (history->get_value(pair.first, s, 0))[RHO_01];
+
+    if ( !omega_ ){
       results[pair.first] += 2.0 * std::real( rho1 * coefficients_[pair_idx][t][0] );
       results[pair.second] += 2.0 * std::real( rho0 * coefficients_[pair_idx][t][1] );
-    
-    }
+    } else {
+      results[pair.first] += 2.0 * std::real( rho1 * coefficients_[pair_idx][t][0] 
+                      * std::exp( iu*omega_*time0) ) * std::exp( -iu*omega_*time0 );
+                                                                                                    
+      results[pair.second] += 2.0 * std::real( rho0 * coefficients_[pair_idx][t][1] 
+                      * std::exp( iu*omega_*time0) ) * std::exp( -iu*omega_*time0 );
+    }    
   }
+  
+  results += past_terms_of_convolution;
+
+  return results;
+}
+
+const InteractionBase::ResultArray &AIM::Nearfield::evaluate_present_field(
+    const int time_idx)
+{
+  constexpr int RHO_01 = 1;
+  const double time0 = time_idx * dt;
+  cmplx rho0, rho1;
+
+  results.setZero();
+  
+  // source pairwise interactions
+  for(int pair_idx = 0; pair_idx < shape_[0]; ++pair_idx) {
+    const auto &pair = (*interaction_pairs_)[pair_idx];
+
+		const int t = support_[pair_idx].begin;
+    const int s = std::max(time_idx - t, -history->window);
+		const double time = time0 - t*dt;
+
+    rho1 = (history->get_value(pair.second, s, 0))[RHO_01];
+    rho0 = (history->get_value(pair.first, s, 0))[RHO_01];
+
+    if ( !omega_ ){
+      results[pair.first] += 2.0 * std::real( rho1 * coefficients_[pair_idx][t][0] );
+      results[pair.second] += 2.0 * std::real( rho0 * coefficients_[pair_idx][t][1] );
+    } else {
+      results[pair.first] += 2.0 * std::real( rho1 * coefficients_[pair_idx][t][0] 
+                      * std::exp( iu*omega_*time) ) * std::exp( -iu*omega_*time );
+                                                                                                    
+      results[pair.second] += 2.0 * std::real( rho0 * coefficients_[pair_idx][t][1] 
+                      * std::exp( iu*omega_*time) ) * std::exp( -iu*omega_*time );
+    }    
+  }
+ 
+  results += past_terms_of_convolution;
 
   return results;
 }
@@ -137,7 +203,7 @@ boost::multi_array<cmplx, 3> AIM::Nearfield::coefficient_table()
                 -time + (h_ ? 0.0 : dyad[1] * lagrange.evaluations[0][poly]);
         }
 
-        for(int obs = 0; obs < expansion_table->shape()[1]; ++obs){ // obs pt
+        /*for(int obs = 0; obs < expansion_table->shape()[1]; ++obs){ // obs pt
           if ( !h_ ) break;
           if ( obs == 13 || obs == 14 || obs == 16 || obs == 17 )
             continue;
@@ -160,19 +226,19 @@ boost::multi_array<cmplx, 3> AIM::Nearfield::coefficient_table()
             if ( pair.first != pair.second)
               stencil_coeffs1[poly][obs] += lagrange.evaluations[0][poly] * stencil1;
           }
-        }
+        }*/
 
       } // j
     } // i
     
-    for(int poly = 0; poly < lagrange.order() + 1; ++poly) {
+    /*for(int poly = 0; poly < lagrange.order() + 1; ++poly) {
       if ( !h_ ) break;
         const int convolution_idx = 0 + poly; // assume dist between any two src/obs expansion points is << c0 * dt 
         coefficients[pair_idx][convolution_idx][0] += 
           dot0.dipole().dot( FDTD_Del_Del(stencil_coeffs0[poly]) );
         coefficients[pair_idx][convolution_idx][1] += 
           dot1.dipole().dot( FDTD_Del_Del(stencil_coeffs1[poly]) );
-    }
+    }*/
     
 /*    for(int t = support_[pair_idx].begin; t < support_[pair_idx].end; ++t)
       std::cout << pair_idx << " " << t << " " 

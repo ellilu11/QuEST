@@ -72,7 +72,7 @@ Integrator::History<soltype>::History(const int num_particles,
   array_.resize(
       boost::extents[num_particles][time_idx_ubound][num_derivatives]);
 
-  outfile.open("./out/out" + std::to_string(task_idx) + ".dat");
+  outfile.open("./out/out" + std::to_string(task_idx) + ".dat2");
   outfile << std::scientific << std::setprecision(15);
 }
 

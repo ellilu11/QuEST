@@ -74,13 +74,15 @@ class AIM::Interaction final : public InteractionBase {
     //     nf.evaluate(t);
     //results = 
     //    ff.evaluate(t).conjugate();
-   results = 
+    results = 
          (ff.evaluate(t).conjugate() - nf.evaluate(t)) + direct.evaluate(t);
     return results;
   }
 
   const ResultArray &evaluate_present_field(const int t)
   {
+  	results = 
+         (ff.evaluate(t).conjugate() - nf.evaluate(t)) + direct.evaluate_present_field(t);
     return results;
   }
 

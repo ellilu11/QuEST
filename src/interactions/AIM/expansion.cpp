@@ -16,6 +16,7 @@ AIM::Expansions::LeastSquaresExpansionSolver::table(
   using DerivArray = Eigen::Array<double, NUM_DERIVS, Eigen::Dynamic>;
   
   int num_obs_pts = h ? 27 : 1;
+	std::cout << "    num_obs_pts: " << num_obs_pts << std::endl;
 
   AIM::Expansions::ExpansionTable table(boost::extents[dots.size()][num_obs_pts][num_pts]);
 
