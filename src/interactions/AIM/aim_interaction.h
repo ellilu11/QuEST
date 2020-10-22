@@ -44,7 +44,8 @@ class AIM::Interaction final : public InteractionBase {
            expansion_table,
            expansion_function,
            expansion_function_fdtd,
-           normalization),
+           normalization,
+					 omega),
 
         nf(dots,
            history,
@@ -60,7 +61,7 @@ class AIM::Interaction final : public InteractionBase {
            nearfield_pairs,
            omega),
 
-        direct(dots, history, kernel, interp_order, c0, dt, nearfield_pairs)
+        direct(dots, history, kernel, interp_order, c0, dt, nearfield_pairs, omega)
   {
         // std::cout << (*nearfield_pairs).size() << std::endl;
         /*for ( int i=0; i < (*nearfield_pairs).size(); i++ )
@@ -82,7 +83,7 @@ class AIM::Interaction final : public InteractionBase {
   const ResultArray &evaluate_present_field(const int t)
   {
   	results = 
-         (ff.evaluate(t).conjugate() - nf.evaluate(t)) + direct.evaluate_present_field(t);
+         (ff.evaluate(t).conjugate() - nf.evaluate_present_field(t)) + direct.evaluate_present_field(t);
     return results;
   }
 

@@ -116,8 +116,8 @@ int main(int argc, char *argv[])
             c0, dt, 0, 
 						AIM::Expansions::RotatingEFIE(transit_steps, c0, dt, omega),
 						AIM::Expansions::Zero(transit_steps),
-            AIM::Normalization::Helmholtz(omega/c0, propagation_constant)
-            );
+            AIM::Normalization::Helmholtz(omega/c0, propagation_constant),
+            omega);
  
      } else {
         Propagation::EFIE<cmplx> dyadic(c0, propagation_constant, beta, 0.0);

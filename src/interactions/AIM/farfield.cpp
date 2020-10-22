@@ -11,12 +11,14 @@ AIM::Farfield::Farfield(
     std::shared_ptr<const Expansions::ExpansionTable> expansion_table,
     Expansions::ExpansionFunction expansion_function,
     Expansions::ExpansionFunction expansion_function_fdtd,
-    Normalization::SpatialNorm normalization)
+    Normalization::SpatialNorm normalization,
+	  const double omega)
     : AimBase(dots,
               history,
               interp_order,
               c0,
               dt,
+							omega,
               h,
               grid,
               expansion_table,
@@ -111,6 +113,7 @@ void AIM::Farfield::propagate(const int step)
 void AIM::Farfield::fill_results_table(const int step)
 {
   results = 0;
+	const double time = step*dt;	
 
   for(auto dot_idx = 0u; dot_idx < expansion_table->shape()[0]; ++dot_idx) {
  
@@ -168,8 +171,11 @@ void AIM::Farfield::fill_results_table(const int step)
 
     // finally sum fields and calculate Rabi freq
     // results(dot_idx) += 2.0 * std::real( (field+deldel_field).dot((*dots)[dot_idx].dipole()) );
-    results(dot_idx) += 2.0 * std::real( field.dot((*dots)[dot_idx].dipole()) );
-
+		if ( !omega_ )
+    	results(dot_idx) += 2.0 * std::real( field.dot((*dots)[dot_idx].dipole()) );
+		else
+			results(dot_idx) += 2.0 * std::real( field.dot((*dots)[dot_idx].dipole()) *
+																	std::exp( iu*omega_*time) ) * std::exp( -iu*omega_*time );		
   }
 }
 

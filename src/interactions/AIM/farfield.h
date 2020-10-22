@@ -20,7 +20,8 @@ class AIM::Farfield final : public AimBase {
            std::shared_ptr<const Expansions::ExpansionTable>,
            Expansions::ExpansionFunction,
            Expansions::ExpansionFunction,
-           Normalization::SpatialNorm);
+           Normalization::SpatialNorm,
+					 const double);
   ~Farfield() = default;
 
   const ResultArray &evaluate(const int step) final

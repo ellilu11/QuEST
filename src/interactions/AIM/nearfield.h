@@ -22,7 +22,7 @@ class AIM::Nearfield final : public AimBase {
             Expansions::ExpansionFunction,
             Normalization::SpatialNorm,
             std::shared_ptr<const std::vector<Grid::ipair_t>>,
-            const double = 0);
+            const double);
   ~Nearfield() = default;
 
   const ResultArray &evaluate(const int) final;
@@ -34,7 +34,7 @@ class AIM::Nearfield final : public AimBase {
     int begin, end;
   };
 
-  const double omega_;
+  // const double omega_;
 	std::shared_ptr<const std::vector<Grid::ipair_t>> interaction_pairs_;
   std::array<int, 3> shape_;
   std::vector<support_range_t> support_;

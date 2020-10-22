@@ -17,7 +17,7 @@ class AIM::DirectInteraction final : public HistoryInteraction {
       const double,
       const double,
     	std::shared_ptr<const std::vector<Grid::ipair_t>>,
-			const double = 0);
+			const double);
 
   const ResultArray &evaluate(const int) final;
 
