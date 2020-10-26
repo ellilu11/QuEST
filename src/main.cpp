@@ -22,7 +22,7 @@ int main(int argc, char *argv[])
 
     // parameters
     const int num_src = atoi(argv[1]);
-    const double tmax = 10000;
+    const double tmax = 50;
     const double dt = 5.0 / pow(10.0, atoi(argv[2]) ); 
                               // rotframe: sigma = 1.0ps -> dt <= 0.52e-1
                               // fixframe: omega = 2278.9013 mev/hbar -> dt <= 1.379e-4
@@ -38,13 +38,13 @@ int main(int argc, char *argv[])
     const double c0 = 299.792458, hbar = 0.65821193, mu0 = 2.0133545e-04;
     const double omega = 2278.9013;
     double beta = // 0.0;
-                  // 1.0e-1 / pow(omega,3);
-                  1.79e-4 / pow( omega, 3 );
+                  1.0e-1 / pow(omega,3);
+                  // 1.79e-4 / pow( omega, 3 );
 
     const double k0 = omega/c0, lambda = 2.0*M_PI/k0;    
 
     // AIM
-    const double ds = 5.0e-3*lambda;
+    const double ds = 4.0e-3*lambda;
     const double h = 0.5*ds; // FDTD spacing
     Eigen::Vector3d grid_spacing(ds, ds, ds);
     const int expansion_order = 4;
@@ -59,8 +59,10 @@ int main(int argc, char *argv[])
               << ((rotating) ? "Rotating" : "Fixed") << std::endl;
 		
     cout << "  dt: " << dt << std::endl;
+		cout << "  Simulation time: " << tmax << std::endl;
     cout << "  Num timesteps: " << num_timesteps << std::endl;
     cout << "  Num sources: " << num_src << std::endl;
+		cout << "  Interpolation order: " << interpolation_order << std::endl;
 		cout << "  AIM ds/lambda: " << ds/lambda << endl;
 		cout << "  AIM expansion order: " << expansion_order << endl;
 		cout << "  AIM border: " << border << endl;

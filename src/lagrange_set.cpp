@@ -20,7 +20,7 @@ void Interpolation::UniformLagrangeSet::evaluate_derivative_table_at_x(
     const double x, const double dt /* = 1 */)
 {
   // Method 1: Directly supplying the coefficients
-  /*  double y = 1.0 - x;
+    double y = 1.0 - x;
   double y2 = pow(y,2), y3 = pow(y,3), y4 = pow(y,4);
 
   assert(order_ == 4);
@@ -53,11 +53,14 @@ void Interpolation::UniformLagrangeSet::evaluate_derivative_table_at_x(
       evaluations[3][0] = 1.0/24.0 * (36.0 + 24.0*y);
 
     }
-  }*/
+		// case 5 : {
+			
+		// }
+  }
 
   // Method 2: Analytically calculating the coefficients;
   // DON'T USE THIS WHEN SELF-INTERACTIONS (x = 0) ARE PRESENT!!!
-  for(int basis_id = 0; basis_id <= order_; ++basis_id) {
+  /*for(int basis_id = 0; basis_id <= order_; ++basis_id) {
     double d0_product = 1;
     double d1_sum = 0, d2_sum = 0, d3_sum = 0;
     for(int m = 0; m <= order_; ++m) {
@@ -82,13 +85,13 @@ void Interpolation::UniformLagrangeSet::evaluate_derivative_table_at_x(
        (2.0 * d3_sum + 3.0 * d1_sum * d2_sum + std::pow(d1_sum, 3));
   }
 
-
+*/
   for(int i = 0; i <= order_; ++i) {
     evaluations[1][i] *= std::pow(dt, -1);
     evaluations[2][i] *= std::pow(dt, -2);
     evaluations[3][i] *= std::pow(dt, -3);
     
-/*    if ( x == 0 ) {
+   /* if ( x == 0 ) {
       for(int j = 0; j <= 3; ++j)
         std::cout << evaluations[j][i] << " ";
       std::cout << std::endl;

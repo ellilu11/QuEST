@@ -62,11 +62,12 @@ const InteractionBase::ResultArray &AIM::Nearfield::evaluate(const int time_idx)
       	past_terms_of_convolution[pair.first] += 2.0 * std::real( rho1 * coefficients_[pair_idx][t][0] );
       	past_terms_of_convolution[pair.second] += 2.0 * std::real( rho0 * coefficients_[pair_idx][t][1] );
       } else {
+				const auto phi = std::exp( iu*omega_*time );
         past_terms_of_convolution[pair.first] += 2.0 * std::real( rho1 * coefficients_[pair_idx][t][0] 
-                        * std::exp( iu*omega_*time) ) * std::exp( -iu*omega_*time );
+                        * phi ) * std::conj( phi );
                                                                                                       
         past_terms_of_convolution[pair.second] += 2.0 * std::real( rho0 * coefficients_[pair_idx][t][1] 
-                        * std::exp( iu*omega_*time) ) * std::exp( -iu*omega_*time );
+                        * phi ) * std::conj( phi );
       }    
     }
    
@@ -79,11 +80,12 @@ const InteractionBase::ResultArray &AIM::Nearfield::evaluate(const int time_idx)
       results[pair.first] += 2.0 * std::real( rho1 * coefficients_[pair_idx][t][0] );
       results[pair.second] += 2.0 * std::real( rho0 * coefficients_[pair_idx][t][1] );
     } else {
+			const auto phi0 = std::exp( iu*omega_*time0 );
       results[pair.first] += 2.0 * std::real( rho1 * coefficients_[pair_idx][t][0] 
-                      * std::exp( iu*omega_*time0) ) * std::exp( -iu*omega_*time0 );
+                      * phi0 ) * std::conj( phi0 );
                                                                                                     
       results[pair.second] += 2.0 * std::real( rho0 * coefficients_[pair_idx][t][1] 
-                      * std::exp( iu*omega_*time0) ) * std::exp( -iu*omega_*time0 );
+                      * phi0 ) * std::conj( phi0 );
     }    
   }
   
@@ -116,11 +118,12 @@ const InteractionBase::ResultArray &AIM::Nearfield::evaluate_present_field(
       results[pair.first] += 2.0 * std::real( rho1 * coefficients_[pair_idx][t][0] );
       results[pair.second] += 2.0 * std::real( rho0 * coefficients_[pair_idx][t][1] );
     } else {
+			const auto phi = std::exp( iu*omega_*time );
       results[pair.first] += 2.0 * std::real( rho1 * coefficients_[pair_idx][t][0] 
-                      * std::exp( iu*omega_*time) ) * std::exp( -iu*omega_*time );
+                      * phi ) * std::conj( phi );
                                                                                                     
       results[pair.second] += 2.0 * std::real( rho0 * coefficients_[pair_idx][t][1] 
-                      * std::exp( iu*omega_*time) ) * std::exp( -iu*omega_*time );
+                      * phi ) * std::conj( phi );
     }    
   }
  
