@@ -20,7 +20,7 @@ void Interpolation::UniformLagrangeSet::evaluate_derivative_table_at_x(
     const double x, const double dt /* = 1 */)
 {
   // Method 1: Directly supplying the coefficients
-    double y = 1.0 - x;
+  double y = 1.0 - x;
   double y2 = pow(y,2), y3 = pow(y,3), y4 = pow(y,4);
 
   assert(order_ == 4);
@@ -52,9 +52,32 @@ void Interpolation::UniformLagrangeSet::evaluate_derivative_table_at_x(
       evaluations[3][1] = -1.0/6.0 * (30.0 + 24.0*y);
       evaluations[3][0] = 1.0/24.0 * (36.0 + 24.0*y);
 
-    }
-		// case 5 : {
+    }	break;
+		
+		case 3 : {
+
+			evaluations[0][3] = -1.0/6.0 * (y3 - y);
+			evaluations[0][2] = 1.0/2.0 * (y3 + y2 - 2.0*y);	
+			evaluations[0][1] = -1.0/2.0 * (y3 + 2.0*y2 - y - 2.0);
+			evaluations[0][0] = 1.0/6.0 * (y3 + 3.0*y2 + 2.0*y);
+
+			evaluations[1][3] = -1.0/6.0 * (3.0*y2 - 1.0);
+			evaluations[1][2] = 1.0/2.0 * (3.0*y2 + 2.0*y - 2.0);
+			evaluations[1][1] = -1.0/2.0 * (3.0*y2 + 4.0*y - 1.0);
+			evaluations[1][0] = 1.0/6.0 * (3.0*y2 + 6.0*y + 2.0);
+
+			evaluations[2][3] = -y;
+			evaluations[2][2] = 1.0/2.0 * (6.0*y + 2.0);
+			evaluations[2][1] = -1.0/2.0 * (6.0*y + 4.0);
+			evaluations[2][0] = y + 1.0;
 			
+			evaluations[3][3] = -1.0;
+			evaluations[3][2] = 3.0;
+			evaluations[3][1] = -3.0;
+			evaluations[3][0] = 1.0;
+		} break;
+
+
 		// }
   }
 
