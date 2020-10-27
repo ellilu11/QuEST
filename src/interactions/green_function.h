@@ -282,8 +282,8 @@ class Propagation::SelfEFIE : public Propagation::Kernel<cmplx> {
     if ( dr.norm() == 0.0){
       for(int i = 0; i <= interp.order(); ++i) {
         this->coefs_[i] = 
-          // -beta_ / pow( 5.2917721e-4, 2 ) * Eigen::Matrix3d::Identity() * 
-          -k2_ * 2.0 * Eigen::Matrix3d::Identity() / ( 3.0 * c_ ) * 
+          -beta_ / pow( 5.2917721e-4, 2 ) * Eigen::Matrix3d::Identity() * 
+          // -k2_ * 2.0 * Eigen::Matrix3d::Identity() / ( 3.0 * c_ ) * 
                 interp.evaluations[3][i] ;
 
       }

@@ -173,7 +173,7 @@ int main(int argc, char *argv[])
 
   std::string taskstr(argv[2]);
 
-  std::ofstream fd("./dots_aimtest.cfg");
+  std::ofstream fd("./dots.cfg");
   fd << std::setprecision(12);
 
   for(const auto &d : dots) {
