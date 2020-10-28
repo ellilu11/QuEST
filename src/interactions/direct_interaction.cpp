@@ -72,7 +72,7 @@ const InteractionBase::ResultArray &DirectInteraction::evaluate(
     for(int i = 1; i <= interp_order; ++i) {
       const int s =
           std::max(time_idx - floor_delays[pair_idx] - i, -history->window);
-      const double time = time0 - i*dt;
+      const double time = (time_idx - i) * dt;
 
       rho_obs = (history->get_value(obs, s, 0))[RHO_01];
       rho_src = (history->get_value(src, s, 0))[RHO_01];
@@ -80,22 +80,21 @@ const InteractionBase::ResultArray &DirectInteraction::evaluate(
       if ( !omega ){
         past_terms_of_convolution[src] += 2.0 * std::real( rho_obs * coeffs[pair_idx][i] );
         past_terms_of_convolution[obs] += 2.0 * std::real( rho_src * coeffs[pair_idx][i] );
-      } 
-			else {
+			} else {
 				const auto phi = std::exp( iu*omega*time );
         past_terms_of_convolution[src] += 2.0 * std::real( rho_obs * coeffs[pair_idx][i] 
                         * phi ) * std::conj( phi );
                                                                                                       
         past_terms_of_convolution[obs] += 2.0 * std::real( rho_src * coeffs[pair_idx][i] 
                         * phi ) * std::conj( phi );
-    	}    
+    	}  
     }
    
     const int s = std::max(time_idx - floor_delays[pair_idx], -history->window);
     rho_obs = (history->get_value(obs, s, 0))[RHO_01];
     rho_src = (history->get_value(src, s, 0))[RHO_01];
 
-    if ( !omega ){
+     if ( !omega ){
       results[src] += 2.0 * std::real( rho_obs * coeffs[pair_idx][0] );
       results[obs] += 2.0 * std::real( rho_src * coeffs[pair_idx][0] );
     } else {
@@ -106,9 +105,11 @@ const InteractionBase::ResultArray &DirectInteraction::evaluate(
       results[obs] += 2.0 * std::real( rho_src * coeffs[pair_idx][0] 
                       * phi0 ) * std::conj( phi0 );
       // if ( time_idx == 10 ) std::cout << phi0 << " " << std::conj( phi0 ) << std::endl;
-    }    
+    } 
   }
   
+	if (time_idx == 50) std::cout << std::exp( iu*omega*time0 ) << std::endl;
+
   results += past_terms_of_convolution;
 
   return results;

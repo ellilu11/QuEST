@@ -22,14 +22,14 @@ int main(int argc, char *argv[])
 
     // parameters
     const int num_src = atoi(argv[1]);
-    const double tmax = 5;
+    const double tmax = 50;
     const double dt = 5.0 / pow(10.0, atoi(argv[2]) ); 
                               // rotframe: sigma = 1.0ps -> dt <= 0.52e-1
                               // fixframe: omega = 2278.9013 mev/hbar -> dt <= 1.379e-4
     const int num_timesteps = tmax/dt;
     const int num_corrector_steps = 0;
 
-    const int interpolation_order = 4;
+    const int interpolation_order = 3;
     const bool interacting = atoi(argv[3]);
     const bool rotating = atoi(argv[4]);
     const bool solve_type = atoi(argv[5]);

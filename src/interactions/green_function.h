@@ -234,9 +234,9 @@ class Propagation::RotatingEFIE : public Propagation::EFIE<cmplx> {
         this->coefs_[i] = 
             -k2_ * std::exp(-iu * omega_ * dr.norm() / c_) *
               (dyads[0].cast<cmplx>() * interp.evaluations[0][i] +
-              dyads[1].cast<cmplx>() * (interp.evaluations[1][i] +
+               dyads[1].cast<cmplx>() * (interp.evaluations[1][i] +
                                        iu * omega_ * interp.evaluations[0][i]) +
-              dyads[2].cast<cmplx>() *
+               dyads[2].cast<cmplx>() *
                  (interp.evaluations[2][i] +
                   2.0 * iu * omega_ * interp.evaluations[1][i] -
                   std::pow(omega_, 2) * interp.evaluations[0][i]));

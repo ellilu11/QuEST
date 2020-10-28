@@ -106,9 +106,9 @@ void Interpolation::UniformLagrangeSet::evaluate_derivative_table_at_x(
         (d2_sum + std::pow(d1_sum, 2));
     evaluations[3][basis_id] = evaluations[0][basis_id] *
        (2.0 * d3_sum + 3.0 * d1_sum * d2_sum + std::pow(d1_sum, 3));
-  }
+  }*/
 
-*/
+
   for(int i = 0; i <= order_; ++i) {
     evaluations[1][i] *= std::pow(dt, -1);
     evaluations[2][i] *= std::pow(dt, -2);
