@@ -10,8 +10,8 @@ if(${Boost_FOUND})
 
   target_sources(qtest-bin
     PUBLIC
-    #"${CMAKE_CURRENT_LIST_DIR}/test.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/dir_error.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/test.cpp"
+    #"${CMAKE_CURRENT_LIST_DIR}/dir_error.cpp"
  
     )
 

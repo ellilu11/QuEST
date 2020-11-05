@@ -113,12 +113,8 @@ void Interpolation::UniformLagrangeSet::evaluate_derivative_table_at_x(
     evaluations[1][i] *= std::pow(dt, -1);
     evaluations[2][i] *= std::pow(dt, -2);
     evaluations[3][i] *= std::pow(dt, -3);
-    
-   /* if ( x == 0 ) {
-      for(int j = 0; j <= 3; ++j)
-        std::cout << evaluations[j][i] << " ";
-      std::cout << std::endl;
-    }*/
+  
+		// std::cout << i << " " << evaluations[0][i] << std::endl;
   }
 
 }

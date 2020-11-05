@@ -22,8 +22,9 @@ int main(int argc, char *argv[])
 
     // parameters
     const int num_src = atoi(argv[1]);
-    const double tmax = 50;
-    const double dt = 5.0 / pow(10.0, atoi(argv[2]) ); 
+    const double tmax = 10000;
+    const double dt = atoi(argv[2]) ? 1.0e-2 : 5.0e-5;
+															// 5.0 / pow(10.0, atoi(argv[2]) ); 
                               // rotframe: sigma = 1.0ps -> dt <= 0.52e-1
                               // fixframe: omega = 2278.9013 mev/hbar -> dt <= 1.379e-4
     const int num_timesteps = tmax/dt;
@@ -44,7 +45,7 @@ int main(int argc, char *argv[])
     const double k0 = omega/c0, lambda = 2.0*M_PI/k0;    
 
     // AIM
-    const double ds = 5.0e-3*lambda;
+    const double ds = 10.0e-3*lambda;
     const double h = 0.5*ds; // FDTD spacing
     Eigen::Vector3d grid_spacing(ds, ds, ds);
     const int expansion_order = 4;
@@ -61,9 +62,11 @@ int main(int argc, char *argv[])
     cout << "  dt: " << dt << std::endl;
     cout << "  Num timesteps: " << num_timesteps << std::endl;
     cout << "  Num sources: " << num_src << std::endl;
-		cout << "  AIM ds/lambda: " << ds/lambda << endl;
-		cout << "  AIM expansion order: " << expansion_order << endl;
-		cout << "  AIM border: " << border << endl;
+		if (solve_type) {
+			cout << "  AIM ds/lambda: " << ds/lambda << endl;
+			cout << "  AIM expansion order: " << expansion_order << endl;
+			cout << "  AIM border: " << border << endl;
+		}
 //    std::cout << "  Beta: " << beta * pow(omega,3) << std::endl;
 
     auto qds = make_shared<DotVector>(import_dots("./dots/dots0.cfg"));
@@ -137,21 +140,21 @@ int main(int argc, char *argv[])
     
     } else {
       if (rotating) {
-          Propagation::RotatingEFIE dyadic(c0, propagation_constant, omega, beta, 0.0);
-          Propagation::SelfRotatingEFIE dyadic_self(c0, propagation_constant, omega, beta);
+				Propagation::RotatingEFIE dyadic(c0, propagation_constant, omega, beta, 0.0);
+				Propagation::SelfRotatingEFIE dyadic_self(c0, propagation_constant, omega, beta);
 
-          selfwise = make_shared<SelfInteraction>(qds, history, dyadic_self,
-                                                      interpolation_order, c0, dt, omega);
-          pairwise = make_shared<DirectInteraction>(qds, history, dyadic,
-                                                        interpolation_order, c0, dt, omega);
-      
+				selfwise = make_shared<SelfInteraction>(qds, history, dyadic_self,
+																							interpolation_order, c0, dt, omega);
+				pairwise = make_shared<DirectInteraction>(qds, history, dyadic,
+																								interpolation_order, c0, dt, omega);
+
       } else {
-          Propagation::EFIE<cmplx> dyadic(c0, propagation_constant, beta, 0.0);
-          Propagation::SelfEFIE dyadic_self(c0, propagation_constant, beta);
+      	Propagation::EFIE<cmplx> dyadic(c0, propagation_constant, beta, 0.0);
+        Propagation::SelfEFIE dyadic_self(c0, propagation_constant, beta);
          
-          selfwise = make_shared<SelfInteraction>(qds, history, dyadic_self,
+        selfwise = make_shared<SelfInteraction>(qds, history, dyadic_self,
                                                       interpolation_order, c0, dt);
-          pairwise = make_shared<DirectInteraction>(qds, history, dyadic,
+        pairwise = make_shared<DirectInteraction>(qds, history, dyadic,
                                                         interpolation_order, c0, dt); 
       }
 
@@ -159,7 +162,7 @@ int main(int argc, char *argv[])
 
     std::vector<std::shared_ptr<InteractionBase>> interactions{ 
       make_shared<PulseInteraction>(qds, pulse1, interpolation_order, c0, dt, hbar, rotating),
-      } ; // no selfwise!
+      selfwise} ; // no selfwise!
 
     if (interacting)
       interactions.push_back( pairwise );
@@ -185,7 +188,7 @@ int main(int argc, char *argv[])
 
     elapsed_time = ( std::clock() - start_time ) / (double) CLOCKS_PER_SEC;
 
-    cout << "Elapsed time: " << elapsed_time << "s" << std::endl;
+    // cout << "Elapsed time: " << elapsed_time << "s" << std::endl;
 
     // == FIELD INTERACTIONS ===============================================
 

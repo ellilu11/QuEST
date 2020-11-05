@@ -44,12 +44,15 @@ const InteractionBase::ResultArray &AIM::DirectInteraction::evaluate(
       	past_terms_of_convolution[pair.first] += 2.0 * std::real( rho1 * coefficients_[pair_idx][i] );
       	past_terms_of_convolution[pair.second] += 2.0 * std::real( rho0 * coefficients_[pair_idx][i] );
       } else {
-				const auto phi = std::exp( iu*omega_*time );
+				past_terms_of_convolution[pair.first] += rho1 * coefficients_[pair_idx][i] ;
+	      past_terms_of_convolution[pair.second] += rho0 * coefficients_[pair_idx][i] ;
+				
+				/*const auto phi = std::exp( iu*omega_*time );
         past_terms_of_convolution[pair.first] += 2.0 * std::real( rho1 * coefficients_[pair_idx][i] 
                         * phi ) * std::conj( phi );
                                                                                                       
         past_terms_of_convolution[pair.second] += 2.0 * std::real( rho0 * coefficients_[pair_idx][i] 
-                        * phi ) * std::conj( phi );
+                        * phi ) * std::conj( phi );*/
       }    
     }
    
@@ -61,12 +64,15 @@ const InteractionBase::ResultArray &AIM::DirectInteraction::evaluate(
       results[pair.first] += 2.0 * std::real( rho1 * coefficients_[pair_idx][0] );
       results[pair.second] += 2.0 * std::real( rho0 * coefficients_[pair_idx][0] );
     } else {
-			const auto phi0 = std::exp( iu*omega_*time0 );
+			results[pair.first] += rho1 * coefficients_[pair_idx][0] ;
+	    results[pair.second] += rho0 * coefficients_[pair_idx][0] ;
+			
+			/*const auto phi0 = std::exp( iu*omega_*time0 );
       results[pair.first] += 2.0 * std::real( rho1 * coefficients_[pair_idx][0] 
                       * phi0 ) * std::conj( phi0 );
                                                                                                     
       results[pair.second] += 2.0 * std::real( rho0 * coefficients_[pair_idx][0] 
-                      * phi0 ) * std::conj( phi0 );
+                      * phi0 ) * std::conj( phi0 );*/
     }    
   }
   
@@ -96,12 +102,15 @@ const InteractionBase::ResultArray &AIM::DirectInteraction::evaluate_present_fie
       results[pair.first] += 2.0 * std::real( rho1 * coefficients_[pair_idx][0] );
       results[pair.second] += 2.0 * std::real( rho0 * coefficients_[pair_idx][0] );
     } else {
-			const auto phi0 = std::exp( iu*omega_*time0 );
+			results[pair.first] += rho1 * coefficients_[pair_idx][0] ;
+	    results[pair.second] += rho0 * coefficients_[pair_idx][0] ;
+			
+			/*const auto phi0 = std::exp( iu*omega_*time0 );
       results[pair.first] += 2.0 * std::real( rho1 * coefficients_[pair_idx][0] 
                       * phi0 ) * std::conj( phi0 );
                                                                                                     
       results[pair.second] += 2.0 * std::real( rho0 * coefficients_[pair_idx][0] 
-                      * phi0 ) * std::conj( phi0 );
+                      * phi0 ) * std::conj( phi0 );*/
     }    
   }
  

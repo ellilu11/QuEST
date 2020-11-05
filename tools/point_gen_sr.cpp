@@ -76,7 +76,7 @@ int main(int argc, char *argv[])
     
   // const double r, ph;
 
-  const double ds = 0.10 * lambda;
+  const double ds = 0.10 * lambda;// 0.10 * lambda;
   const double xlen = ds; // ds;
   const double ylen = xlen;
   const double zlen = xlen; // std::max( xlen, 0.015 * num_dots * ds );  
