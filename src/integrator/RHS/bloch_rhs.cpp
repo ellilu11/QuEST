@@ -32,10 +32,9 @@ const Integrator::BlochRHS::ResultArray Integrator::BlochRHS::evaluate(const int
   }
 
 	return projected_rabi;
-
 }
 
-void Integrator::BlochRHS::evaluate_present(const int step) const
+const Integrator::BlochRHS::ResultArray Integrator::BlochRHS::evaluate_present(const int step) const
 {
   auto eval_and_sum =
       [step](const InteractionBase::ResultArray &r,
@@ -53,5 +52,7 @@ void Integrator::BlochRHS::evaluate_present(const int step) const
 	      projected_rabi[solution],
         step);
   }
+
+	return projected_rabi; // interactions[0]->evaluate(step);
 }
 

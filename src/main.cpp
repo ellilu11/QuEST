@@ -22,14 +22,14 @@ int main(int argc, char *argv[])
 
     // parameters
     const int num_src = atoi(argv[1]);
-    const double tmax = 2000;
+    const double tmax = 40000;
     const double dt = 5.0 / pow(10.0, atoi(argv[2]) ); 
                               // rotframe: sigma = 1.0ps -> dt <= 0.52e-1
                               // fixframe: omega = 2278.9013 mev/hbar -> dt <= 1.379e-4
     const int num_timesteps = tmax/dt;
     const int num_corrector_steps = 0;
 
-    const int interpolation_order = 3;
+    const int interpolation_order = 4;
     const bool interacting = atoi(argv[3]);
     const bool rotating = atoi(argv[4]);
     const bool solve_type = atoi(argv[5]);
@@ -44,10 +44,10 @@ int main(int argc, char *argv[])
     const double k0 = omega/c0, lambda = 2.0*M_PI/k0;    
 
     // AIM
-    const double ds = 5.0e-1*lambda;
+    const double ds = 5.0e-2*lambda;
     const double h = 0.5*ds; // FDTD spacing
     Eigen::Vector3d grid_spacing(ds, ds, ds);
-    const int expansion_order = 4;
+    const int expansion_order = 3;
     const int border = 1;
 
     cout << "Initializing..." << endl;
@@ -164,8 +164,9 @@ int main(int argc, char *argv[])
     }
 
     std::vector<std::shared_ptr<InteractionBase>> interactions{ 
-      make_shared<PulseInteraction>(qds, pulse1, interpolation_order, c0, dt, hbar, rotating),
-      selfwise} ;
+      make_shared<PulseInteraction>(qds, pulse1, interpolation_order, c0, dt, hbar, rotating)
+    	// };  
+		  , selfwise} ;
 
     if (interacting)
       interactions.push_back( pairwise );

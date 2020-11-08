@@ -18,7 +18,7 @@ class Integrator::BlochRHS : public Integrator::RHS<Eigen::Vector2cd> {
            std::vector<std::shared_ptr<InteractionBase>>,
            std::vector<BlochFunctionType>);
   const ResultArray evaluate(const int) const override;
-  void evaluate_present(const int) const override;
+  const ResultArray evaluate_present(const int) const override;
   std::vector<BlochFunctionType> rhs_functions;
 private:
   int num_solutions;
