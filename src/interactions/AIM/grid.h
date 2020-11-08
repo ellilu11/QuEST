@@ -18,7 +18,7 @@ class AIM::Grid {
        const int,
        const Eigen::Array3i &,
        const Eigen::Vector3i & = Eigen::Vector3i::Zero());
-  Grid(const Eigen::Array3d &, const int, DotVector &);
+  Grid(const Eigen::Array3d &, const int, const double, DotVector &);
 
   BoundsArray calculate_bounds(const DotVector &) const;
   std::array<int, 4> circulant_shape(const double,
@@ -86,6 +86,7 @@ class AIM::Grid {
   int expansion_order;
   BoundsArray bounds; // min and max in units of grid spacing containing all dots
   Eigen::Array3i dimensions; // dimensions of grid in units of grid spacing
+  int h_int;
   size_t num_gridpoints;
   void sort_points_on_boxidx(DotVector &) const;
 };

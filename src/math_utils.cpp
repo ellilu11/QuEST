@@ -65,6 +65,47 @@ int grid_sequence(const size_t n)
   return (1 - std::pow(-1, n) * (1 + 2 * n)) / 4;
 }
 
+Eigen::Vector3i idx_to_coord(size_t idx, int dim)
+{
+  int dimsq = pow(dim,2);
+  const int x = idx / dimsq;
+  idx -= x * dimsq;
+  const int y = idx / dim;
+  const int z = idx % dim;
+
+  Eigen::Vector3i coord(x,y,z);
+
+  return coord;
+}
+
+Eigen::Vector3i idx_to_delta(size_t idx, int dim)
+{
+  Eigen::Vector3i coord = idx_to_coord(idx, dim);
+  Eigen::Vector3i delta( grid_sequence(coord[0]), 
+                         grid_sequence(coord[1]),
+                         grid_sequence(coord[2]) );
+
+  return delta;
+}
+
+/*size_t inv_grid_sequence(const int delta)
+{
+  return delta > 0 ? 2*delta - 1 : -2*delta;
+}
+size_t coord_to_idx(const Eigen::Vector3i &coord, int dim)
+{
+  return pow(dim,2)*coord(0) + dim*coord(1) + coord(2);
+}
+
+size_t delta_to_idx(const Eigen::Vector3i &delta, int dim)
+{
+  Eigen::Vector3i n(inv_grid_sequence(delta[0]),
+                    inv_grid_sequence(delta[1]),
+                    inv_grid_sequence(delta[2]);
+
+  return coord_to_idx( n, dim );
+}*/
+
 std::pair<int, double> split_double(const double delay)
 {
   std::pair<int, double> result;

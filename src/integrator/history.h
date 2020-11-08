@@ -74,6 +74,7 @@ Integrator::History<soltype>::History(const int num_particles,
 
   outfile.open("./out/out" + std::to_string(task_idx) + ".dat");
   outfile << std::scientific << std::setprecision(15);
+
 }
 
 template <class soltype>
@@ -152,13 +153,13 @@ void Integrator::History<soltype>::write_step_to_file(const int timestep)
     //outfile << prep_for_output(get_value(n, timestep, 0)) << " ";
     double rho01_real = (get_value(n, timestep, 0))[1].real();
     double rho01_imag = (get_value(n, timestep, 0))[1].imag();
-    double rho01_abs = sqrt( pow(rho01_real,2) + pow(rho01_imag,2) );
+    // double rho01_abs = sqrt( pow(rho01_real,2) + pow(rho01_imag,2) );
 
     outfile // << timestep << " "
             << (get_value(n, timestep, 0))[0].real() << " "
             << rho01_real << " "
-            << rho01_imag << " "
-            << rho01_abs << " ";
+            << rho01_imag << " ";
+            // << rho01_abs << " ";
   }
 
   outfile << "\n";

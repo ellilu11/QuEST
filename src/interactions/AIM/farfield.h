@@ -15,10 +15,13 @@ class AIM::Farfield final : public AimBase {
            const int,
            const double,
            const double,
+           const double,
            std::shared_ptr<const Grid>,
            std::shared_ptr<const Expansions::ExpansionTable>,
            Expansions::ExpansionFunction,
-           Normalization::SpatialNorm);
+           Expansions::ExpansionFunction,
+           Normalization::SpatialNorm,
+					 const double);
   ~Farfield() = default;
 
   const ResultArray &evaluate(const int step) final
@@ -29,7 +32,12 @@ class AIM::Farfield final : public AimBase {
 
     return results;
   }
- 
+
+  const ResultArray &evaluate_present_field(const int step) final
+  {
+    return results;
+  }
+
  private:
   std::array<int, 4> table_dimensions_;
 

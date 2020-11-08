@@ -16,15 +16,22 @@ namespace AIM {
             const int interp_order,
             const double c0,
             const double dt,
+						const double omega, // = 0 implies fix frame
+            const double h,
             std::shared_ptr<const Grid> grid,
             std::shared_ptr<const Expansions::ExpansionTable> expansion_table,
             Expansions::ExpansionFunction expansion_function,
+            Expansions::ExpansionFunction expansion_function_fdtd,
             Normalization::SpatialNorm normalization)
         : HistoryInteraction(dots, history, interp_order, c0, dt),
           grid(std::move(grid)),
           expansion_table(std::move(expansion_table)),
           expansion_function(std::move(expansion_function)),
-          normalization(std::move(normalization))
+          expansion_function_fdtd(std::move(expansion_function_fdtd)),
+          normalization(std::move(normalization)),
+          omega_(omega),
+					h_(h),
+          fdtd( h_? 1 : 0 )
     {
     }
 
@@ -32,7 +39,14 @@ namespace AIM {
     std::shared_ptr<const Grid> grid;
     std::shared_ptr<const Expansions::ExpansionTable> expansion_table;
     Expansions::ExpansionFunction expansion_function;
+    Expansions::ExpansionFunction expansion_function_fdtd;
     Normalization::SpatialNorm normalization;
+ 
+    const Eigen::Vector3cd FDTD_Del_Del( // const std::vector<Eigen::Vector3cd> );
+                                         const boost::multi_array<Eigen::Vector3cd, 1> );
+		const double omega_;
+    const double h_;
+    const bool fdtd;
   };
 }
 

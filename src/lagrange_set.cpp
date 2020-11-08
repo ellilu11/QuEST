@@ -19,6 +19,7 @@ Interpolation::UniformLagrangeSet::UniformLagrangeSet(const double x,
 void Interpolation::UniformLagrangeSet::evaluate_derivative_table_at_x(
     const double x, const double dt /* = 1 */)
 {
+  // Method 1: Directly supplying the coefficients
   double y = 1.0 - x;
   double y2 = pow(y,2), y3 = pow(y,3), y4 = pow(y,4);
 
@@ -51,60 +52,69 @@ void Interpolation::UniformLagrangeSet::evaluate_derivative_table_at_x(
       evaluations[3][1] = -1.0/6.0 * (30.0 + 24.0*y);
       evaluations[3][0] = 1.0/24.0 * (36.0 + 24.0*y);
 
-    }
+    }	break;
+		
+		case 3 : {
+
+			evaluations[0][3] = -1.0/6.0 * (y3 - y);
+			evaluations[0][2] = 1.0/2.0 * (y3 + y2 - 2.0*y);	
+			evaluations[0][1] = -1.0/2.0 * (y3 + 2.0*y2 - y - 2.0);
+			evaluations[0][0] = 1.0/6.0 * (y3 + 3.0*y2 + 2.0*y);
+
+			evaluations[1][3] = -1.0/6.0 * (3.0*y2 - 1.0);
+			evaluations[1][2] = 1.0/2.0 * (3.0*y2 + 2.0*y - 2.0);
+			evaluations[1][1] = -1.0/2.0 * (3.0*y2 + 4.0*y - 1.0);
+			evaluations[1][0] = 1.0/6.0 * (3.0*y2 + 6.0*y + 2.0);
+
+			evaluations[2][3] = -y;
+			evaluations[2][2] = 1.0/2.0 * (6.0*y + 2.0);
+			evaluations[2][1] = -1.0/2.0 * (6.0*y + 4.0);
+			evaluations[2][0] = y + 1.0;
+			
+			evaluations[3][3] = -1.0;
+			evaluations[3][2] = 3.0;
+			evaluations[3][1] = -3.0;
+			evaluations[3][0] = 1.0;
+		} break;
+
+
+		// }
   }
-/*    for(int basis_id = 0; basis_id <= order_; ++basis_id) {
-    double d0_product = 1, d1_product = 1, d2_product = 1, d3_product = 1;
+
+  // Method 2: Analytically calculating the coefficients;
+  // DON'T USE THIS WHEN SELF-INTERACTIONS (x = 0) ARE PRESENT!!!
+  /*for(int basis_id = 0; basis_id <= order_; ++basis_id) {
+    double d0_product = 1;
     double d1_sum = 0, d2_sum = 0, d3_sum = 0;
     for(int m = 0; m <= order_; ++m) {
       if(m == basis_id) continue;
 
       double numer = (x - m);
 
-      d0_product *= numer / (basis_id - m)  
+      d0_product *= numer / (basis_id - m);
 
       if(numer != 0) {
         d1_sum -= 1 / numer;  // Note the minus sign!
         d2_sum -= std::pow(numer, -2);
         d3_sum -= std::pow(numer, -3);
       }
-
-      d0_product *= (x - m) / (basis_id - m);
-
-      for(int l=0; l <=order_; ++l){
-        if(l == m) continue;
-        d1_product *= (x - l) / (basis_id - l);
-      }
-      d1_sum -= d1_product;
-
-
     }
 
-//    std::cout << x << std::endl;
-
     evaluations[0][basis_id] = d0_product;
-
     evaluations[1][basis_id] = (evaluations[0][basis_id] * d1_sum);
     evaluations[2][basis_id] = evaluations[0][basis_id] *
         (d2_sum + std::pow(d1_sum, 2));
     evaluations[3][basis_id] = evaluations[0][basis_id] *
        (2.0 * d3_sum + 3.0 * d1_sum * d2_sum + std::pow(d1_sum, 3));
+  }*/
 
-    evaluations[1][basis_id] = d1_product;
-
- }
-*/
 
   for(int i = 0; i <= order_; ++i) {
     evaluations[1][i] *= std::pow(dt, -1);
     evaluations[2][i] *= std::pow(dt, -2);
     evaluations[3][i] *= std::pow(dt, -3);
-    
-/*    if ( x == 0 ) {
-      for(int j = 0; j <= 3; ++j)
-        std::cout << evaluations[j][i] << " ";
-      std::cout << std::endl;
-    }*/
+  
+		// std::cout << i << " " << evaluations[0][i] << std::endl;
   }
 
 }

@@ -22,7 +22,7 @@ class Integrator::PredictorCorrector {
                      const double,
                      const std::shared_ptr<Integrator::History<soltype>>,
                      std::unique_ptr<Integrator::RHS<soltype>>);
-  void solve(const log_level_t = log_level_t::LOG_NOTHING) const;
+  void solve(const log_level_t = log_level_t::LOG_NOTHING);
 
   void output_writer(const int) const;
 
@@ -32,8 +32,10 @@ class Integrator::PredictorCorrector {
   Weights weights;
   std::shared_ptr<Integrator::History<soltype>> history;
   std::unique_ptr<Integrator::RHS<soltype>> rhs;
+	Eigen::Array<cmplx, Eigen::Dynamic, 1> rabi;
+	std::ofstream outfile;
 
-  void solve_step(const int) const;
+  void solve_step(const int);
   void predictor(const int) const;
   void corrector(const int) const;
 
@@ -63,28 +65,37 @@ Integrator::PredictorCorrector<soltype>::PredictorCorrector(
 
 template <class soltype>
 void Integrator::PredictorCorrector<soltype>::solve(
-    const log_level_t log_level) const
+    const log_level_t log_level)
 {
-  int num_outsteps = 20000;
+  int num_outsteps = std::min( 20000, time_idx_ubound );
   int outstep = time_idx_ubound / num_outsteps;
 
   int num_logsteps = 100;
  
+	outfile.open("./out/chi.dat");
+	outfile << std::scientific << std::setprecision(15);
+
   for(int step = 0; step < time_idx_ubound; ++step) {
     solve_step(step);
     
-    if (!(step%outstep))
+    if (!(step%outstep)) {
        history->write_step_to_file(step);
-    
-    if (step%(time_idx_ubound/num_logsteps) == 0) 
-       std::cout << step / (time_idx_ubound/num_logsteps) << std::endl;
 
-    // if(log_level >= log_level_t::LOG_INFO) log_percentage_complete(step);
+ 			for(int solution = 0; solution < num_solutions; ++solution)
+				outfile << (rabi[solution]).real() << " " << (rabi[solution]).imag() << " ";
+			outfile << std::endl;
+		}
+     
+    if (step%(time_idx_ubound/num_logsteps) == 0)
+      std::cout << step / (time_idx_ubound/num_logsteps) << std::endl;
+
+  // if(log_level >= log_level_t::LOG_INFO) log_percentage_complete(step);
   }
+	// outfile.close();
 }
 
 template <class soltype>
-void Integrator::PredictorCorrector<soltype>::solve_step(const int step) const
+void Integrator::PredictorCorrector<soltype>::solve_step(const int step)
 {
   assert(0 <= step && step < time_idx_ubound);
 
@@ -102,23 +113,22 @@ void Integrator::PredictorCorrector<soltype>::solve_step(const int step) const
         history_prev[sol_idx] = (history->get_value(sol_idx, step, 0))[1];
 
       corrector(step);
-      rhs->evaluate_present(step);
+      rabi = rhs->evaluate_present(step);
+      // rhs->evaluate_present(step);
 
       for( int sol_idx = 0; sol_idx < num_solutions; ++sol_idx )
         history_diff[sol_idx] = (history->get_value(sol_idx, step, 0))[1] - history_prev[sol_idx];
       
       m++;
-      // if (step == 0) std::cout << history_diff.norm() << std::endl;
 
     } while( (history_diff.norm() / num_solutions) > EPS );
-
-    // if (step < 1000) std::cout << m << std::endl;
 
   } else {
     for(int m = 0; m < num_corrector_steps; ++m) {
       corrector(step);
-      rhs->evaluate_present(step);
-    }
+      rabi = rhs->evaluate_present(step);
+      // rhs->evaluate_present(step);
+   }
   }
 }
 

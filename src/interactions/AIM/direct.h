@@ -16,13 +16,19 @@ class AIM::DirectInteraction final : public HistoryInteraction {
       const int,
       const double,
       const double,
-      std::shared_ptr<const std::vector<Grid::ipair_t>>);
+    	std::shared_ptr<const std::vector<Grid::ipair_t>>,
+			const double);
 
   const ResultArray &evaluate(const int) final;
+
+  const ResultArray &evaluate_present_field(const int step) final;
+
   boost::multi_array<cmplx, 2> coefficient_table(Propagation::Kernel<cmplx> &,
                                                  std::vector<int> &) const;
+ // boost::multi_array<cmplx, 2> &coefficients() final { return coefficients_; }
 
  private:
+	const double omega_; 
   std::shared_ptr<const std::vector<Grid::ipair_t>> interaction_pairs_;
   std::array<int, 2> shape_;
   std::vector<int> floor_delays_;

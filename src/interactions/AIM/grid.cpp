@@ -14,13 +14,20 @@ AIM::Grid::Grid(const Eigen::Array3d &spacing,
 
 AIM::Grid::Grid(const Eigen::Array3d &spacing,
                 const int expansion_order,
+                const double h,
                 DotVector &dots)
     : spacing(spacing),
       expansion_order(expansion_order),
+      h_int(std::ceil(h/spacing[0])), // change this later!!
       bounds(calculate_bounds(dots)),
       dimensions(bounds.col(1) - bounds.col(0) + 1),
       num_gridpoints(dimensions.prod())
 {
+
+//  std::cout << bounds.col(0) << std::endl;
+//  std::cout << bounds.col(1) << std::endl;
+
+//  std::cout << h_int << std::endl;
   sort_points_on_boxidx(dots);
 }
 
@@ -37,7 +44,7 @@ AIM::Grid::BoundsArray AIM::Grid::calculate_bounds(const DotVector &dots) const
     b.col(1) = grid_coord.array().max(b.col(1));
   }
 
-  b.col(0) -= expansion_order / 2;
+  b.col(0) -= expansion_order / 2; // also change this later!!
   b.col(1) += (expansion_order + 1) / 2;
 
   return b;
@@ -49,7 +56,9 @@ std::array<int, 4> AIM::Grid::circulant_shape(const double c,
 {
   std::array<int, 4> dims;
   dims[0] = max_transit_steps(c, dt) + pad;
-  for(int i = 1; i < 4; ++i) dims[i] = 2 * dimensions(i - 1);
+  for(int i = 1; i < 4; ++i) {
+    dims[i] = 2 * dimensions(i - 1);
+  }
 
   return dims;
 }
@@ -73,7 +82,7 @@ std::vector<const_DotRange> AIM::Grid::box_contents_map(
 }
 
 std::vector<size_t> AIM::Grid::expansion_indices(const int grid_index) const
-// assign an index to each expansion point of the expansion region around any gridpoint
+// assign an index (relative to whole grid) to every expansion point of a given expansion region
 {
   Eigen::Vector3i origin = idx_to_coord(grid_index);
   std::vector<size_t> indices(std::pow(expansion_order + 1, 3));
@@ -144,7 +153,7 @@ std::vector<AIM::Grid::ipair_t> AIM::Grid::nearfield_point_pairs(
         auto idx2{std::distance(dots.begin(), dot2)};
 
         if(idx1 <= idx2) particle_pairs.emplace_back(idx1, idx2);
-        // if(idx1 <= idx2)
+        // if(idx1 <= idx2) counts self "pairs" as nearfield pairs!
       }
     }
   }
