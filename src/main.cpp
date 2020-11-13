@@ -22,8 +22,8 @@ int main(int argc, char *argv[])
 
     // parameters
     const int num_src = atoi(argv[1]);
-    const double tmax = 40000;
-    const double dt = 5.0 / pow(10.0, atoi(argv[2]) ); 
+    const double tmax = 80000;
+    const double dt = 10.0 / pow(10.0, atoi(argv[2]) ); 
                               // rotframe: sigma = 1.0ps -> dt <= 0.52e-1
                               // fixframe: omega = 2278.9013 mev/hbar -> dt <= 1.379e-4
     const int num_timesteps = tmax/dt;
@@ -68,7 +68,7 @@ int main(int argc, char *argv[])
 			cout << "  AIM expansion order: " << expansion_order << endl;
 			cout << "  AIM border: " << border << endl;
 		}
-//    std::cout << "  Beta: " << beta * pow(omega,3) << std::endl;
+    std::cout << "  Beta: " << beta * pow(omega,3) << std::endl;
 
     string idstr(argv[6]);
     auto qds = make_shared<DotVector>(import_dots("./dots/dots_line"+idstr+".cfg"));
@@ -164,9 +164,8 @@ int main(int argc, char *argv[])
     }
 
     std::vector<std::shared_ptr<InteractionBase>> interactions{ 
-      make_shared<PulseInteraction>(qds, pulse1, interpolation_order, c0, dt, hbar, rotating)
-    	// };  
-		  , selfwise} ;
+      make_shared<PulseInteraction>(qds, pulse1, interpolation_order, c0, dt, hbar, rotating),
+		  selfwise} ;
 
     if (interacting)
       interactions.push_back( pairwise );
