@@ -84,12 +84,6 @@ const InteractionBase::ResultArray &DirectInteraction::evaluate(
         past_terms_of_convolution[src] += rho_obs * coeffs[pair_idx][i] ;
 	      past_terms_of_convolution[obs] += rho_src * coeffs[pair_idx][i] ;
 	
-				/*const auto phi = std::exp( iu*omega*time );
-        past_terms_of_convolution[src] += 2.0 * std::real( rho_obs * coeffs[pair_idx][i] 
-                        * phi ) * std::conj( phi );
-                                                                                                      
-        past_terms_of_convolution[obs] += 2.0 * std::real( rho_src * coeffs[pair_idx][i] 
-                        * phi ) * std::conj( phi );*/
     	}
     }
    
@@ -103,17 +97,6 @@ const InteractionBase::ResultArray &DirectInteraction::evaluate(
     } else {
       results[src] += rho_obs * coeffs[pair_idx][0] ;
 	    results[obs] += rho_src * coeffs[pair_idx][0] ;
-	 	  
-			/*const auto phi0 = std::exp( iu*omega*time0 );
-     	results[src] += 2.0 * std::real( rho_obs * coeffs[pair_idx][0] 
-                      * phi0 ) * std::conj( phi0 );
-      results[obs] += 2.0 * std::real( rho_src * coeffs[pair_idx][0] 
-                      * phi0 ) * std::conj( phi0 );
-		*/
-			//if (pair_idx == 0 && time_idx >= 1000 && time_idx < 1010) 
-				// std::cout << time_idx << " " << rho_obs << " " << rho_src << " " << phi0 << std::endl;
-				// std::cout << time_idx << " " << phi0 << " " << results[src] << " " << results[obs] << std::endl;	
-
     } 
   }
 
@@ -147,13 +130,6 @@ const InteractionBase::ResultArray &DirectInteraction::evaluate_present_field(
 	    results[src] += rho_obs * coeffs[pair_idx][0] ;
 	    results[obs] += rho_src * coeffs[pair_idx][0] ;
 			
-	  	/*const auto phi0 = std::exp( iu*omega*time0 );
-      results[src] += 2.0 * std::real( rho_obs * coeffs[pair_idx][0] 
-                      * phi0 ) * std::conj( phi0 );
-                                                                                                    
-      results[obs] += 2.0 * std::real( rho_src * coeffs[pair_idx][0] 
-                      * phi0 ) * std::conj( phi0 );
-      */
     }    
   }
  
