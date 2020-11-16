@@ -70,20 +70,14 @@ void Integrator::PredictorCorrector<soltype>::solve(
   int num_outsteps = std::min( 20000, time_idx_ubound );
   int outstep = time_idx_ubound / num_outsteps;
 
-  int num_logsteps = 100;
+  int num_logsteps = 10;
  
-	outfile.open("./out/chi.dat");
-	outfile << std::scientific << std::setprecision(15);
-
   for(int step = 0; step < time_idx_ubound; ++step) {
     solve_step(step);
     
     if (!(step%outstep)) {
        history->write_step_to_file(step);
-
- 			for(int solution = 0; solution < num_solutions; ++solution)
-				outfile << (rabi[solution]).real() << " " << (rabi[solution]).imag() << " ";
-			outfile << std::endl;
+       rhs->evaluate_field(step);
 		}
      
     if (step%(time_idx_ubound/num_logsteps) == 0)
@@ -91,7 +85,6 @@ void Integrator::PredictorCorrector<soltype>::solve(
 
   // if(log_level >= log_level_t::LOG_INFO) log_percentage_complete(step);
   }
-	// outfile.close();
 }
 
 template <class soltype>
@@ -113,8 +106,7 @@ void Integrator::PredictorCorrector<soltype>::solve_step(const int step)
         history_prev[sol_idx] = (history->get_value(sol_idx, step, 0))[1];
 
       corrector(step);
-      rabi = rhs->evaluate_present(step);
-      // rhs->evaluate_present(step);
+      rhs->evaluate_present(step);
 
       for( int sol_idx = 0; sol_idx < num_solutions; ++sol_idx )
         history_diff[sol_idx] = (history->get_value(sol_idx, step, 0))[1] - history_prev[sol_idx];
@@ -122,12 +114,12 @@ void Integrator::PredictorCorrector<soltype>::solve_step(const int step)
       m++;
 
     } while( (history_diff.norm() / num_solutions) > EPS );
+    // std::cout << m << " " ;
 
   } else {
     for(int m = 0; m < num_corrector_steps; ++m) {
       corrector(step);
-      rabi = rhs->evaluate_present(step);
-      // rhs->evaluate_present(step);
+      rhs->evaluate_present(step);
    }
   }
 }

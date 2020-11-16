@@ -13,7 +13,7 @@ DirectInteraction::DirectInteraction(
     : HistoryInteraction(
           std::move(dots), std::move(obss), std::move(history), interp_order, c0, dt),
       num_src((this->dots)->size()),
-      num_obs((this->obss)->size()),
+      num_obs((this->obss) ? (this->obss)->size() : 0),
       num_interactions( num_src * (num_src - 1) / 2 ),
       num_srcobs( num_src * num_obs ),
       omega(omega), 
@@ -182,6 +182,9 @@ const InteractionBase::ResultArray &DirectInteraction::evaluate_field(
   for(int obs = 0; obs < num_obs; ++obs) {
       
     Eigen::Vector3d dip_obs = (*obss)[obs].dipole();
+
+    // if ( time_idx == 10 && obs == 0 )
+    //  std::cout << dip_obs << std::endl;
 
     for(int src = 0; src < num_src; ++src) {
       int pair_idx = coord2idxsq( obs, src, num_src ); 

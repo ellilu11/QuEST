@@ -13,7 +13,7 @@ SelfInteraction::SelfInteraction(
     : HistoryInteraction(
           std::move(dots), std::move(obss), std::move(history), interp_order, c0, dt),
       num_src((this->dots)->size()),
-      num_obs((this->obss)->size()),
+      num_obs((this->obss) ? (this->obss)->size() : 0),
       num_srcobs( num_src * num_obs ),
       omega(omega), 
       coeffs(boost::extents[num_src][interp_order + 1]),

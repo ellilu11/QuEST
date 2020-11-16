@@ -16,7 +16,7 @@ class HistoryInteraction : public InteractionBase {
   HistoryInteraction(
       std::shared_ptr<const DotVector> dots,
       std::shared_ptr<const DotVector> obss,
-      std::shared_ptr<const Integrator::History<Eigen::Vector2cd>> history, // feed Gaussian pulse into here
+      std::shared_ptr<const Integrator::History<Eigen::Vector2cd>> history,
       const int interp_order,
       const double c0,
       const double dt)

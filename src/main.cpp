@@ -22,7 +22,7 @@ int main(int argc, char *argv[])
 
     // parameters
     const int num_src = atoi(argv[1]);
-    const double tmax = 80000;
+    const double tmax = 10;
     const double dt = 10.0 / pow(10.0, atoi(argv[2]) ); 
                               // rotframe: sigma = 1.0ps -> dt <= 0.52e-1
                               // fixframe: omega = 2278.9013 mev/hbar -> dt <= 1.379e-4
@@ -62,21 +62,25 @@ int main(int argc, char *argv[])
 		cout << "  Simulation time: " << tmax << std::endl;
     cout << "  Num timesteps: " << num_timesteps << std::endl;
 		cout << "  Interp order: " << interpolation_order << std::endl;
-    cout << "  Num sources: " << num_src << std::endl;
-		if ( solve_type ) {
+ 	  if ( solve_type ) {
 			cout << "  AIM ds/lambda: " << ds/lambda << endl;
 			cout << "  AIM expansion order: " << expansion_order << endl;
 			cout << "  AIM border: " << border << endl;
 		}
     std::cout << "  Beta: " << beta * pow(omega,3) << std::endl;
 
-    string idstr(argv[6]);
-    auto qds = make_shared<DotVector>(import_dots("./dots/dots_line"+idstr+".cfg"));
+    auto qds = make_shared<DotVector>(import_dots("./dots/dots0.cfg"));
     qds->resize(num_src);
     auto rhs_funcs = rhs_functions(*qds, omega, beta, rotating);
 
+    auto obs = make_shared<DotVector>(import_dots("./dots/obss0.cfg"));
+ 
+    cout << "  Num sources: " << num_src << std::endl;
+    cout << "  Num observers: " << obs->size() << std::endl;	
+
     // == HISTORY ====================================================
-    int task_idx = atoi(argv[6]);
+
+    int task_idx = 0;
     int min_time_to_keep =
         max_transit_steps_between_dots(qds, c0, dt) +
         interpolation_order;
@@ -146,9 +150,9 @@ int main(int argc, char *argv[])
           Propagation::SelfRotatingEFIE dyadic_self(c0, propagation_constant, omega, beta);
 
           selfwise = make_shared<SelfInteraction>(qds, nullptr, history, dyadic_self,
-                                                      interpolation_order, c0, dt, omega);
+                                                     interpolation_order, c0, dt, omega);
           pairwise = make_shared<DirectInteraction>(qds, nullptr, history, dyadic,
-                                                        interpolation_order, c0, dt, omega);
+                                                     interpolation_order, c0, dt, omega);
       
       } else {
           Propagation::EFIE<cmplx> dyadic(c0, propagation_constant, beta, 0.0);
@@ -164,37 +168,18 @@ int main(int argc, char *argv[])
 
     std::vector<std::shared_ptr<InteractionBase>> interactions{ 
       make_shared<PulseInteraction>(qds, nullptr, pulse1, interpolation_order, c0, dt, hbar, rotating),
-		  selfwise} ;
+		  } ; // no selfwise!
 
     if (interacting)
       interactions.push_back( pairwise );
 
     double elapsed_time = ( std::clock() - start_time ) / (double) CLOCKS_PER_SEC;
 
-    cout << "Elapsed time: " << elapsed_time << "s" << std::endl;
-
-    // == INTEGRATOR =================================================
-
-    std::unique_ptr<Integrator::RHS<Eigen::Vector2cd>> bloch_rhs =
-        std::make_unique<Integrator::BlochRHS>(
-            dt, history, std::move(interactions), std::move(rhs_funcs));
-
-    Integrator::PredictorCorrector<Eigen::Vector2cd> solver_pc(
-        dt, num_corrector_steps, 18, 22, 3.15, history, std::move(bloch_rhs));
-
-    cout << "Solving P-C..." << endl;
-    
-    start_time = std::clock();
-
-    solver_pc.solve();
-
-    elapsed_time = ( std::clock() - start_time ) / (double) CLOCKS_PER_SEC;
-
-    cout << "Elapsed time: " << elapsed_time << "s" << std::endl;
+    cout << "  Elapsed time: " << elapsed_time << "s" << std::endl;
 
     // == SRC-OBS INTERACTIONS ===============================================
 
-    auto obs = make_shared<DotVector>(import_dots("./dots/obs"+idstr+".cfg"));
+    cout << "Setting up src-obs interactions..." << endl;
  
    	std::shared_ptr<InteractionBase> selfwise_fld;
     std::shared_ptr<InteractionBase> pairwise_fld;
@@ -218,12 +203,37 @@ int main(int argc, char *argv[])
                                                     interpolation_order, c0, dt); 
     }
 
-    std::vector<std::shared_ptr<InteractionBase>> interactions_fld{ 
+    std::vector<std::shared_ptr<InteractionBase>> fld_interactions{ 
       make_shared<PulseInteraction>(qds, obs, pulse1, interpolation_order, c0, dt, hbar, rotating),
-		  selfwise_fld} ;
+		  } ; // no selfwise!
 
     if (interacting)
-      interactions_fld.push_back( pairwise_fld );
+      fld_interactions.push_back( pairwise_fld );
+
+    // == INTEGRATOR =================================================
+
+    cout << "Setting up integrator..." << endl;
+ 
+    std::unique_ptr<Integrator::RHS<Eigen::Vector2cd>> bloch_rhs =
+        std::make_unique<Integrator::BlochRHS>(
+            hbar, dt, num_timesteps, 
+            history, 
+            std::move(interactions), std::move(fld_interactions), 
+            std::move(rhs_funcs), obs, 
+            task_idx);
+
+    Integrator::PredictorCorrector<Eigen::Vector2cd> solver_pc(
+        dt, num_corrector_steps, 18, 22, 3.15, history, std::move(bloch_rhs));
+
+    start_time = std::clock();
+
+    cout << "Solving P-C..." << endl;
+ 
+    solver_pc.solve();
+
+    elapsed_time = ( std::clock() - start_time ) / (double) CLOCKS_PER_SEC;
+
+    cout << "  Elapsed time: " << elapsed_time << "s" << std::endl;
 
   return 0;
 }

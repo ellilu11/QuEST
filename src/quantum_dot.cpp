@@ -84,11 +84,10 @@ DotVector import_dots(const std::string &fname)
   return DotVector(in_iter, eof);
 }
 
-
-void set_dipolevec(std::shared_ptr<DotVector> dots, const Eigen::Vector3d dip)
+void set_dipole_of_dots(std::shared_ptr<DotVector> dots, const Eigen::Vector3d dip)
 {
   for (int dot = 0; dot < (*dots).size(); ++dot)
-    (*dots)[dot].set_dipole(dip);
+    (*dots)[dot].set_dipole() = dip;
 }
 
 std::vector<BlochFunctionType> rhs_functions(const DotVector &dots,

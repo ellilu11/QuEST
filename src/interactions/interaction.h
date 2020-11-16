@@ -16,7 +16,7 @@ class InteractionBase {
     const double dt)
       : dots(std::move(dots)),
         obss(std::move(obss)),
-        results(dots ? dots->size() : 0),
+        results(obss ? obss->size() : (dots ? dots->size() : 0) ),
         past_terms_of_convolution(dots ? dots->size() : 0), 
         dt(dt){};
   const cmplx &operator[](const int i) const { return results[i]; }
