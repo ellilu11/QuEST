@@ -22,7 +22,7 @@ int main(int argc, char *argv[])
 
     // parameters
     const int num_src = atoi(argv[1]);
-    const double tmax = 10;
+    const double tmax = 100;
     const double dt = 10.0 / pow(10.0, atoi(argv[2]) ); 
                               // rotframe: sigma = 1.0ps -> dt <= 0.52e-1
                               // fixframe: omega = 2278.9013 mev/hbar -> dt <= 1.379e-4
