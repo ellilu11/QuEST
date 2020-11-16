@@ -9,10 +9,7 @@ PulseInteraction::PulseInteraction(
     const double dt,
     const double hbar,
     const bool rotating)
-    : InteractionBase(dots, obss, dt), pulse(std::move(pulse)), hbar(hbar), rotating(rotating),
-        num_src((this->dots)->size()), 
-        num_interactions( num_src * ( num_src - 1 ) / 2 ),
-        coeffs(boost::extents[num_interactions+num_src][interp_order+1])
+    : InteractionBase(dots, obss, dt), pulse(std::move(pulse)), hbar(hbar), rotating(rotating)
 {
 }
 
@@ -33,9 +30,9 @@ const InteractionBase::ResultArray &PulseInteraction::evaluate_field(
 {
   const double time = time_idx * dt;
 
-  for(size_t i = 0; i < dots->size(); ++i)
+  for(size_t i = 0; i < obss->size(); ++i)
     results[i] =
-        (*pulse)((*dots)[i].position(), time, 0, rotating).dot((*dots)[i].dipole()) / hbar;
+        (*pulse)((*obss)[i].position(), time, 0, rotating).dot((*obss)[i].dipole()) / hbar;
 
   return results;
 }

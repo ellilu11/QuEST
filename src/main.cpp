@@ -8,7 +8,7 @@
 #include "integrator/RHS/bloch_rhs.h"
 #include "integrator/history.h"
 #include "integrator/integrator.h"
-#include "interactions/AIM/aim_interaction.h"
+//#include "interactions/AIM/aim_interaction.h"
 #include "interactions/direct_interaction.h"
 #include "interactions/green_function.h"
 #include "interactions/pulse_interaction.h"
@@ -72,7 +72,6 @@ int main(int argc, char *argv[])
 
     string idstr(argv[6]);
     auto qds = make_shared<DotVector>(import_dots("./dots/dots_line"+idstr+".cfg"));
-//    cout << (*qds).size() << std::endl;
     qds->resize(num_src);
     auto rhs_funcs = rhs_functions(*qds, omega, beta, rotating);
 
@@ -104,7 +103,7 @@ int main(int argc, char *argv[])
     std::shared_ptr<InteractionBase> pairwise;
 
     if (solve_type) {
-      AIM::Grid grid(grid_spacing, expansion_order, h, *qds); 
+      /*AIM::Grid grid(grid_spacing, expansion_order, h, *qds); 
       const int transit_steps = grid.max_transit_steps(c0, dt) + 
                                   interpolation_order;
 
@@ -139,32 +138,32 @@ int main(int argc, char *argv[])
             // AIM::Expansions::EFIE_Retardation(transit_steps, c0), // fdtd expansion function
             AIM::Normalization::Laplace(propagation_constant)
            );
-      }
+      }*/
     
     } else {
       if (rotating) {
           Propagation::RotatingEFIE dyadic(c0, propagation_constant, omega, beta, 0.0);
           Propagation::SelfRotatingEFIE dyadic_self(c0, propagation_constant, omega, beta);
 
-          selfwise = make_shared<SelfInteraction>(qds, NULL, history, dyadic_self,
+          selfwise = make_shared<SelfInteraction>(qds, nullptr, history, dyadic_self,
                                                       interpolation_order, c0, dt, omega);
-          pairwise = make_shared<DirectInteraction>(qds, NULL, history, dyadic,
+          pairwise = make_shared<DirectInteraction>(qds, nullptr, history, dyadic,
                                                         interpolation_order, c0, dt, omega);
       
       } else {
           Propagation::EFIE<cmplx> dyadic(c0, propagation_constant, beta, 0.0);
           Propagation::SelfEFIE dyadic_self(c0, propagation_constant, beta);
          
-          selfwise = make_shared<SelfInteraction>(qds, NULL, history, dyadic_self,
+          selfwise = make_shared<SelfInteraction>(qds, nullptr, history, dyadic_self,
                                                       interpolation_order, c0, dt);
-          pairwise = make_shared<DirectInteraction>(qds, NULL, history, dyadic,
+          pairwise = make_shared<DirectInteraction>(qds, nullptr, history, dyadic,
                                                         interpolation_order, c0, dt); 
       }
 
     }
 
     std::vector<std::shared_ptr<InteractionBase>> interactions{ 
-      make_shared<PulseInteraction>(qds, pulse1, interpolation_order, c0, dt, hbar, rotating),
+      make_shared<PulseInteraction>(qds, nullptr, pulse1, interpolation_order, c0, dt, hbar, rotating),
 		  selfwise} ;
 
     if (interacting)
@@ -193,18 +192,26 @@ int main(int argc, char *argv[])
 
     cout << "Elapsed time: " << elapsed_time << "s" << std::endl;
 
-    // == FIELD INTERACTIONS ===============================================
+    // == SRC-OBS INTERACTIONS ===============================================
 
+    auto obs = make_shared<DotVector>(import_dots("./dots/obs"+idstr+".cfg"));
+ 
    	std::shared_ptr<InteractionBase> selfwise_fld;
     std::shared_ptr<InteractionBase> pairwise_fld;
 
     if (rotating) {
+      Propagation::RotatingEFIE dyadic(c0, propagation_constant, omega, beta, 0.0);
+      Propagation::SelfRotatingEFIE dyadic_self(c0, propagation_constant, omega, beta);
+
       selfwise_fld = make_shared<SelfInteraction>(qds, obs, history, dyadic_self,
                                                   interpolation_order, c0, dt, omega);
       pairwise_fld = make_shared<DirectInteraction>(qds, obs, history, dyadic,
                                                     interpolation_order, c0, dt, omega);
   
     } else {
+      Propagation::EFIE<cmplx> dyadic(c0, propagation_constant, beta, 0.0);
+      Propagation::SelfEFIE dyadic_self(c0, propagation_constant, beta);
+      
       selfwise_fld = make_shared<SelfInteraction>(qds, obs, history, dyadic_self,
                                                   interpolation_order, c0, dt);
       pairwise_fld = make_shared<DirectInteraction>(qds, obs, history, dyadic,
@@ -216,7 +223,7 @@ int main(int argc, char *argv[])
 		  selfwise_fld} ;
 
     if (interacting)
-      interactions_fld.push_back( pairwise );
+      interactions_fld.push_back( pairwise_fld );
 
   return 0;
 }

@@ -62,7 +62,7 @@ void SelfInteraction::build_fldcoeff_table(
 
         for(int i = 0; i <= interp_order; ++i){
           fldcoeffs[pair_idx][i] = interp_dyads_self[i] * dip_src;
-          std::cout << src << " " << obs << " " fldcoeffs[pair_idx][i] << std::endl;
+          std::cout << src << " " << obs << " " << fldcoeffs[pair_idx][i] << std::endl;
         }
       }
     }
@@ -154,8 +154,8 @@ const InteractionBase::ResultArray &SelfInteraction::evaluate_field(
         rho_src = (history->get_value(src, s, 0))[RHO_01];
 
         if ( !omega )
-          results[obs] += 2.0 * dip_obs.dot ( 
-                            std::real( rho_src * fldcoeffs[pair_idx][i] ) ) ;
+          results[obs] += 2.0 * std::real( dip_obs.dot ( 
+                            rho_src * fldcoeffs[pair_idx][i] ) ) ;
         else
           results[obs] += dip_obs.dot ( 
                             rho_src * fldcoeffs[pair_idx][i] ) ;

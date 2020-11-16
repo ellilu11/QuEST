@@ -39,7 +39,7 @@ const Integrator::BlochRHS::ResultArray Integrator::BlochRHS::evaluate_present(c
   auto eval_and_sum =
       [step](const InteractionBase::ResultArray &r,
              const std::shared_ptr<InteractionBase> &interaction) {
-        return r + interaction->evaluate_present_field(step);
+        return r + interaction->evaluate_present(step);
       };
   auto nil = InteractionBase::ResultArray::Zero(num_solutions, 1).eval();
 

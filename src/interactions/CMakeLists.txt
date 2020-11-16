@@ -1,4 +1,4 @@
-include("${CMAKE_CURRENT_LIST_DIR}/AIM/CMakeLists.txt")
+#include("${CMAKE_CURRENT_LIST_DIR}/AIM/CMakeLists.txt")
 
 target_sources(quest
   PRIVATE
