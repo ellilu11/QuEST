@@ -74,19 +74,21 @@ void Integrator::BlochRHS::evaluate_field(const int step)
   auto nil = InteractionBase::ResultArray::Zero(num_obs, 1).eval();
 
   set_dipole_of_dots( obss, Eigen::Vector3d(hbar, 0, 0) );
-  auto fldx = fld_interactions[1]->evaluate_field(step); 
+  auto efldx = fld_interactions[1]->evaluate_field(step); 
       // std::accumulate(
       // fld_interactions.begin(), fld_interactions.end(), nil, eval_and_sum);
  
   set_dipole_of_dots( obss, Eigen::Vector3d(0, hbar, 0) );
-  auto fldy = fld_interactions[1]->evaluate_field(step); 
+  auto efldy = fld_interactions[1]->evaluate_field(step); 
       // std::accumulate(
       // fld_interactions.begin(), fld_interactions.end(), nil, eval_and_sum);
   
   set_dipole_of_dots( obss, Eigen::Vector3d(0, 0, hbar) );
-  auto fldz = fld_interactions[1]->evaluate_field(step); 
+  auto efldz = fld_interactions[1]->evaluate_field(step); 
       // std::accumulate(
       // fld_interactions.begin(), fld_interactions.end(), nil, eval_and_sum);
+
+
 
   for(int solution = 0; solution < num_obs; ++solution) {
     outfile << std::abs(fldx[solution]) << " " 

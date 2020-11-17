@@ -32,6 +32,11 @@ namespace Propagation {
 
   class RotatingEFIE;
 
+  template <class T>
+  class MFIE;
+
+  class RotatingMFIE;
+
   class SelfEFIE;
 
   class SelfRotatingEFIE;
@@ -267,6 +272,61 @@ class Propagation::RotatingEFIE : public Propagation::EFIE<cmplx> {
 
 };
 
+template <class T>
+class Propagation::MFIE : public Propagation::Kernel<T> {
+ public:
+  MFIE(const double c, const double k2) : c_(c), k2_(k2){};
+  const std::vector<Mat3D<T>> &coefficients(
+      const Eigen::Vector3d &dr,
+      const Interpolation::UniformLagrangeSet &interp)
+  {
+    this->coefs_.resize(interp.order() + 1);
+
+    for(int i = 0; i <= interp.order(); ++i) {
+      this->coefs_[i] = Eigen::Matrix3d::Zero();
+
+      if ( dr.norm() > 0.0 ) {
+        this->coefs_[i] = -k2_ * Eigen::Matrix3d::Identity() / dr.norm() * 
+                            interp.evaluations[1][i];
+      }
+    }
+    return this->coefs_;
+  }
+
+ protected:
+  double c_, k2_;
+
+};
+
+class Propagation::RotatingMFIE : public Propagation::MFIE<cmplx> {
+ public:
+  RotatingMFIE(const double c, const double k2, const double omega)
+       : MFIE<cmplx>(c, k2), omega_(omega){};
+
+ const std::vector<Eigen::Matrix3cd> &coefficients(
+      const Eigen::Vector3d &dr,
+      const Interpolation::UniformLagrangeSet &interp)
+  {
+    this->coefs_.resize(interp.order() + 1);
+
+    for(int i = 0; i <= interp.order(); ++i) {
+      this->coefs_[i] = Eigen::Matrix3d::Zero();
+
+      if ( dr.norm() > 0.0 ) {
+        this->coefs_[i] = 
+            -k2_ * std::exp(-iu * omega_ * dr.norm() / c_) *
+              Eigen::Matrix3cd::Identity() / dr.norm() *
+              (interp.evaluations[1][i] + iu * omega_ * interp.evaluations[0][i]);
+      }
+    }
+    return this->coefs_;
+  }
+
+ protected:
+  double c_, k2_, omega_;
+
+};
+
 class Propagation::SelfEFIE : public Propagation::Kernel<cmplx> {
  public:
   SelfEFIE(const double c, const double k2, const double beta)
@@ -293,6 +353,7 @@ class Propagation::SelfEFIE : public Propagation::Kernel<cmplx> {
  protected:
   double c_, k2_, beta_;
 };
+
 
 class Propagation::SelfRotatingEFIE : public Propagation::SelfEFIE {
  public:
