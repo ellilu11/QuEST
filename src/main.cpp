@@ -22,7 +22,7 @@ int main(int argc, char *argv[])
 
     // parameters
     const int num_src = atoi(argv[1]);
-    const double tmax = 10;
+    const double tmax = 100;
     const double dt = 10.0 / pow(10.0, atoi(argv[2]) ); 
                               // rotframe: sigma = 1.0ps -> dt <= 0.52e-1
                               // fixframe: omega = 2278.9013 mev/hbar -> dt <= 1.379e-4
@@ -183,32 +183,44 @@ int main(int argc, char *argv[])
  
    	std::shared_ptr<InteractionBase> selfwise_fld;
     std::shared_ptr<InteractionBase> pairwise_fld;
+    std::shared_ptr<InteractionBase> pairwise_bfld;
 
     if (rotating) {
       Propagation::RotatingEFIE dyadic(c0, propagation_constant, omega, beta, 0.0);
       Propagation::SelfRotatingEFIE dyadic_self(c0, propagation_constant, omega, beta);
+      Propagation::RotatingMFIE dyadic_mfie(c0, propagation_constant, omega);
 
       selfwise_fld = make_shared<SelfInteraction>(qds, obs, history, dyadic_self,
                                                   interpolation_order, c0, dt, omega);
       pairwise_fld = make_shared<DirectInteraction>(qds, obs, history, dyadic,
                                                     interpolation_order, c0, dt, omega);
+      pairwise_bfld = make_shared<DirectInteraction>(qds, obs, history, dyadic_mfie,
+                                                     interpolation_order, c0, dt, omega);
   
     } else {
       Propagation::EFIE<cmplx> dyadic(c0, propagation_constant, beta, 0.0);
       Propagation::SelfEFIE dyadic_self(c0, propagation_constant, beta);
-      
+      Propagation::MFIE<cmplx> dyadic_mfie(c0, propagation_constant);
+
       selfwise_fld = make_shared<SelfInteraction>(qds, obs, history, dyadic_self,
                                                   interpolation_order, c0, dt);
       pairwise_fld = make_shared<DirectInteraction>(qds, obs, history, dyadic,
                                                     interpolation_order, c0, dt); 
+      pairwise_bfld = make_shared<DirectInteraction>(qds, obs, history, dyadic_mfie,
+                                                     interpolation_order, c0, dt);
     }
 
-    std::vector<std::shared_ptr<InteractionBase>> fld_interactions{ 
+    std::vector<std::shared_ptr<InteractionBase>> efld_interactions{ 
+      make_shared<PulseInteraction>(qds, obs, pulse1, interpolation_order, c0, dt, hbar, rotating),
+		  } ; // no selfwise!
+    std::vector<std::shared_ptr<InteractionBase>> bfld_interactions{ 
       make_shared<PulseInteraction>(qds, obs, pulse1, interpolation_order, c0, dt, hbar, rotating),
 		  } ; // no selfwise!
 
-    if (interacting)
-      fld_interactions.push_back( pairwise_fld );
+    if (interacting){
+      efld_interactions.push_back( pairwise_fld );
+      bfld_interactions.push_back( pairwise_bfld );
+    }
 
     // == INTEGRATOR =================================================
 
@@ -218,7 +230,7 @@ int main(int argc, char *argv[])
         std::make_unique<Integrator::BlochRHS>(
             hbar, dt, num_timesteps, 
             history, 
-            std::move(interactions), std::move(fld_interactions), 
+            std::move(interactions), std::move(efld_interactions), std::move(bfld_interactions), 
             std::move(rhs_funcs), obs, 
             task_idx);
 

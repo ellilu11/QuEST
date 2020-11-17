@@ -170,7 +170,7 @@ const InteractionBase::ResultArray &DirectInteraction::evaluate_present(
 }
 
 const InteractionBase::ResultArray &DirectInteraction::evaluate_field(
-    const int time_idx)
+    const int time_idx, const bool flag)
 {
   constexpr int RHO_01 = 1;
   const double time0 = time_idx * dt;
@@ -182,9 +182,8 @@ const InteractionBase::ResultArray &DirectInteraction::evaluate_field(
   for(int obs = 0; obs < num_obs; ++obs) {
       
     Eigen::Vector3d dip_obs = (*obss)[obs].dipole();
-
-    // if ( time_idx == 10 && obs == 0 )
-    //  std::cout << dip_obs << std::endl;
+    Eigen::Vector3d pos_obs = (*obss)[obs].position();
+    Eigen::Vector3d u_obs = pos_obs / pos_obs.norm();
 
     for(int src = 0; src < num_src; ++src) {
       int pair_idx = coord2idxsq( obs, src, num_src ); 
@@ -194,19 +193,30 @@ const InteractionBase::ResultArray &DirectInteraction::evaluate_field(
             std::max(time_idx - floor_delays_fld[pair_idx] - i, -history->window);
         rho_src = (history->get_value(src, s, 0))[RHO_01];
 
-        if ( !omega )
-          results[obs] += 2.0 * std::real( dip_obs.dot ( 
-                            rho_src * fldcoeffs[pair_idx][i] ) ) ;
-        else
-          results[obs] += dip_obs.dot ( 
-                            rho_src * fldcoeffs[pair_idx][i] ) ;
+        if ( flag ) {
+          Eigen::Vector3cd cross_coeffs = 
+            (u_obs.cast<cmplx>()).cross(fldcoeffs[pair_idx][i]);
+          if ( !omega )
+            results[obs] += 2.0 * std::real( dip_obs.dot ( 
+                              rho_src * cross_coeffs ) ) ;
+          else
+            results[obs] += dip_obs.dot ( 
+                              rho_src * cross_coeffs ) ;
+        } else {
+
+          if ( !omega )
+            results[obs] += 2.0 * std::real( dip_obs.dot ( 
+                              rho_src * fldcoeffs[pair_idx][i] ) ) ;
+          else
+            results[obs] += dip_obs.dot ( 
+                              rho_src * fldcoeffs[pair_idx][i] ) ;
+          }
       }
     }
   }
 
   return results;
 }
-
 
 int DirectInteraction::coord2idx(int row, int col)
 {

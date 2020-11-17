@@ -20,6 +20,7 @@ class Integrator::BlochRHS : public Integrator::RHS<Eigen::Vector2cd> {
            const std::shared_ptr<History<Eigen::Vector2cd>>,
            std::vector<std::shared_ptr<InteractionBase>>,
            std::vector<std::shared_ptr<InteractionBase>>,
+           std::vector<std::shared_ptr<InteractionBase>>,
            std::vector<BlochFunctionType>,
            std::shared_ptr<DotVector>,
            const int);
@@ -32,7 +33,7 @@ private:
   int num_solutions, num_obs;
   int num_timesteps;
   double hbar;
-  std::vector<std::shared_ptr<InteractionBase>> interactions, fld_interactions;
+  std::vector<std::shared_ptr<InteractionBase>> interactions, efld_interactions, bfld_interactions;
   std::shared_ptr<DotVector> obss;
 
   std::ofstream outfile;

@@ -22,7 +22,7 @@ class InteractionBase {
   const cmplx &operator[](const int i) const { return results[i]; }
   virtual const ResultArray &evaluate(const int) = 0;
   virtual const ResultArray &evaluate_present(const int) = 0;
-  virtual const ResultArray &evaluate_field(const int) = 0;
+  virtual const ResultArray &evaluate_field(const int, const bool=0) = 0;
   virtual ~InteractionBase(){};
 
  protected:

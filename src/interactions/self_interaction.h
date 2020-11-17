@@ -18,7 +18,7 @@ class SelfInteraction final : public HistoryInteraction {
 
   const ResultArray &evaluate(const int) final;
   const ResultArray &evaluate_present(const int) final;
-  const ResultArray &evaluate_field(const int) final;
+  const ResultArray &evaluate_field(const int, const bool=0) final;
 
  private:
   int num_src, num_obs, num_srcobs;

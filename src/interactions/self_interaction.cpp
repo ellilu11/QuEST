@@ -132,7 +132,7 @@ const InteractionBase::ResultArray &SelfInteraction::evaluate_present(
 }
 
 const InteractionBase::ResultArray &SelfInteraction::evaluate_field(
-    const int time_idx)
+    const int time_idx, const bool flag)
 {
   constexpr int RHO_01 = 1;
   const double time0 = time_idx * dt;

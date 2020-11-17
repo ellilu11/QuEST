@@ -17,11 +17,11 @@ class PulseInteraction : public InteractionBase {
   {
     return evaluate(time_idx);
   }
-  const ResultArray &evaluate_field(const int);
+  const ResultArray &evaluate_field(const int, const bool=0);
  
  private:
   std::shared_ptr<const Pulse> pulse;
-  const double hbar;
+  const double c0, hbar;
   const bool rotating;
 };
 
