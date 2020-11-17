@@ -102,7 +102,7 @@ int main(int argc, char *argv[])
   	qd = {{xpos, ypos, zpos, omega,
                     T1, T2, dipx, dipy, dipz}};
     dots.push_back(qd);
-		zpos += dist0; // dist(generator);
+		zpos += dist(generator);
   }
 
   min_dist(dots);
