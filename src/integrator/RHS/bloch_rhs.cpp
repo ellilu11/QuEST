@@ -133,7 +133,7 @@ void Integrator::BlochRHS::evaluate_field(const int step)
   for(int obs = 0; obs < num_obs; ++obs) {
     Eigen::Vector3cd efld(efldx[obs], efldy[obs], efldz[obs]);
     Eigen::Vector3cd bfld(bfldx[obs], bfldy[obs], bfldz[obs]);
-    auto poynting = efld.cross(bfld);
+    Eigen::Vector3cd poynting = efld.cross(bfld) / mu0;
  
     outfile << std::abs(efldx[obs]) << " " 
             << std::abs(efldy[obs]) << " " 
@@ -145,11 +145,11 @@ void Integrator::BlochRHS::evaluate_field(const int step)
             << std::abs(poynting[1]) << " " 
             << std::abs(poynting[2]) << " ";
 
-    // Calculate flux from spherical surface, or energy stored in sphere
+    // Calculate flux from spherical surface, or energy stored within that sphere
     Eigen::Vector3d pos = (*obss)[obs].position();
     double r0 = pos.norm();
     Eigen::Vector3d rhat = pos / pos.norm();
-    double measure = (*obss)[obs].frequency();
+    double measure = (*obss)[obs].frequency(); // not the "frequency" of the observer but its associated area/volume ("measure")
 
     if (getflux) {
       // std::cout << "Getting flux" << std::endl;
@@ -157,14 +157,14 @@ void Integrator::BlochRHS::evaluate_field(const int step)
       flux_imag = flux_imag + measure * std::imag( poynting.dot(rhat) );
     } else {
       // std::cout << "Getting energy" << std::endl;
-      double energy_density = ( eps0 * efld.squaredNorm() + bfld.squaredNorm() / mu0 ) / 2.0;
+      double energy_density = ( efld.squaredNorm() * eps0 + bfld.squaredNorm() / mu0 ) / 2.0;
       energy = energy + measure * energy_density;
     }
   }
     
   if (getflux){
     // std::cout << "Printing flux" << std::endl;
-    std::cout << flux_real / mu0 << " " << flux_imag / mu0 << std::endl;
+    std::cout << flux_real << " " << flux_imag << std::endl;
   } else {
     // std::cout << "Printing energy" << std::endl;
     std::cout << energy << std::endl;

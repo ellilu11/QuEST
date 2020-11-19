@@ -34,7 +34,7 @@ class Integrator::BlochRHS : public Integrator::RHS<Eigen::Vector2cd> {
 private:
   int num_solutions, num_obs;
   int num_timesteps;
-  double hbar, mu0, eps0;
+  const double hbar, mu0, eps0;
   std::vector<std::shared_ptr<InteractionBase>> interactions, efld_interactions, bfld_interactions;
   std::shared_ptr<DotVector> obss;
   // std::vector<double> area_elements;

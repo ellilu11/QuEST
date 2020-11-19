@@ -85,7 +85,7 @@ int main(int argc, char *argv[])
  
   std::cout << "Nth: " << nth << " Nph: " << nph << " Num dots: " << num_dots << std::endl;
 
-  const double num_src = 20;
+  const double num_src = 5;
   const double src_dz = 5.0e-3; // avg distance between srcs
   const double r0 = ( num_src + 2 ) * src_dz / 2.0;
 
