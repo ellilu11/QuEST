@@ -25,9 +25,9 @@ class DirectInteraction final : public HistoryInteraction {
   int num_src, num_interactions;
   int num_obs, num_srcobs;
 
-  std::vector<int> floor_delays, floor_delays_fld;
+  std::vector<int> floor_delays, floor_delays_srcobs;
   boost::multi_array<cmplx, 2> coeffs;
-  boost::multi_array<Eigen::Vector3cd, 2> fldcoeffs;
+  boost::multi_array<Eigen::Vector3cd, 2> fldcoeffs, cross_coeffs;
   double omega;
 
   void build_coeff_table(Propagation::Kernel<cmplx> &);

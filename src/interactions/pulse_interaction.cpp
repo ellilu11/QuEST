@@ -5,11 +5,11 @@ PulseInteraction::PulseInteraction(
     const std::shared_ptr<const DotVector> obss,
     const std::shared_ptr<const Pulse> pulse,
     const int interp_order,
-    const double c0,
     const double dt,
     const double hbar,
+    const double omega,
     const bool rotating)
-    : InteractionBase(dots, obss, dt), pulse(std::move(pulse)), c0(c0), hbar(hbar), rotating(rotating)
+    : InteractionBase(dots, obss, dt), pulse(std::move(pulse)), hbar(hbar), omega(omega), rotating(rotating)
 {
 }
 
@@ -35,7 +35,7 @@ const InteractionBase::ResultArray &PulseInteraction::evaluate_field(
     if ( flag ) {
       Eigen::Vector3d wavevector = pulse->wavevec();
       results[i] =
-        (wavevector.cross(pulse0)).dot((*obss)[i].dipole()) / ( c0 * hbar );
+        (wavevector.cross(pulse0)).dot((*obss)[i].dipole()) / ( omega * hbar );
     } else 
       results[i] =
         pulse0.dot((*obss)[i].dipole()) / hbar;

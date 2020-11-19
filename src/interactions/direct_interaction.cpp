@@ -19,8 +19,9 @@ DirectInteraction::DirectInteraction(
       omega(omega), 
       floor_delays(num_interactions),
       coeffs(boost::extents[num_interactions][interp_order + 1]),
-      floor_delays_fld(num_srcobs),
-      fldcoeffs(boost::extents[num_srcobs][interp_order+1])
+      floor_delays_srcobs(num_srcobs),
+      fldcoeffs(boost::extents[num_srcobs][interp_order+1]),
+      cross_coeffs(boost::extents[num_srcobs][interp_order+1])
 {
   build_coeff_table(kernel);
   build_fldcoeff_table(kernel);
@@ -65,12 +66,15 @@ void DirectInteraction::build_fldcoeff_table(
       int pair_idx = coord2idxsq( obs, src, num_src ); 
 
       Eigen::Vector3d dr(separation((*dots)[src], (*obss)[obs]));
+
       double dist = dr.norm();
       if ( dist == 0.0 ) continue;
 
+      Eigen::Vector3d rhat = dr / dist;
+ 
       std::pair<int, double> delay(split_double(dist / (c0 * dt)));
 
-      floor_delays_fld[pair_idx] = delay.first;
+      floor_delays_srcobs[pair_idx] = delay.first;
 
       lagrange.evaluate_derivative_table_at_x(delay.second, dt);
 
@@ -81,6 +85,13 @@ void DirectInteraction::build_fldcoeff_table(
 
       for(int i = 0; i <= interp_order; ++i){
         fldcoeffs[pair_idx][i] = interp_dyads[i] * dip_src;
+        cross_coeffs[pair_idx][i] = 
+            // (u_obs.cast<cmplx>()).cross(fldcoeffs[pair_idx][i]);
+            rhat.cross(fldcoeffs[pair_idx][i]);
+
+       /*std::cout << i << " " 
+                  // << fldcoeffs[pair_idx][i].transpose() 
+                  << std::endl;*/
       }
     }
   } 
@@ -182,26 +193,20 @@ const InteractionBase::ResultArray &DirectInteraction::evaluate_field(
   for(int obs = 0; obs < num_obs; ++obs) {
       
     Eigen::Vector3d dip_obs = (*obss)[obs].dipole();
-    Eigen::Vector3d pos_obs = (*obss)[obs].position();
-    Eigen::Vector3d u_obs = pos_obs / pos_obs.norm();
-
     for(int src = 0; src < num_src; ++src) {
       int pair_idx = coord2idxsq( obs, src, num_src ); 
-
       for(int i = 0; i <= interp_order; ++i) {
         const int s =
-            std::max(time_idx - floor_delays_fld[pair_idx] - i, -history->window);
+            std::max(time_idx - floor_delays_srcobs[pair_idx] - i, -history->window);
         rho_src = (history->get_value(src, s, 0))[RHO_01];
 
         if ( flag ) {
-          Eigen::Vector3cd cross_coeffs = 
-            (u_obs.cast<cmplx>()).cross(fldcoeffs[pair_idx][i]);
           if ( !omega )
             results[obs] += 2.0 * std::real( dip_obs.dot ( 
-                              rho_src * cross_coeffs ) ) ;
+                              rho_src * cross_coeffs[pair_idx][i] ) ) ;
           else
             results[obs] += dip_obs.dot ( 
-                              rho_src * cross_coeffs ) ;
+                              rho_src * cross_coeffs[pair_idx][i] ) ;
         } else {
 
           if ( !omega )

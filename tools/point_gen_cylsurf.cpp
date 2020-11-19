@@ -69,48 +69,46 @@ int main(int argc, char *argv[])
   const double T1 = 10000.0, T2 = 20000.0;
   const double dip = 5.2917721e-4 * 1.0;
   const double dipx = dip, dipy = 0.0, dipz = 0.0;
-  const int num_dots = atoi(argv[1]);
 
-  const unsigned seed =
-      std::chrono::system_clock::now().time_since_epoch().count();
-    
-  const double dist0 = 5.0e-3; // mean long. distance between dots;
-	const double sigma = 0.1*dist0; // stdev of long. distance between dots
-  const double R = 0; // 1.0e-2;// transverse radius
+  const int num_long = atoi(argv[1]);
+  const int num_trans = atoi(argv[2]);
+  const int num_dots = num_long * num_trans;
 
-  std::cout << "dist0: " << dist0 << " sigma: " << sigma << std::endl;
+  std::cout << "Num long: " << num_long << " Num trans: " << num_trans << std::endl;
  
-  std::default_random_engine generator(seed);
-  std::normal_distribution<double> dist(dist0, sigma);
-
-  std::uniform_real_distribution<double> u(0, R*R);
-  std::uniform_real_distribution<double> v(0, 2*M_PI);
+  const double num_src = 20;
+  const double src_dz = 5.0e-3; // avg distance between srcs
+  const double leng = num_src * src_dz;
+  const double dz = leng / ( num_long - 1 );
+  
+  const double r0 = 1.0e-2;
+  const double dph = 2*M_PI / num_trans;
 
   Qdot qd;
   std::vector<Qdot> dots;
   dots.reserve(num_dots);
 
-	double zpos = -(num_dots-1)*dist0 / 2.0;
+  const double z0 = -(num_long-1)*dz / 2.0;
 
-  for(int i = 0; i < num_dots; ++i) {
-    double r = std::sqrt( u(generator) );
-    double phi = v(generator);
+  for(int iz = 0; iz < num_long; ++iz) {
+    double z = z0 + iz*dz;  
 
-    double xpos = r * std::cos(phi);
-    double ypos = r * std::sin(phi); 
+    for(int iph = 0; iph < num_trans; ++iph){
+      double phi = iph*dph;
+      double x = r0*std::cos(phi);
+      double y = r0*std::sin(phi);
 
-  	qd = {{xpos, ypos, zpos, omega,
-                    T1, T2, dipx, dipy, dipz}};
-    dots.push_back(qd);
-		zpos += dist(generator);
+      qd = {{x, y, z, omega,
+                      T1, T2, dipx, dipy, dipz}};
+      dots.push_back(qd);
+    }
   }
 
   min_dist(dots);
 
-  std::string taskstr(argv[2]);
+  std::string taskstr(argv[3]);
 
-  std::ofstream fd("./dots/dots"+taskstr+".cfg");
-  // std::ofstream fd("./dots/obss"+taskstr+".cfg");
+  std::ofstream fd("./dots/obss"+taskstr+".cfg");
   fd << std::setprecision(12);
 
   for(const auto &d : dots) {

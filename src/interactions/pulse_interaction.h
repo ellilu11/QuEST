@@ -21,7 +21,7 @@ class PulseInteraction : public InteractionBase {
  
  private:
   std::shared_ptr<const Pulse> pulse;
-  const double c0, hbar;
+  const double hbar, omega;
   const bool rotating;
 };
 

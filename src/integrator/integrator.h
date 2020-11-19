@@ -67,10 +67,10 @@ template <class soltype>
 void Integrator::PredictorCorrector<soltype>::solve(
     const log_level_t log_level)
 {
-  int num_outsteps = std::min( 20000, time_idx_ubound );
+  int num_outsteps = std::min( 2000, time_idx_ubound );
   int outstep = time_idx_ubound / num_outsteps;
 
-  int num_logsteps = 10;
+  int num_logsteps = 100;
  
   for(int step = 0; step < time_idx_ubound; ++step) {
     solve_step(step);
@@ -80,8 +80,8 @@ void Integrator::PredictorCorrector<soltype>::solve(
        rhs->evaluate_field(step);
 		}
      
-    if (step%(time_idx_ubound/num_logsteps) == 0)
-      std::cout << step / (time_idx_ubound/num_logsteps) << std::endl;
+    // if (step%(time_idx_ubound/num_logsteps) == 0)
+    //  std::cout << step / (time_idx_ubound/num_logsteps) << std::endl;
 
   // if(log_level >= log_level_t::LOG_INFO) log_percentage_complete(step);
   }

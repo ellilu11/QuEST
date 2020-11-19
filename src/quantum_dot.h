@@ -51,6 +51,7 @@ class QuantumDot {
   const Eigen::Vector3d &dipole() const { return dipr; }
   const Eigen::Vector3d &dipole_imag() const { return dipi; }
   Eigen::Vector3d &set_dipole() { return dipr; }
+  const double &frequency() const { return freq; }
 
   friend Eigen::Vector3d separation(const QuantumDot &, const QuantumDot &);
   friend int max_transit_steps_between_dots(const std::shared_ptr<DotVector>,
