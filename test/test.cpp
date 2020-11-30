@@ -78,6 +78,7 @@ int main(int argc, char *argv[])
     std::shared_ptr<DotVector> obs;
     if (getflux)
       obs = make_shared<DotVector>(import_dots("./dots/obss_sphsurf.cfg"));
+      // obs = make_shared<DotVector>(import_dots("./dots/dots0.cfg"));
     else
       obs = make_shared<DotVector>(import_dots("./dots/obss_sph.cfg"));
 
@@ -242,7 +243,7 @@ int main(int argc, char *argv[])
  
     std::unique_ptr<Integrator::RHS<Eigen::Vector2cd>> bloch_rhs =
         std::make_unique<Integrator::BlochRHS>(
-            hbar, mu0, c0,
+            hbar, mu0, c0, omega,
             dt, num_timesteps, 
             history, 
             std::move(interactions), std::move(efld_interactions), std::move(bfld_interactions), 

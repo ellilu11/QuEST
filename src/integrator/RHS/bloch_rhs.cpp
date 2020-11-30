@@ -4,6 +4,7 @@ Integrator::BlochRHS::BlochRHS(
     const double hbar, 
     const double mu0,
     const double c0,
+    const double omega,
     const double dt, 
     const int num_timesteps,
     const std::shared_ptr<Integrator::History<Eigen::Vector2cd>> history,
@@ -15,7 +16,7 @@ Integrator::BlochRHS::BlochRHS(
     const int task_idx,
     const bool getflux)
     : Integrator::RHS<Eigen::Vector2cd>(dt, history),
-      hbar(hbar), mu0(mu0), eps0(1.0/(mu0*c0*c0)),
+      hbar(hbar), mu0(mu0), eps0(1.0/(mu0*c0*c0)), omega(omega),
       num_timesteps(num_timesteps),
       num_solutions(history->num_particles),
       interactions(std::move(interactions)),
@@ -126,53 +127,58 @@ void Integrator::BlochRHS::evaluate_field(const int step)
       std::accumulate(
         bfld_interactions.begin(), bfld_interactions.end(), nil, eval_and_sum_bfld);
 
-  double flux_real = 0.0;
-  double flux_imag = 0.0;
+  double flux = 0.0;
   double energy = 0.0;
+  double time = step*dt;
 
   for(int obs = 0; obs < num_obs; ++obs) {
     Eigen::Vector3cd efld(efldx[obs], efldy[obs], efldz[obs]);
     Eigen::Vector3cd bfld(bfldx[obs], bfldy[obs], bfldz[obs]);
-    Eigen::Vector3cd poynting = efld.cross(bfld) / mu0;
- 
-    outfile << std::abs(efldx[obs]) << " " 
-            << std::abs(efldy[obs]) << " " 
-            << std::abs(efldz[obs]) << " "    
-            << std::abs(bfldx[obs]) << " " 
-            << std::abs(bfldy[obs]) << " " 
-            << std::abs(bfldz[obs]) << " "
-            << std::abs(poynting[0]) << " " 
-            << std::abs(poynting[1]) << " " 
-            << std::abs(poynting[2]) << " ";
 
-    // Calculate flux from spherical surface, or energy stored within that sphere
+    Eigen::Vector3d poynting = (efld.real()).cross(bfld.real()) / ( mu0 ); // Fix frame
+    //Eigen::Vector3d poynting = ( efld.cross(bfld.conjugate()) + 
+    //                             efld.cross(bfld) * std::exp(2.0*iu*omega*time) ).real() / ( 2.0*mu0 ); // Rot frame
+ 
     Eigen::Vector3d pos = (*obss)[obs].position();
     double r0 = pos.norm();
     Eigen::Vector3d rhat = pos / pos.norm();
-    double measure = (*obss)[obs].frequency(); // not the "frequency" of the observer but its associated area/volume ("measure")
+    double measure = (*obss)[obs].frequency(); 
+
+    //if ( step == 4800000 )
+      /*outfile << std::abs(efldx[obs]) << " " 
+              << std::abs(efldy[obs]) << " " 
+              << std::abs(efldz[obs]) << " "    
+              << std::abs(bfldx[obs]) << " " 
+              << std::abs(bfldy[obs]) << " " 
+              << std::abs(bfldz[obs]) << " "
+              << poynting[0] << " " 
+              << poynting[1] << " " 
+              << poynting[2] << " "
+              << rhat[0] << " "
+              << rhat[1] << " "
+              << rhat[2] << " ";*/
 
     if (getflux) {
-      // std::cout << "Getting flux" << std::endl;
-      flux_real = flux_real + measure * std::real( poynting.dot(rhat) );
-      flux_imag = flux_imag + measure * std::imag( poynting.dot(rhat) );
+      // flux_real = flux_real + measure * std::real( poynting.dot(rhat) );
+      // flux_imag = flux_imag + measure * std::imag( poynting.dot(rhat) );
+      double flux_per_area = poynting.dot(rhat) ;
+      flux = flux + measure * flux_per_area;
+      // if ( step == 4800000 )
+      //  outfile << flux_per_area << std::endl;
     } else {
-      // std::cout << "Getting energy" << std::endl;
       double energy_density = ( efld.squaredNorm() * eps0 + bfld.squaredNorm() / mu0 ) / 2.0;
       energy = energy + measure * energy_density;
     }
   }
     
-  if (getflux){
-    // std::cout << "Printing flux" << std::endl;
-    std::cout << flux_real << " " << flux_imag << std::endl;
-  } else {
-    // std::cout << "Printing energy" << std::endl;
+  if (getflux)
+    std::cout << flux << std::endl;
+  else 
     std::cout << energy << std::endl;
-  }
 
   outfile << "\n";
   if ( step > num_timesteps*0.90){
-    outfile.flush();
+    // outfile.flush();
     // fluxfile.flush();
   }
 }

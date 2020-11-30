@@ -286,7 +286,7 @@ class Propagation::MFIE : public Propagation::Kernel<T> {
       this->coefs_[i] = Eigen::Matrix3d::Zero();
 
       if ( dr.norm() > 0.0 ) {
-        this->coefs_[i] = k2_ * Eigen::Matrix3d::Identity() * 
+        this->coefs_[i] = -k2_ * Eigen::Matrix3d::Identity() * 
                             ( interp.evaluations[1][i] / dr.squaredNorm() +
                               interp.evaluations[2][i] / ( c_ * dr.norm() ) );
       }
@@ -315,7 +315,7 @@ class Propagation::RotatingMFIE : public Propagation::MFIE<cmplx> {
 
       if ( dr.norm() > 0.0 ) {
         this->coefs_[i] = 
-          k2_ * std::exp(-iu * omega_ * dr.norm() / c_) * Eigen::Matrix3cd::Identity() *
+          -k2_ * std::exp(-iu * omega_ * dr.norm() / c_) * Eigen::Matrix3cd::Identity() *
               ( (interp.evaluations[1][i] + 
                   iu * omega_ * interp.evaluations[0][i]) / dr.squaredNorm() +
                 (interp.evaluations[2][i] +
