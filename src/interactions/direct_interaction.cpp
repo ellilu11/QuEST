@@ -76,7 +76,8 @@ void DirectInteraction::build_fldcoeff_table(
 
       floor_delays_srcobs[pair_idx] = delay.first;
 
-      lagrange.evaluate_derivative_table_at_x(delay.second, dt);
+      // lagrange.evaluate_derivative_table_at_x(delay.second, dt);
+      lagrange.evaluate_derivative_table_at_x(0.0, dt);
 
       std::vector<Eigen::Matrix3cd> interp_dyads(
           kernel.coefficients(dr, lagrange));
@@ -197,7 +198,8 @@ const InteractionBase::ResultArray &DirectInteraction::evaluate_field(
       int pair_idx = coord2idxsq( obs, src, num_src ); 
       for(int i = 0; i <= interp_order; ++i) {
         const int s =
-            std::max(time_idx - floor_delays_srcobs[pair_idx] - i, -history->window);
+            std::max(time_idx - i, -history->window);
+            // std::max(time_idx - floor_delays_srcobs[pair_idx] - i, -history->window);
         rho_src = (history->get_value(src, s, 0))[RHO_01];
 
         if ( flag ) {
