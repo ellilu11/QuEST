@@ -52,23 +52,24 @@ Eigen::Vector3d analytic_EFIE_evaluate(Eigen::Vector3d &fld_d0,
                                        Eigen::Vector3d &fld_d2,
                                        Eigen::Vector3d &dr,
                                        double c0, double dist){
-    Eigen::Matrix3d rr = dr * dr.transpose() / dr.squaredNorm();
-    Eigen::Matrix3d irr = Eigen::Matrix3d::Identity() - rr;
-    Eigen::Matrix3d i3rr = Eigen::Matrix3d::Identity() - 3.0 * rr;
+  Eigen::Matrix3d rr = dr * dr.transpose() / dr.squaredNorm();
+  Eigen::Matrix3d irr = Eigen::Matrix3d::Identity() - rr;
+  Eigen::Matrix3d i3rr = Eigen::Matrix3d::Identity() - 3.0 * rr;
 
-    return -pow(c0, 2) * prop_constant * hbar * 
-       (i3rr * fld_d0 / std::pow(dist, 3) +
-        i3rr * fld_d1 / (c0 * std::pow(dist, 2)) +
-        irr * fld_d2 / (std::pow(c0, 2) * dist));
+  return -pow(c0, 2) * prop_constant * hbar * 
+     (i3rr * fld_d0 / std::pow(dist, 3) +
+      i3rr * fld_d1 / (c0 * std::pow(dist, 2)) +
+      irr * fld_d2 / (std::pow(c0, 2) * dist));
 }
 
 Eigen::Vector3d analytic_MFIE_evaluate(Eigen::Vector3d &fld_d1,
                                        Eigen::Vector3d &fld_d2,
                                        Eigen::Vector3d &dr,
-                                       Eigen::Vector3d &nhat,
                                        double c0, double dist){
-    return -pow(c0, 2) * prop_constant * hbar * nhat.cross( 
-       fld_d1 / (std::pow(dist, 2)) + fld_d2 / (c0 * dist) );
+
+  Eigen::Vector3d rhat = dr / dr.norm();
+  return -pow(c0, 2) * prop_constant * hbar * rhat.cross( 
+     fld_d1 / (std::pow(dist, 2)) + fld_d2 / (c0 * dist) );
 }
 
 Eigen::Vector3cd analytic_RotatingEFIE_evaluate
@@ -77,14 +78,14 @@ Eigen::Vector3cd analytic_RotatingEFIE_evaluate
                                        Eigen::Vector3d &efld_d2,
                                        Eigen::Vector3d &dr,
                                        double c0, double dist){
-    Eigen::Matrix3d rr = dr * dr.transpose() / dr.squaredNorm();
-    Eigen::Matrix3d irr = Eigen::Matrix3d::Identity() - rr;
-    Eigen::Matrix3d i3rr = Eigen::Matrix3d::Identity() - 3.0 * rr;
+  Eigen::Matrix3d rr = dr * dr.transpose() / dr.squaredNorm();
+  Eigen::Matrix3d irr = Eigen::Matrix3d::Identity() - rr;
+  Eigen::Matrix3d i3rr = Eigen::Matrix3d::Identity() - 3.0 * rr;
 
-    return -pow(c0, 2) * prop_constant * hbar * exp( -iu*omega*dist/c0 ) *
-       (1.0 * i3rr * efld_d0 / std::pow(dist, 3) +
-        1.0 * i3rr * ( efld_d1 + iu*omega*efld_d0 ) / (c0 * std::pow(dist, 2)) +
-        1.0 * irr * ( efld_d2 + 2.0*iu*omega*efld_d1 - pow(omega,2)*efld_d0 ) / (std::pow(c0, 2) * dist));
+  return -pow(c0, 2) * prop_constant * hbar * exp( -iu*omega*dist/c0 ) *
+     (1.0 * i3rr * efld_d0 / std::pow(dist, 3) +
+      1.0 * i3rr * ( efld_d1 + iu*omega*efld_d0 ) / (c0 * std::pow(dist, 2)) +
+      1.0 * irr * ( efld_d2 + 2.0*iu*omega*efld_d1 - pow(omega,2)*efld_d0 ) / (std::pow(c0, 2) * dist));
 }
 
 int main(int argc, char *argv[]){
@@ -140,11 +141,11 @@ int main(int argc, char *argv[]){
 
     if (rotating) {
       Propagation::RotatingEFIE dyadic(c0, propagation_constant, omega, beta, 0.0);
-      pairwise_fld = make_shared<DirectInteraction>(qds, obs, history, dyadic,
+      pairwise_fld = make_shared<DirectInteraction>(dots, obss, history, dyadic,
                                                     interpolation_order, c0, dt, omega);
     } else {
       Propagation::EFIE<cmplx> dyadic(c0, propagation_constant, beta, 0.0);
-      pairwise_fld = make_shared<DirectInteraction>(qds, obs, history, dyadic,
+      pairwise_fld = make_shared<DirectInteraction>(dots, obss, history, dyadic,
                                                     interpolation_order, c0, dt); 
     }
 
@@ -152,11 +153,11 @@ int main(int argc, char *argv[]){
 
     if (rotating) {
       Propagation::RotatingMFIE dyadic_mfie(c0, propagation_constant, omega);
-      pairwise_bfld = make_shared<DirectInteraction>(qds, obs, history, dyadic_mfie,
+      pairwise_bfld = make_shared<DirectInteraction>(dots, obss, history, dyadic_mfie,
                                                      interpolation_order, c0, dt, omega);
     } else {
       Propagation::MFIE<cmplx> dyadic_mfie(c0, propagation_constant);
-      pairwise_bfld = make_shared<DirectInteraction>(qds, obs, history, dyadic_mfie,
+      pairwise_bfld = make_shared<DirectInteraction>(dots, obss, history, dyadic_mfie,
                                                      interpolation_order, c0, dt);
     }
 
@@ -165,10 +166,10 @@ int main(int argc, char *argv[]){
     cmplx fld_dir, fld_anl;
 
     ofstream outfile, errfile;
-    outfile.open("out/test/out.dat");
-    outfile << scientific << setprecision(15);
-    errfile.open("out/test/err.dat", ios::app);
-    errfile << scientific << setprecision(15);
+    fldfile.open("out/test/fld.dat");
+    fldfile << scientific << setprecision(15);
+    fluxfile.open("out/test/flux.dat"); //ios:app
+    fluxfile << scientific << setprecision(15);
 
     double err_dir = 0;
 		double anl_sum = 0;
@@ -179,15 +180,28 @@ int main(int argc, char *argv[]){
     for (int step = 0; step < steps; ++step) {
 
 			const double time = step*dt;
-      const InteractionBase::ResultArray array_dir = pairwise->evaluate(step);
- 
-      for (int idot = 0; idot < ndots; ++idot) {
-        fld_dir = array_dir[idot];
-        fld_anl = 0;
+       
+      set_dipole_of_dots( obss, Eigen::Vector3d(hbar, 0, 0) );
+      auto efldx = pairwise_efld->evaluate_field(step); 
+      auto bfldx = pairwise_bfld->evaluate_field(step, 1);
+     
+      set_dipole_of_dots( obss, Eigen::Vector3d(0, hbar, 0) );
+      auto efldy = pairwise_efld->evaluate_field(step); 
+      auto bfldy = pairwise_bfld->evaluate_field(step, 1);
+      
+      set_dipole_of_dots( obss, Eigen::Vector3d(0, 0, hbar) );
+      auto efldz = pairwise_efld->evaluate_field(step); 
+      auto bfldz = pairwise_bfld->evaluate_field(step, 1);
+
+      double flux_dir = 0;
+      double flux_anl = 0;
+
+      for (int iobs = 0; iobs < nobss; ++idot) {
+        Eigen::Vector3cd efld(efldx[iobs], efldy[iobs], efldz[iobs]);
+        Eigen::Vector3cd bfld(bfldx[iobs], bfldy[iobs], bfldz[iobs]);
 
         for (int isrc = 0; isrc < ndots; ++isrc) {
-          if ( isrc == idot ) continue;
-          Eigen::Vector3d dr(separation( (*dots)[idot], (*dots)[isrc] ));
+          Eigen::Vector3d dr(separation( (*dots)[isrc], (*obss)[iobs] ));
           double dist = dr.norm();
           double delay = dist / c0;
 
@@ -196,32 +210,29 @@ int main(int argc, char *argv[]){
           Eigen::Vector3d fld_d2 = fld_d2_source( step*dt, mu+delay, sigsqr );
 
 					if (rotating) {
- 	    				fld_anl += analytic_RotatingEFIE_evaluate(efld_d0, efld_d1, efld_d2, dr, c0, dist).dot(
-                                (*dots)[idot].dipole() ) / hbar / 2.0;
+ 	    			efld_anl += analytic_RotatingEFIE_evaluate(efld_d0, efld_d1, efld_d2, dr, c0, dist);
 
-						// if (idot == 0 && isrc == 1 && step >= 1000 && step < 1010) 
-						//	cout << phi << " ";
-						//	cout << step << " " << efld_d0[0] / (*dots)[idot].dipole().norm() / 2.0 << " " << phi << endl;
-
-					} else 
-     				fld_anl += analytic_EFIE_evaluate(efld_d0, efld_d1, efld_d2, dr, c0, dist).dot(
-                                (*dots)[idot].dipole() ) / hbar;
+					} else {
+     				efld_anl += analytic_EFIE_evaluate(fld_d0, fld_d1, fld_d2, dr, c0, dist);
+      			bfld_anl += analytic_MFIE_evaluate(fld_d1, fld_d2, dr, c0, dist);;
+          }
         }
-		  
-				// if (step >= 1000 && step < 1010) 
-				//	cout << fld_anl << " ";
+ 
+        Eigen::Vector3d poynting_dir = (efld.real()).cross(bfld.real()) / mu0;
+        Eigen::Vector3d poynting_anl = efld_anl.cross(bfld_anl) / mu0;
 
-        double fld_dir_abs = abs(fld_dir);
-        double fld_anl_abs = abs(fld_anl);
-
-        outfile << fld_dir_abs << " " << fld_anl_abs << " ";
-
+        Eigen::Vector3d pos = (*obss)[iobs].position();
+        Eigen::Vector3d nhat = pos / pos.norm();
+        double area_element = (*obss)[obs].frequency();
+        
+        flux_anl += area_element * poynting_anl.dot(nhat);
+ 
         err_dir += pow( fld_dir_abs - fld_anl_abs, 2 );
 				anl_sum += fld_anl_abs;
       }
-			// if (step >= 1000 && step < 1010) 
-			//	cout << endl;
-      outfile << endl;
+	  
+      fluxfile << fld_dir << " " << flux_anl << std::endl;
+
     }
 
 		const int ndata = steps*ndots;
