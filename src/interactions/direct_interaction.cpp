@@ -89,7 +89,8 @@ const InteractionBase::ResultArray &DirectInteraction::evaluate(
                         * phi ) * std::conj( phi );
                                                                                                       
         past_terms_of_convolution[obs] += 2.0 * std::real( rho_src * coeffs[pair_idx][i] 
-                        * phi ) * std::conj( phi );*/
+                        * phi ) * std::conj( phi );
+        */
     	}
     }
    
@@ -109,11 +110,7 @@ const InteractionBase::ResultArray &DirectInteraction::evaluate(
                       * phi0 ) * std::conj( phi0 );
       results[obs] += 2.0 * std::real( rho_src * coeffs[pair_idx][0] 
                       * phi0 ) * std::conj( phi0 );
-		*/
-			//if (pair_idx == 0 && time_idx >= 1000 && time_idx < 1010) 
-				// std::cout << time_idx << " " << rho_obs << " " << rho_src << " " << phi0 << std::endl;
-				// std::cout << time_idx << " " << phi0 << " " << results[src] << " " << results[obs] << std::endl;	
-
+		  */
     } 
   }
 

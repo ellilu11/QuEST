@@ -58,9 +58,12 @@ const InteractionBase::ResultArray &SelfInteraction::evaluate(
       if ( !omega )
         past_terms_of_convolution[src] += 2.0 * std::real( rho_src * coeffs[src][i] );
       else { 
-				const auto phi0 = std::exp( iu*omega*time0 );
+        past_terms_of_convolution[src] += rho_src * coeffs[src][i];
+ 
+				/*const auto phi0 = std::exp( iu*omega*time0 );
         past_terms_of_convolution[src] += 2.0 * std::real( rho_src * coeffs[src][i] 
                         * phi0 ) * std::conj( phi0 );
+        */
       }
     }
 
@@ -70,9 +73,12 @@ const InteractionBase::ResultArray &SelfInteraction::evaluate(
     if ( !omega )
       results[src] += 2.0 * std::real( rho_src * coeffs[src][0] );
     else { 
-			const auto phi0 = std::exp( iu*omega*time0 );
+	    results[src] += rho_src * coeffs[src][0];
+
+ 	 	  /*const auto phi0 = std::exp( iu*omega*time0 );
       results[src] += 2.0 * std::real( rho_src * coeffs[src][0] 
                       * phi0 ) * std::conj( phi0 );
+      */
 		}
   } 
   
@@ -99,9 +105,12 @@ const InteractionBase::ResultArray &SelfInteraction::evaluate_present_field(
     if ( !omega )
       results[src] += 2.0 * std::real( rho_src * coeffs[src][0] );
     else {
-  		const auto phi0 = std::exp( iu*omega*time0 );
+	    results[src] += rho_src * coeffs[src][0];
+
+  		/*const auto phi0 = std::exp( iu*omega*time0 );
       results[src] += 2.0 * std::real( rho_src * coeffs[src][0] 
                       * phi0 ) * std::conj( phi0 );
+      */
 		}
   } 
 

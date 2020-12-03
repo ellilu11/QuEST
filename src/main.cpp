@@ -22,8 +22,8 @@ int main(int argc, char *argv[])
 
     // parameters
     const int num_src = atoi(argv[1]);
-    const double tmax = 80000;
-    const double dt = 10.0 / pow(10.0, atoi(argv[2]) ); 
+    const double tmax = 40000;
+    const double dt = 5.0 / pow(10.0, atoi(argv[2]) ); 
                               // rotframe: sigma = 1.0ps -> dt <= 0.52e-1
                               // fixframe: omega = 2278.9013 mev/hbar -> dt <= 1.379e-4
     const int num_timesteps = tmax/dt;
@@ -71,7 +71,7 @@ int main(int argc, char *argv[])
     std::cout << "  Beta: " << beta * pow(omega,3) << std::endl;
 
     string idstr(argv[6]);
-    auto qds = make_shared<DotVector>(import_dots("./dots/dots_line"+idstr+".cfg"));
+    auto qds = make_shared<DotVector>(import_dots("./dots/dots"+idstr+".cfg"));
 //    cout << (*qds).size() << std::endl;
     qds->resize(num_src);
     auto rhs_funcs = rhs_functions(*qds, omega, beta, rotating);
@@ -192,21 +192,6 @@ int main(int argc, char *argv[])
     elapsed_time = ( std::clock() - start_time ) / (double) CLOCKS_PER_SEC;
 
     cout << "Elapsed time: " << elapsed_time << "s" << std::endl;
-
-    // == FIELD INTERACTIONS ===============================================
-
-    /*std::vector<std::shared_ptr<InteractionBase>> interactions_fld{ 
-        make_shared<PulseInteraction>(qds, obs, pulse1, interpolation_order, c0, dt, hbar, rotating),
-        make_shared<DirectInteraction>(qds, obs, history, dyadic_self,
-                                                    interpolation_order, c0, dt, omega, beta, hbar, rotating) };
-
-    if(interacting) {
-        std::shared_ptr<InteractionBase> pairwise_fld;
-
-        pairwise_fld = make_shared<DirectInteraction>(qds, obs, history, dyadic,
-                                                      interpolation_order, c0, dt, omega, beta, hbar, rotating);
-        interactions.push_back( pairwise_fld );
-    }*/
 
   return 0;
 }
