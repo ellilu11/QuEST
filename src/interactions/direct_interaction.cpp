@@ -37,6 +37,7 @@ void DirectInteraction::build_coeff_table(
     std::tie(src, obs) = idx2coord(pair_idx);
 
     Eigen::Vector3d dr(separation((*dots)[src], (*dots)[obs]));
+
     double dist = dr.norm();
 
     std::pair<int, double> delay(split_double(dist / (c0 * dt)));
@@ -71,13 +72,13 @@ void DirectInteraction::build_fldcoeff_table(
       if ( dist == 0.0 ) continue;
 
       Eigen::Vector3d rhat = dr / dist;
- 
+  
       std::pair<int, double> delay(split_double(dist / (c0 * dt)));
 
       floor_delays_srcobs[pair_idx] = delay.first;
 
-      // lagrange.evaluate_derivative_table_at_x(delay.second, dt);
-      lagrange.evaluate_derivative_table_at_x(0.0, dt);
+      lagrange.evaluate_derivative_table_at_x(delay.second, dt);
+      // lagrange.evaluate_derivative_table_at_x(0.0, dt);
 
       std::vector<Eigen::Matrix3cd> interp_dyads(
           kernel.coefficients(dr, lagrange));
@@ -87,12 +88,8 @@ void DirectInteraction::build_fldcoeff_table(
       for(int i = 0; i <= interp_order; ++i){
         fldcoeffs[pair_idx][i] = interp_dyads[i] * dip_src;
         cross_coeffs[pair_idx][i] = 
-            // (u_obs.cast<cmplx>()).cross(fldcoeffs[pair_idx][i]);
             rhat.cross(fldcoeffs[pair_idx][i]);
 
-       /*std::cout << i << " " 
-                  // << fldcoeffs[pair_idx][i].transpose() 
-                  << std::endl;*/
       }
     }
   } 
@@ -194,12 +191,19 @@ const InteractionBase::ResultArray &DirectInteraction::evaluate_field(
   for(int obs = 0; obs < num_obs; ++obs) {
       
     Eigen::Vector3d dip_obs = (*obss)[obs].dipole();
+    Eigen::Vector3d pos_obs = (*obss)[obs].position();
+    Eigen::Vector3d rhat = pos_obs / pos_obs.norm();    
+
     for(int src = 0; src < num_src; ++src) {
       int pair_idx = coord2idxsq( obs, src, num_src ); 
+      Eigen::Vector3d dr(separation((*dots)[src], (*obss)[obs]));
+
+      Eigen::Vector3d pos_src = (*dots)[src].position();
+
       for(int i = 0; i <= interp_order; ++i) {
         const int s =
-            std::max(time_idx - i, -history->window);
-            // std::max(time_idx - floor_delays_srcobs[pair_idx] - i, -history->window);
+            // std::max(time_idx - i, -history->window);
+            std::max(time_idx - floor_delays_srcobs[pair_idx] - i, -history->window);
         rho_src = (history->get_value(src, s, 0))[RHO_01];
 
         if ( flag ) {
@@ -208,7 +212,7 @@ const InteractionBase::ResultArray &DirectInteraction::evaluate_field(
                               rho_src * cross_coeffs[pair_idx][i] ) ) ;
           else
             results[obs] += dip_obs.dot ( 
-                              rho_src * cross_coeffs[pair_idx][i] ) ;
+                              rho_src * cross_coeffs[pair_idx][i] ) * std::exp( iu*omega*rhat.dot(pos_src)/c0 );
         } else {
 
           if ( !omega )
@@ -216,7 +220,8 @@ const InteractionBase::ResultArray &DirectInteraction::evaluate_field(
                               rho_src * fldcoeffs[pair_idx][i] ) ) ;
           else
             results[obs] += dip_obs.dot ( 
-                              rho_src * fldcoeffs[pair_idx][i] ) ;
+                              rho_src * fldcoeffs[pair_idx][i] ) * std::exp( iu*omega*rhat.dot(pos_src)/c0 );
+
           }
       }
     }

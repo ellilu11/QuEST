@@ -31,6 +31,7 @@ namespace Propagation {
   class EFIE;
 
   class RotatingEFIE;
+  class RotatingEFIE_nodelay;
 
   template <class T>
   class MFIE;
@@ -246,22 +247,6 @@ class Propagation::RotatingEFIE : public Propagation::EFIE<cmplx> {
                   2.0 * iu * omega_ * interp.evaluations[1][i] -
                   std::pow(omega_, 2) * interp.evaluations[0][i]));
 
-      /*} else if ( dr.norm() == 0.0 ){
-
-         this->coefs_[i] = -k2_ * 
-          (dyads[0].cast<cmplx>() * interp.evaluations[0][i] +
-           dyads[3].cast<cmplx>() * 
-              (interp.evaluations[2][i] +
-               2.0 * iu * omega_ * interp.evaluations[1][i] - 
-               std::pow(omega_, 2) * interp.evaluations[0][i] ) );
-   
-          this->coefs_[i] = 
-            beta_ / pow( 5.2917721e-4, 2 ) * Eigen::Matrix3d::Identity() * 
-            ( 1.0 * iu * pow(omega_,3) * interp.evaluations[0][i] +
-              3.0 * pow(omega_,2) * interp.evaluations[1][i] -
-              3.0 * iu * omega_ * interp.evaluations[2][i] -
-              interp.evaluations[3][i] );
-      } */   
     }
 
     return this->coefs_;
@@ -269,8 +254,43 @@ class Propagation::RotatingEFIE : public Propagation::EFIE<cmplx> {
 
  private:
   double omega_;
-
 };
+
+class Propagation::RotatingEFIE_nodelay : public Propagation::EFIE<cmplx> {
+ public:
+  RotatingEFIE_nodelay(const double c, const double k2, const double omega, const double beta, const double dist0)
+      : EFIE<cmplx>(c, k2, beta, dist0), omega_(omega){};
+
+  const std::vector<Eigen::Matrix3cd> &coefficients(
+      const Eigen::Vector3d &dr,
+      const Interpolation::UniformLagrangeSet &interp)
+  {
+    this->coefs_.resize(interp.order() + 1);
+
+    const auto dyads(spatial_dyads(dr));
+    for(int i = 0; i <= interp.order(); ++i) {
+      this->coefs_[i] = Eigen::Matrix3cd::Zero();
+
+	    // if ( dr.norm() > dist0_ ) {
+        this->coefs_[i] = 
+            -k2_ *
+              (dyads[0].cast<cmplx>() * interp.evaluations[0][i] +
+               dyads[1].cast<cmplx>() * (interp.evaluations[1][i] +
+                                       iu * omega_ * interp.evaluations[0][i]) +
+               dyads[2].cast<cmplx>() *
+                 (interp.evaluations[2][i] +
+                  2.0 * iu * omega_ * interp.evaluations[1][i] -
+                  std::pow(omega_, 2) * interp.evaluations[0][i]));
+
+    }
+
+    return this->coefs_;
+  }
+
+ private:
+  double omega_;
+};
+
 
 template <class T>
 class Propagation::MFIE : public Propagation::Kernel<T> {
@@ -315,8 +335,9 @@ class Propagation::RotatingMFIE : public Propagation::MFIE<cmplx> {
 
       if ( dr.norm() > 0.0 ) {
         this->coefs_[i] = 
-          -k2_ * std::exp(-iu * omega_ * dr.norm() / c_) * Eigen::Matrix3cd::Identity() *
-              ( (interp.evaluations[1][i] + 
+          -k2_* Eigen::Matrix3cd::Identity() *
+              // * std::exp(-iu * omega_ * dr.norm() / c_) 
+             ( (interp.evaluations[1][i] + 
                   iu * omega_ * interp.evaluations[0][i]) / dr.squaredNorm() +
                 (interp.evaluations[2][i] +
                   2.0 * iu * omega_ * interp.evaluations[1][i] -

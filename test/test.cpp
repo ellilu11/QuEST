@@ -81,7 +81,7 @@ Eigen::Vector3cd analytic_RotatingEFIE_evaluate
   Eigen::Matrix3d irr = Eigen::Matrix3d::Identity() - rr;
   Eigen::Matrix3d i3rr = Eigen::Matrix3d::Identity() - 3.0 * rr;
 
-  return -pow(c0, 2) * prop_constant * hbar * exp( -iu*omega*dist/c0 ) *
+  return -pow(c0, 2) * prop_constant * hbar *
      (1.0 * i3rr * fld_d0 / std::pow(dist, 3) +
       1.0 * i3rr * ( fld_d1 + iu*omega*fld_d0 ) / (c0 * std::pow(dist, 2)) +
       1.0 * irr * ( fld_d2 + 2.0*iu*omega*fld_d1 - pow(omega,2)*fld_d0 ) / (std::pow(c0, 2) * dist));
@@ -94,7 +94,7 @@ Eigen::Vector3cd analytic_RotatingMFIE_evaluate
                                        Eigen::Vector3d &dr,
                                        double c0, double dist){
   Eigen::Vector3d rhat = dr / dr.norm();
-  return -prop_constant * hbar * exp( -iu*omega*dist/c0 ) * rhat.cross( 
+  return -prop_constant * hbar * rhat.cross( 
       1.0 * ( fld_d1 + iu*omega*fld_d0 ) / (std::pow(dist, 2)) + 
       1.0 * ( fld_d2 + 2.0*iu*omega*fld_d1 - pow(omega,2)*fld_d0) / ( c0 * dist ) );
 }
@@ -239,13 +239,13 @@ int main(int argc, char *argv[]){
         }
 
         if (rotating) { 
-          poynting_dir = (efld_dir.real()).cross(bfld_dir.real()) / mu0;
-          poynting_anl = (efld_anl.real()).cross(bfld_anl.real()) / mu0;
-        } else {
           poynting_dir = ( efld_dir.cross(bfld_dir.conjugate()) + 
                            efld_dir.cross(bfld_dir) * exp(2.0*iu*omega*time) ).real() / ( 2.0*mu0 );
           poynting_anl = ( efld_anl.cross(bfld_anl.conjugate()) + 
                            efld_anl.cross(bfld_anl) * exp(2.0*iu*omega*time) ).real() / ( 2.0*mu0 );
+        } else {
+          poynting_dir = (efld_dir.real()).cross(bfld_dir.real()) / mu0;
+          poynting_anl = (efld_anl.real()).cross(bfld_anl.real()) / mu0;
         }
 
         double flux_per_area_dir = poynting_dir.dot(nhat);     

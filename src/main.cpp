@@ -22,7 +22,7 @@ int main(int argc, char *argv[])
 
     // parameters
     const int num_src = atoi(argv[1]);
-    const double tmax = 40000;
+    const double tmax = 100;
     const double dt = 5.0 / pow(10.0, atoi(argv[2]) ); 
                               // rotframe: sigma = 1.0ps -> dt <= 0.52e-1
                               // fixframe: omega = 2278.9013 mev/hbar -> dt <= 1.379e-4
@@ -84,17 +84,21 @@ int main(int argc, char *argv[])
 
     cout << "  Num sources: " << num_src << std::endl;
     cout << "  Num observers: " << obs->size() << std::endl;	
+    Eigen::Vector3d pos = (*obs)[0].position();
+    cout << "  Observer radius: " << pos.norm() << std::endl;
 
     // == HISTORY ====================================================
 
-    int task_idx = 1;
+    int task_idx = 0;
+    int window = 22;
     int min_time_to_keep =
-        max_transit_steps_between_dots(qds, c0, dt) +
-        interpolation_order;
+        num_timesteps + window;
+        //max_transit_steps_between_dots(qds, c0, dt) +
+        //interpolation_order;
     std::cout << "  Min time to keep: " << min_time_to_keep << std::endl;
 
     auto history = make_shared<Integrator::History<Eigen::Vector2cd>>(
-        num_src, 22, num_timesteps, min_time_to_keep, 2, task_idx);
+        num_src, window, num_timesteps, min_time_to_keep, 2, task_idx);
     history->fill(Eigen::Vector2cd::Zero());
     history->initialize_past( Eigen::Vector2cd(1,0) );
     // history->initialize_past( qd_path );
@@ -191,19 +195,15 @@ int main(int argc, char *argv[])
     std::shared_ptr<InteractionBase> pairwise_fld;
 
     if (rotating) {
-      Propagation::RotatingEFIE dyadic(c0, propagation_constant, omega, beta, 0.0);
+      Propagation::RotatingEFIE_nodelay dyadic(c0, propagation_constant, omega, beta, 0.0);
       Propagation::SelfRotatingEFIE dyadic_self(c0, propagation_constant, omega, beta);
 
-      selfwise_fld = make_shared<SelfInteraction>(qds, obs, history, dyadic_self,
-                                                  interpolation_order, c0, dt, omega);
       pairwise_fld = make_shared<DirectInteraction>(qds, obs, history, dyadic,
                                                     interpolation_order, c0, dt, omega);
     } else {
       Propagation::EFIE<cmplx> dyadic(c0, propagation_constant, beta, 0.0);
       Propagation::SelfEFIE dyadic_self(c0, propagation_constant, beta);
 
-      selfwise_fld = make_shared<SelfInteraction>(qds, obs, history, dyadic_self,
-                                                  interpolation_order, c0, dt);
       pairwise_fld = make_shared<DirectInteraction>(qds, obs, history, dyadic,
                                                     interpolation_order, c0, dt); 
     }
@@ -251,7 +251,7 @@ int main(int argc, char *argv[])
             task_idx, getflux);
 
     Integrator::PredictorCorrector<Eigen::Vector2cd> solver_pc(
-        dt, num_corrector_steps, 18, 22, 3.15, history, std::move(bloch_rhs));
+        dt, num_corrector_steps, 18, window, 3.15, history, std::move(bloch_rhs));
 
     start_time = std::clock();
 
