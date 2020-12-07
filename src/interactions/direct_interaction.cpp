@@ -72,7 +72,7 @@ void DirectInteraction::build_fldcoeff_table(
       if ( dist == 0.0 ) continue;
 
       Eigen::Vector3d rhat = dr / dist;
-  
+ 
       std::pair<int, double> delay(split_double(dist / (c0 * dt)));
 
       floor_delays_srcobs[pair_idx] = delay.first;
@@ -88,8 +88,12 @@ void DirectInteraction::build_fldcoeff_table(
       for(int i = 0; i <= interp_order; ++i){
         fldcoeffs[pair_idx][i] = interp_dyads[i] * dip_src;
         cross_coeffs[pair_idx][i] = 
-            rhat.cross(fldcoeffs[pair_idx][i]);
-
+            (rhat.cross(fldcoeffs[pair_idx][i])).conjugate(); // not sure why need conjugate
+      
+        // if (obs == 0 && src == 0) 
+        //  std::cout << i << " " << fldcoeffs[pair_idx][i].transpose() <<
+        //  std::endl << cross_coeffs[pair_idx][i].transpose() << std::endl;
+ 
       }
     }
   } 
@@ -212,7 +216,7 @@ const InteractionBase::ResultArray &DirectInteraction::evaluate_field(
                               rho_src * cross_coeffs[pair_idx][i] ) ) ;
           else
             results[obs] += dip_obs.dot ( 
-                              rho_src * cross_coeffs[pair_idx][i] ) * std::exp( iu*omega*rhat.dot(pos_src)/c0 );
+                              rho_src * cross_coeffs[pair_idx][i] ); // * std::exp( iu*omega*rhat.dot(pos_src)/c0 );
         } else {
 
           if ( !omega )
@@ -220,7 +224,7 @@ const InteractionBase::ResultArray &DirectInteraction::evaluate_field(
                               rho_src * fldcoeffs[pair_idx][i] ) ) ;
           else
             results[obs] += dip_obs.dot ( 
-                              rho_src * fldcoeffs[pair_idx][i] ) * std::exp( iu*omega*rhat.dot(pos_src)/c0 );
+                              rho_src * fldcoeffs[pair_idx][i] ); // * std::exp( iu*omega*rhat.dot(pos_src)/c0 );
 
           }
       }

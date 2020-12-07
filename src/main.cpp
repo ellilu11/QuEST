@@ -195,7 +195,7 @@ int main(int argc, char *argv[])
     std::shared_ptr<InteractionBase> pairwise_fld;
 
     if (rotating) {
-      Propagation::RotatingEFIE_nodelay dyadic(c0, propagation_constant, omega, beta, 0.0);
+      Propagation::RotatingEFIE dyadic(c0, propagation_constant, omega, beta, 0.0);
       Propagation::SelfRotatingEFIE dyadic_self(c0, propagation_constant, omega, beta);
 
       pairwise_fld = make_shared<DirectInteraction>(qds, obs, history, dyadic,

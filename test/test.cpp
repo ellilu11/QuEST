@@ -82,6 +82,7 @@ Eigen::Vector3cd analytic_RotatingEFIE_evaluate
   Eigen::Matrix3d i3rr = Eigen::Matrix3d::Identity() - 3.0 * rr;
 
   return -pow(c0, 2) * prop_constant * hbar *
+     exp( -iu*omega*dist/c0 ) *
      (1.0 * i3rr * fld_d0 / std::pow(dist, 3) +
       1.0 * i3rr * ( fld_d1 + iu*omega*fld_d0 ) / (c0 * std::pow(dist, 2)) +
       1.0 * irr * ( fld_d2 + 2.0*iu*omega*fld_d1 - pow(omega,2)*fld_d0 ) / (std::pow(c0, 2) * dist));
@@ -94,7 +95,7 @@ Eigen::Vector3cd analytic_RotatingMFIE_evaluate
                                        Eigen::Vector3d &dr,
                                        double c0, double dist){
   Eigen::Vector3d rhat = dr / dr.norm();
-  return -prop_constant * hbar * rhat.cross( 
+  return -prop_constant * hbar * exp( -iu*omega*dist/c0 ) * rhat.cross( 
       1.0 * ( fld_d1 + iu*omega*fld_d0 ) / (std::pow(dist, 2)) + 
       1.0 * ( fld_d2 + 2.0*iu*omega*fld_d1 - pow(omega,2)*fld_d0) / ( c0 * dist ) );
 }
@@ -134,7 +135,7 @@ int main(int argc, char *argv[]){
     history->fill(Eigen::Vector2cd::Zero());
     for (int i = -window; i < steps; ++i)
       for (int n = 0; n < nsrcs; ++n)
-        history->set_value(n, i, 0) = source(i * dt, mu, sigsqr) / (*dots)[n].dipole().norm() / 2.0;
+        history->set_value(n, i, 0) = source(i * dt, mu, sigsqr) / (*dots)[n].dipole().norm();
  
 /*    cout << "  Setting up direct interaction" << endl;
 		std::shared_ptr<InteractionBase> pairwise;    
@@ -225,24 +226,34 @@ int main(int argc, char *argv[]){
           double dist = dr.norm();
           double delay = dist / c0;
 
-          Eigen::Vector3d fld_d0 = d0_source( step*dt, mu, sigsqr );
-          Eigen::Vector3d fld_d1 = d1_source( step*dt, mu, sigsqr );
-          Eigen::Vector3d fld_d2 = d2_source( step*dt, mu, sigsqr );
+          Eigen::Vector3d fld_d0 = d0_source( step*dt, mu+delay, sigsqr );
+          Eigen::Vector3d fld_d1 = d1_source( step*dt, mu+delay, sigsqr );
+          Eigen::Vector3d fld_d2 = d2_source( step*dt, mu+delay, sigsqr );
 
 					if (rotating) {
  	    			efld_anl += analytic_RotatingEFIE_evaluate(fld_d0, fld_d1, fld_d2, dr, c0, dist);
       			bfld_anl += analytic_RotatingMFIE_evaluate(fld_d0, fld_d1, fld_d2, dr, c0, dist);
 					} else {
-     				efld_anl += analytic_EFIE_evaluate(fld_d0, fld_d1, fld_d2, dr, c0, dist);
-      			bfld_anl += analytic_MFIE_evaluate(fld_d1, fld_d2, dr, c0, dist);
+     				efld_anl += 2.0 * analytic_EFIE_evaluate(fld_d0, fld_d1, fld_d2, dr, c0, dist);
+      			bfld_anl += 2.0 * analytic_MFIE_evaluate(fld_d1, fld_d2, dr, c0, dist);
           }
         }
 
-        if (rotating) { 
-          poynting_dir = ( efld_dir.cross(bfld_dir.conjugate()) + 
-                           efld_dir.cross(bfld_dir) * exp(2.0*iu*omega*time) ).real() / ( 2.0*mu0 );
-          poynting_anl = ( efld_anl.cross(bfld_anl.conjugate()) + 
-                           efld_anl.cross(bfld_anl) * exp(2.0*iu*omega*time) ).real() / ( 2.0*mu0 );
+        if (rotating) {
+
+          /*if ( iobs >= 0 && iobs < 1 )
+            std::cout << step << " "
+                      << ( bfld_dir ).transpose() << "     " 
+                      << ( bfld_anl ).transpose() << endl;
+          */            // << ( efld_dir.cross(bfld_dir.conjugate()) ).transpose() << "     " 
+                      // << ( efld_anl.cross(bfld_anl.conjugate()) ).transpose() << endl;
+ 
+          poynting_dir = ( efld_dir.cross(bfld_dir.conjugate())  
+                           // + 0.0 * efld_dir.cross(bfld_dir) * exp(2.0*iu*omega*time) 
+                           ).real() / ( 2.0*mu0 );
+          poynting_anl = ( efld_anl.cross(bfld_anl.conjugate())
+                           // + 0.0 * efld_anl.cross(bfld_anl) * exp(2.0*iu*omega*time) 
+                           ).real() / ( 2.0*mu0 );
         } else {
           poynting_dir = (efld_dir.real()).cross(bfld_dir.real()) / mu0;
           poynting_anl = (efld_anl.real()).cross(bfld_anl.real()) / mu0;
@@ -251,15 +262,28 @@ int main(int argc, char *argv[]){
         double flux_per_area_dir = poynting_dir.dot(nhat);     
         double flux_per_area_anl = poynting_anl.dot(nhat);     
 
-        if ( step == steps / 2 ) {
-          fldfile << flux_per_area_dir << " " << flux_per_area_anl << endl;
+        /*if ( step == steps / 2 ) {
+          fldfile << flux_per_area_dir << " " << flux_per_area_anl << " " << flux_per_area_dir / flux_per_area_anl << endl;
           err_fld += pow( flux_per_area_dir - flux_per_area_anl, 2 );
+        }*/
+
+        Eigen::Vector3d efld_dir_real = efld_dir.real();
+        Eigen::Vector3d efld_anl_real = efld_anl.real();
+        Eigen::Vector3d bfld_dir_real = bfld_dir.real();
+        Eigen::Vector3d bfld_anl_real = bfld_anl.real();
+
+        if ( iobs >= 90 && iobs < 91 ) {
+          fldfile << efld_dir_real[0] << " " << efld_dir_real[1]<< " " << efld_dir_real[2] << " ";
+          fldfile << efld_anl_real[0] << " " << efld_anl_real[1]<< " " << efld_anl_real[2] << " ";
+          fldfile << bfld_dir_real[0] << " " << bfld_dir_real[1]<< " " << bfld_dir_real[2] << " ";
+          fldfile << bfld_anl_real[0] << " " << bfld_anl_real[1]<< " " << bfld_anl_real[2] << " ";
+          fldfile << poynting_dir[0] << " " << poynting_dir[1]<< " " << poynting_dir[2] << " ";
+          fldfile << poynting_anl[0] << " " << poynting_anl[1]<< " " << poynting_anl[2] << " ";
         }
 
         flux_dir += area_element * flux_per_area_dir;
         flux_anl += area_element * flux_per_area_anl;
  
-        // err_dir += pow( fld_dir_abs - fld_anl_abs, 2 );
       }
 
       Eigen::Vector3d fld_d2 = d2_source( step*dt, mu, sigsqr );
@@ -267,6 +291,8 @@ int main(int argc, char *argv[]){
 	
       fluxfile << flux_dir << " " << flux_anl << " " << flux_anl_ff << " " << flux_anl_ff / flux_anl << std::endl;
       err_flux += pow( flux_dir - flux_anl, 2 );
+      
+      fldfile << endl;
 
     }
 

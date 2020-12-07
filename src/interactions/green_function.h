@@ -336,7 +336,7 @@ class Propagation::RotatingMFIE : public Propagation::MFIE<cmplx> {
       if ( dr.norm() > 0.0 ) {
         this->coefs_[i] = 
           -k2_* Eigen::Matrix3cd::Identity() *
-              // * std::exp(-iu * omega_ * dr.norm() / c_) 
+            std::exp(-iu * omega_ * dr.norm() / c_) * 
              ( (interp.evaluations[1][i] + 
                   iu * omega_ * interp.evaluations[0][i]) / dr.squaredNorm() +
                 (interp.evaluations[2][i] +
