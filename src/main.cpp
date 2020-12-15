@@ -22,7 +22,7 @@ int main(int argc, char *argv[])
 
     // parameters
     const int num_src = atoi(argv[1]);
-    const double tmax = 30000;
+    const double tmax = 20000;
     const double dt = 5.0 / pow(10.0, atoi(argv[2]) ); 
                               // rotframe: sigma = 1.0ps -> dt <= 0.52e-1
                               // fixframe: omega = 2278.9013 mev/hbar -> dt <= 1.379e-4
@@ -93,7 +93,8 @@ int main(int argc, char *argv[])
 
     const double propagation_constant = mu0 / (4 * M_PI * hbar);
 
-    auto pulse1 = make_shared<Pulse>(read_pulse_config("pulse.cfg"));
+    auto pulse0 = make_shared<Pulse>(read_pulse_config("pulse0.cfg"));
+    auto pulse1 = make_shared<Pulse>(read_pulse_config("pulse1.cfg"));
  
     cout << "Setting up interactions..." << endl;
  
@@ -164,7 +165,8 @@ int main(int argc, char *argv[])
     }
 
     std::vector<std::shared_ptr<InteractionBase>> interactions{ 
-      make_shared<PulseInteraction>(qds, pulse1, interpolation_order, c0, dt, hbar, rotating),
+      make_shared<PulseInteraction>(qds, pulse0, interpolation_order, c0, dt, hbar, rotating),
+	    // make_shared<PulseInteraction>(qds, pulse1, interpolation_order, c0, dt, hbar, rotating),
 		  selfwise} ;
 
     if (interacting)
