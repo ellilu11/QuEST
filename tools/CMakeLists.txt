@@ -1,6 +1,6 @@
 add_executable(point_gen EXCLUDE_FROM_ALL "")
 #target_sources(point_gen PUBLIC "${CMAKE_CURRENT_LIST_DIR}/point_gen_grid.cpp")
-target_sources(point_gen PUBLIC "${CMAKE_CURRENT_LIST_DIR}/point_gen.cpp")
+target_sources(point_gen PUBLIC "${CMAKE_CURRENT_LIST_DIR}/make_detuned.cpp")
 target_compile_features(point_gen PUBLIC ${CPP_FEATURES})
 target_include_directories(point_gen PUBLIC ${EIGEN3_INCLUDE_DIR})
 

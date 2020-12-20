@@ -63,7 +63,7 @@ int max_transit_steps_between_dots(const std::shared_ptr<DotVector> dots,
 std::ostream &operator<<(std::ostream &os, const QuantumDot &qd)
 {
   os << qd.pos.transpose() << " " << qd.freq << " " << qd.damping.first << " "
-     << qd.damping.second << " " << qd.dipr.transpose(); // << " " << qd.dipi.transpose();
+     << qd.damping.second << " " << qd.dipr.transpose() << std::endl; // << " " << qd.dipi.transpose();
   return os;
 }
 
