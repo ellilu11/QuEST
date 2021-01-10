@@ -17,10 +17,13 @@ using std::endl;
 
 int main(int argc, char *argv[])
 {
-  auto dots = make_shared<DotVector>(import_dots("../build/dots/dots0.cfg"));
+  std::string taskstr(argv[1]);
+
+  // auto dots = make_shared<DotVector>(import_dots("../build/dots/dots0.cfg"));
+  auto dots = make_shared<DotVector>(import_dots("../build/dots/dots"+taskstr+".cfg"));
 
   const double omega0 = 2278.9013;
-	const double sigma = 1.0;
+	const double sigma = 10.0;
   std::cout << "Sigma omega: " << sigma << std::endl;
  
   const unsigned seed =
@@ -30,8 +33,6 @@ int main(int argc, char *argv[])
 
   for(int i = 0; i < dots->size(); ++i)
     (*dots)[i].set_freq( omega(generator) );
-
-  std::string taskstr(argv[1]);
 
   std::ofstream fd("./dots/dots"+taskstr+".cfg");
   // std::ofstream fd("./dots/dots"+taskstr+".cfg");
