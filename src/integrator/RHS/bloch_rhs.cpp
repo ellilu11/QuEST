@@ -95,7 +95,7 @@ void Integrator::BlochRHS::evaluate_field(const int step)
         return r + interaction->evaluate_field(step, 1);
       };
 
-  int idx = 1;
+  int idx = 0;
   
   set_dipole_of_dots( obss, Eigen::Vector3d(hbar, 0, 0) );
   auto efldx = 
@@ -135,7 +135,11 @@ void Integrator::BlochRHS::evaluate_field(const int step)
     Eigen::Vector3cd efld(efldx[obs], efldy[obs], efldz[obs]);
     Eigen::Vector3cd bfld(bfldx[obs], bfldy[obs], bfldz[obs]);
 
-    // Eigen::Vector3d poynting = (efld.real()).cross(bfld.real()) / ( mu0 ); // Fix frame
+    outfile << std::real(efldx[obs]) << " " 
+            << std::real(efldy[obs]) << " " 
+            << std::real(efldz[obs]) << " "; 
+ 
+    /* Eigen::Vector3d poynting = (efld.real()).cross(bfld.real()) / ( mu0 ); // Fix frame
     Eigen::Vector3d poynting = ( efld.cross(bfld.conjugate()) + 
                                  0.0 * efld.cross(bfld) * std::exp(2.0*iu*omega*time) ).real() / ( 2.0*mu0 ); // Rot frame
 
@@ -147,12 +151,12 @@ void Integrator::BlochRHS::evaluate_field(const int step)
     double measure = (*obss)[obs].frequency(); 
 
     if ( step == 4000000 )
-      outfile /*<< std::real(efldx[obs]) << " " 
+      outfile << std::real(efldx[obs]) << " " 
               << std::real(efldy[obs]) << " " 
               << std::real(efldz[obs]) << " "    
               << std::real(bfldx[obs]) << " " 
               << std::real(bfldy[obs]) << " " 
-              << std::real(bfldz[obs]) << " "*/
+              << std::real(bfldz[obs]) << " "
               << poynting[0] << " " 
               << poynting[1] << " " 
               << poynting[2] << " "
@@ -168,17 +172,15 @@ void Integrator::BlochRHS::evaluate_field(const int step)
     } else {
       double energy_density = ( efld.squaredNorm() * eps0 + bfld.squaredNorm() / mu0 ) / 2.0;
       energy = energy + measure * energy_density;
-    }
+    } */
   }
     
-  if (getflux)
+/*  if (getflux)
     std::cout << flux << std::endl;
   else 
     std::cout << energy << std::endl;
+*/
+  outfile << std::endl;
 
-  if ( step > num_timesteps*0.90){
-    // outfile.flush();
-    // fluxfile.flush();
-  }
 }
 

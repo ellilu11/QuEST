@@ -22,7 +22,7 @@ int main(int argc, char *argv[])
 
     // parameters
     const int num_src = atoi(argv[1]);
-    const double tmax = 40000;
+    const double tmax = 80000;
     const double dt = 5.0 / pow(10.0, atoi(argv[2]) ); 
                               // rotframe: sigma = 1.0ps -> dt <= 0.52e-1
                               // fixframe: omega = 2278.9013 mev/hbar -> dt <= 1.379e-4
@@ -69,32 +69,29 @@ int main(int argc, char *argv[])
 		}
     std::cout << "  Beta: " << beta * pow(omega,3) << std::endl;
 
-    auto qds = make_shared<DotVector>(import_dots("./dots/dots0.cfg"));
+    string idstr(argv[6]);
+    auto qds = make_shared<DotVector>(import_dots("./dots/dots"+idstr+".cfg"));
     qds->resize(num_src);
     auto rhs_funcs = rhs_functions(*qds, omega, beta, rotating);
 
-    const bool getflux = atoi(argv[6]);
+    const bool getflux = 0;
    
     std::shared_ptr<DotVector> obs;
-    if (getflux)
-      obs = make_shared<DotVector>(import_dots("./dots/obss_sphsurf.cfg"));
-      // obs = make_shared<DotVector>(import_dots("./dots/dots0.cfg"));
-    else
-      obs = make_shared<DotVector>(import_dots("./dots/obss_sph.cfg"));
+    obs = make_shared<DotVector>(import_dots("./dots/dots"+idstr+".cfg"));
 
     cout << "  Num sources: " << num_src << std::endl;
     cout << "  Num observers: " << obs->size() << std::endl;	
-    Eigen::Vector3d pos = (*obs)[0].position();
-    cout << "  Observer radius: " << pos.norm() << std::endl;
+    // Eigen::Vector3d pos = (*obs)[0].position();
+    // cout << "  Observer radius: " << pos.norm() << std::endl;
 
     // == HISTORY ====================================================
 
     int task_idx = 0;
     int window = 22;
     int min_time_to_keep =
-        num_timesteps + window;
-        //max_transit_steps_between_dots(qds, c0, dt) +
-        //interpolation_order;
+        // num_timesteps + window;
+        max_transit_steps_between_dots(qds, c0, dt) +
+        interpolation_order;
     std::cout << "  Min time to keep: " << min_time_to_keep << std::endl;
 
     auto history = make_shared<Integrator::History<Eigen::Vector2cd>>(
@@ -178,8 +175,8 @@ int main(int argc, char *argv[])
     }
 
     std::vector<std::shared_ptr<InteractionBase>> interactions{ 
-      make_shared<PulseInteraction>(qds, nullptr, pulse1, interpolation_order, dt, hbar, omega, rotating),
-		  selfwise}; //no selfwise!
+      make_shared<PulseInteraction>(qds, nullptr, pulse1, interpolation_order, dt, hbar, omega, rotating)
+		  }; //no selfwise!
 
     if (interacting)
       interactions.push_back( pairwise );
