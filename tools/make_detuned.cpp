@@ -23,7 +23,7 @@ int main(int argc, char *argv[])
   auto dots = make_shared<DotVector>(import_dots("../build/dots/dots"+taskstr+".cfg"));
 
   const double omega0 = 2278.9013;
-	const double sigma = 10.0;
+	const double sigma = 1.0;
   std::cout << "Sigma omega: " << sigma << std::endl;
  
   const unsigned seed =

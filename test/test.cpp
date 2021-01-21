@@ -22,15 +22,14 @@ int main(int argc, char *argv[])
 
     // parameters
     const int num_src = atoi(argv[1]);
-    const double tmax = 10000;
-    const double dt = atoi(argv[2]) ? 1.0e-2 : 5.0e-5;
-															// 5.0 / pow(10.0, atoi(argv[2]) ); 
+    const double tmax = 10;
+    const double dt = 5.0 / pow(10.0, atoi(argv[2]) ); 
                               // rotframe: sigma = 1.0ps -> dt <= 0.52e-1
                               // fixframe: omega = 2278.9013 mev/hbar -> dt <= 1.379e-4
     const int num_timesteps = tmax/dt;
-    const int num_corrector_steps = 0;
+    const int num_corrector_steps = 10;
 
-    const int interpolation_order = 3;
+    const int interpolation_order = 43;
     const bool interacting = atoi(argv[3]);
     const bool rotating = atoi(argv[4]);
     const bool solve_type = atoi(argv[5]);
@@ -90,7 +89,7 @@ int main(int argc, char *argv[])
 
     const double propagation_constant = mu0 / (4 * M_PI * hbar);
 
-    auto pulse1 = make_shared<Pulse>(read_pulse_config("pulse.cfg"));
+    auto pulse1 = make_shared<Pulse>(read_pulse_config("pulse1.cfg"));
  
     cout << "Setting up interactions..." << endl;
  
@@ -161,8 +160,8 @@ int main(int argc, char *argv[])
     }
 
     std::vector<std::shared_ptr<InteractionBase>> interactions{ 
-      make_shared<PulseInteraction>(qds, pulse1, interpolation_order, c0, dt, hbar, rotating),
-      selfwise} ; // no selfwise!
+      make_shared<PulseInteraction>(qds, pulse1, interpolation_order, c0, dt, hbar, rotating) };
+      // selfwise} ; // no selfwise!
 
     if (interacting)
       interactions.push_back( pairwise );

@@ -109,7 +109,7 @@ int main(int argc, char *argv[])
 
   std::string taskstr(argv[2]);
 
-  std::ofstream fd("./dots/dots_line"+taskstr+".cfg");
+  std::ofstream fd("./dots/dots"+taskstr+".cfg");
   // std::ofstream fd("./dots/obss"+taskstr+".cfg");
   fd << std::setprecision(12);
 
