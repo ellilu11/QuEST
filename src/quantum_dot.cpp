@@ -19,9 +19,9 @@ matrix_elements QuantumDot::liouville_rhs(const matrix_elements &rho,
                                           const bool rotating) const
 {
   const cmplx m0 = -iu * (rabi * std::conj(rho[1]) - std::conj(rabi) * rho[1]) -
-                   0.0 * (rho[0] - 1.0) / damping.first;
+                   2.0 * (rho[0] - 1.0) / damping.first;
 
-  cmplx m1_temp = -iu * (rabi * (1.0 - 2.0 * rho[0])) - 0.0 * rho[1] / damping.second;
+  cmplx m1_temp = -iu * (rabi * (1.0 - 2.0 * rho[0])) - 2.0 * rho[1] / damping.second;
 
   m1_temp -=
       rotating ? iu * rho[1] * (laser_freq - freq) : iu * rho[1] * (-freq);
@@ -63,7 +63,7 @@ int max_transit_steps_between_dots(const std::shared_ptr<DotVector> dots,
 std::ostream &operator<<(std::ostream &os, const QuantumDot &qd)
 {
   os << qd.pos.transpose() << " " << qd.freq << " " << qd.damping.first << " "
-     << qd.damping.second << " " << qd.dipr.transpose(); // << " " << qd.dipi.transpose();
+     << qd.damping.second << " " << qd.dipr.transpose() << std::endl; // << " " << qd.dipi.transpose();
   return os;
 }
 
@@ -84,10 +84,11 @@ DotVector import_dots(const std::string &fname)
   return DotVector(in_iter, eof);
 }
 
+
 void set_dipole_of_dots(std::shared_ptr<DotVector> dots, const Eigen::Vector3d dip)
 {
   for (int dot = 0; dot < (*dots).size(); ++dot)
-    (*dots)[dot].set_dipole() = dip;
+    (*dots)[dot].set_dipole(dip);
 }
 
 std::vector<BlochFunctionType> rhs_functions(const DotVector &dots,

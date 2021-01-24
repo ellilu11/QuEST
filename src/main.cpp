@@ -86,7 +86,7 @@ int main(int argc, char *argv[])
 
     // == HISTORY ====================================================
 
-    int task_idx = 0;
+    int task_idx = atoi(argv[6]);
     int window = 22;
     int min_time_to_keep =
         // num_timesteps + window;
@@ -175,8 +175,8 @@ int main(int argc, char *argv[])
     }
 
     std::vector<std::shared_ptr<InteractionBase>> interactions{ 
-      make_shared<PulseInteraction>(qds, nullptr, pulse1, interpolation_order, dt, hbar, omega, rotating)
-		  }; //no selfwise!
+      make_shared<PulseInteraction>(qds, nullptr, pulse1, interpolation_order, dt, hbar, omega, rotating),
+		  selfwise}; //no selfwise!
 
     if (interacting)
       interactions.push_back( pairwise );
@@ -195,19 +195,23 @@ int main(int argc, char *argv[])
       Propagation::RotatingEFIE dyadic(c0, propagation_constant, omega, beta, 0.0);
       Propagation::SelfRotatingEFIE dyadic_self(c0, propagation_constant, omega, beta);
 
+      selfwise_fld = make_shared<SelfInteraction>(qds, obs, history, dyadic_self,
+                                                     interpolation_order, c0, dt, omega);
       pairwise_fld = make_shared<DirectInteraction>(qds, obs, history, dyadic,
                                                     interpolation_order, c0, dt, omega);
     } else {
       Propagation::EFIE<cmplx> dyadic(c0, propagation_constant, beta, 0.0);
       Propagation::SelfEFIE dyadic_self(c0, propagation_constant, beta);
 
+      selfwise_fld = make_shared<SelfInteraction>(qds, obs, history, dyadic_self,
+                                                      interpolation_order, c0, dt);
       pairwise_fld = make_shared<DirectInteraction>(qds, obs, history, dyadic,
                                                     interpolation_order, c0, dt); 
     }
 
     std::vector<std::shared_ptr<InteractionBase>> efld_interactions{ 
       make_shared<PulseInteraction>(qds, obs, pulse1, interpolation_order, dt, hbar, omega, rotating),
-		  } ; // no selfwise!
+		  selfwise_fld } ; // no selfwise!
 
     if (interacting)
       efld_interactions.push_back( pairwise_fld );

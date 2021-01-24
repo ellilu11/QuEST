@@ -67,7 +67,7 @@ template <class soltype>
 void Integrator::PredictorCorrector<soltype>::solve(
     const log_level_t log_level)
 {
-  int num_outsteps = std::min( 20000, time_idx_ubound );
+  int num_outsteps = std::min( 10000, time_idx_ubound );
   int outstep = time_idx_ubound / num_outsteps;
 
   int num_logsteps = 100;
