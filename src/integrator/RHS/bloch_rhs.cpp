@@ -136,8 +136,8 @@ void Integrator::BlochRHS::evaluate_field(const int step)
   for(int obs = 0; obs < num_obs; ++obs) {
     Eigen::Vector3cd efld(efldx[obs], efldy[obs], efldz[obs]);
 
-    outfile << std::real( efld.dot( efld ) ) << " " // Eigen dot product is adjoint inner product!
-            << std::imag( efld.dot( efld ) ) << " ";
+    outfile << std::real( efld.dot( efld ) ) << " "; // Eigen dot product is adjoint inner product!
+            // << std::imag( efld.dot( efld ) ) << " ";
 
     /*outfile << std::real( efldx[obs] * std::conj(efldx[obs]) ) +
                std::real( efldy[obs] * std::conj(efldy[obs]) ) +

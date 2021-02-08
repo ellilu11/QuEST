@@ -5,10 +5,10 @@
 #include <string>
 #include <vector>
 
+#include "configuration.h"
 #include "integrator/RHS/bloch_rhs.h"
 #include "integrator/history.h"
 #include "integrator/integrator.h"
-//#include "interactions/AIM/aim_interaction.h"
 #include "interactions/direct_interaction.h"
 #include "interactions/green_function.h"
 #include "interactions/pulse_interaction.h"
@@ -19,38 +19,9 @@ using namespace std;
 int main(int argc, char *argv[])
 {
     cout << setprecision(15) << scientific;
+    auto vm = parse_configs(argc, argv);
 
-    // parameters
-    const int num_src = atoi(argv[1]);
-    const double tmax = 80000;
-    const double dt = 5.0 / pow(10.0, atoi(argv[2]) ); 
-                              // rotframe: sigma = 1.0ps -> dt <= 0.52e-1
-                              // fixframe: omega = 2278.9013 mev/hbar -> dt <= 1.379e-4
-    const int num_timesteps = tmax/dt;
-    const int num_corrector_steps = 0;
-
-    const int interpolation_order = 4;
-    const bool interacting = atoi(argv[3]);
-    const bool rotating = atoi(argv[4]);
-    const bool solve_type = atoi(argv[5]);
-
-    // constants
-    const double c0 = 299.792458, hbar = 0.65821193, mu0 = 2.0133545e-04;
-    const double omega = 2278.9013;
-    double beta = // 0.0;
-                  // 1.0e-1 / pow(omega,3);
-                  1.79e-4 / pow( omega, 3 );
-
-    const double k0 = omega/c0, lambda = 2.0*M_PI/k0;    
-
-    // AIM
-    const double ds = 5.0e-2*lambda;
-    const double h = 0.5*ds; // FDTD spacing
-    Eigen::Vector3d grid_spacing(ds, ds, ds);
-    const int expansion_order = 3;
-    const int border = 1;
-
-    cout << "Initializing..." << endl;
+    /*cout << "Initializing..." << endl;
     cout << "  Interacting particles: " 
               << (interacting ? "TRUE" : "FALSE") << std::endl;
     cout << "  Solve type: "
@@ -67,9 +38,8 @@ int main(int argc, char *argv[])
 			cout << "  AIM expansion order: " << expansion_order << endl;
 			cout << "  AIM border: " << border << endl;
 		}
-    std::cout << "  Beta: " << beta * pow(omega,3) << std::endl;
 
-    string idstr(argv[6]);
+    string idstr(argv[1]);
     auto qds = make_shared<DotVector>(import_dots("./dots/dots"+idstr+".cfg"));
     qds->resize(num_src);
     auto rhs_funcs = rhs_functions(*qds, omega, beta, rotating);
@@ -78,6 +48,7 @@ int main(int argc, char *argv[])
    
     std::shared_ptr<DotVector> obs;
     obs = make_shared<DotVector>(import_dots("./dots/dots"+idstr+".cfg"));
+    // obs = make_shared<DotVector>(import_dots("./dots/obss_line.cfg"));
 
     cout << "  Num sources: " << num_src << std::endl;
     cout << "  Num observers: " << obs->size() << std::endl;	
@@ -104,7 +75,7 @@ int main(int argc, char *argv[])
 
     const double propagation_constant = mu0 / (4 * M_PI * hbar);
 
-    auto pulse1 = make_shared<Pulse>(read_pulse_config("pulse.cfg"));
+    auto pulse1 = make_shared<Pulse>(read_pulse_config("pulse_miyajima.cfg"));
  
     cout << "Setting up interactions..." << endl;
  
@@ -114,8 +85,9 @@ int main(int argc, char *argv[])
    	std::shared_ptr<InteractionBase> selfwise;
     std::shared_ptr<InteractionBase> pairwise;
 
-    if (solve_type) {
-      /*AIM::Grid grid(grid_spacing, expansion_order, h, *qds); 
+*/
+    /*if (solve_type) {
+      AIM::Grid grid(grid_spacing, expansion_order, h, *qds); 
       const int transit_steps = grid.max_transit_steps(c0, dt) + 
                                   interpolation_order;
 
@@ -150,7 +122,7 @@ int main(int argc, char *argv[])
             // AIM::Expansions::EFIE_Retardation(transit_steps, c0), // fdtd expansion function
             AIM::Normalization::Laplace(propagation_constant)
            );
-      }*/
+      }
     
     } else {
       if (rotating) {
@@ -175,8 +147,8 @@ int main(int argc, char *argv[])
     }
 
     std::vector<std::shared_ptr<InteractionBase>> interactions{ 
-      make_shared<PulseInteraction>(qds, nullptr, pulse1, interpolation_order, dt, hbar, omega, rotating),
-		  selfwise}; //no selfwise!
+      make_shared<PulseInteraction>(qds, nullptr, pulse1, interpolation_order, dt, hbar, omega, rotating) };
+		  // selfwise}; //no selfwise!
 
     if (interacting)
       interactions.push_back( pairwise );
@@ -263,6 +235,6 @@ int main(int argc, char *argv[])
     elapsed_time = ( std::clock() - start_time ) / (double) CLOCKS_PER_SEC;
 
     cout << "  Elapsed time: " << elapsed_time << "s" << std::endl;
-
+*/
   return 0;
 }

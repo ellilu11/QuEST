@@ -28,7 +28,7 @@ po::variables_map parse_configs(int argc, char *argv[]) {
     ("constants.hbar", po::value<double>(&config.hbar)->required(), "reduced Planck constant")
     ("constants.mu0",  po::value<double>(&config.mu0)->required(), "vacuum permeability")
     ("constants.laser frequency",  po::value<double>(&config.omega)->required(), "(angular) frequency of incident pulse")
-    ("constants.RR damping",  po::value<double>(&config.beta)->required(), "radiation reaction damping factor")    
+    // ("constants.RR damping",  po::value<double>(&config.beta)->required(), "radiation reaction damping factor")    
   ;   
 
   po::options_description parameters_description("System parameters");
