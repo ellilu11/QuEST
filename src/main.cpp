@@ -22,7 +22,7 @@ int main(int argc, char *argv[])
 
     // parameters
     const int num_src = atoi(argv[1]);
-    const double tmax = 80000;
+    const double tmax = 10;
     const double dt = 5.0 / pow(10.0, atoi(argv[2]) ); 
                               // rotframe: sigma = 1.0ps -> dt <= 0.52e-1
                               // fixframe: omega = 2278.9013 mev/hbar -> dt <= 1.379e-4
@@ -36,7 +36,7 @@ int main(int argc, char *argv[])
 
     // constants
     const double c0 = 299.792458, hbar = 0.65821193, mu0 = 2.0133545e-04;
-    const double omega = 2278.9013;
+    const double omega = 4823.67;
     double beta = // 0.0;
                   // 1.0e-1 / pow(omega,3);
                   1.79e-4 / pow( omega, 3 );
@@ -93,8 +93,8 @@ int main(int argc, char *argv[])
 
     const double propagation_constant = mu0 / (4 * M_PI * hbar);
 
-    auto pulse0 = make_shared<Pulse>(read_pulse_config("pulse0.cfg"));
-    auto pulse1 = make_shared<Pulse>(read_pulse_config("pulse1.cfg"));
+    auto pulse0 = make_shared<Pulse>(read_pulse_config("pulse_miyajima.cfg"));
+    // auto pulse1 = make_shared<Pulse>(read_pulse_config("pulse1.cfg"));
  
     cout << "Setting up interactions..." << endl;
  
