@@ -3,9 +3,10 @@
 #include <iomanip>
 #include <iostream>
 #include <string>
+#include <iterator>
 #include <vector>
 
-#include "configuration.h"
+#include "../src/configuration.h"
 #include "integrator/RHS/bloch_rhs.h"
 #include "integrator/history.h"
 #include "integrator/integrator.h"

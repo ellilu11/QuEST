@@ -13,6 +13,8 @@ po::variables_map parse_configs(int argc, char *argv[]) {
     ("version,v", "print version string")
     ("config,c", po::value<string>(&config_path)->default_value("input.cfg"), "path to configuration file")
     ("fast,f",   po::bool_switch()->default_value(false), "employ fast methods to calculate potentials")
+    ("int,i",    po::bool_switch()->default_value(false), "compute inter-dot interactions")
+    ("rot,r",    po::bool_switch()->default_value(false), "employ the rotating frame")
     ("time,t",   po::bool_switch(&config.report_time_data)->default_value(false), "report execution time data");
   ;
 
@@ -44,8 +46,9 @@ po::variables_map parse_configs(int argc, char *argv[]) {
     ("parameters.timestep",            po::value<double>(&config.dt)->required(), "timestep size")
     ("parameters.interpolation_order", po::value<int>(&config.interpolation_order)->required(), "order of the temporal Lagrange interpolants")
     ("parameters.fast",                po::bool_switch()->default_value(false), "in-file alias of --fast")
-    ("parameters.interacting",         po::value<bool>(&config.interacting)->default_value(true), "interaction flag")
-    ("parameters.rotating",            po::value<bool>(&config.rotating)->default_value(true), "rotating frame flag")
+    ("parameters.interacting",         po::bool_switch()->default_value(false), "in-file alias of --int")
+    ("parameters.rotating",            po::bool_switch()->default_value(false), "in-file alias of --rot")
+    ("parameters.num_corrector_steps", po::value<int>(&config.num_corrector_steps)->required(), "# corrector steps, 0: error threshold based")
   ;
 
   po::options_description aim_description("AIM & Grid parameters");
@@ -101,6 +104,10 @@ po::variables_map parse_configs(int argc, char *argv[]) {
     config.grid_spacing = Eigen::Vector3d(tokens.at(0), tokens.at(1), tokens.at(2));
     config.sim_type = static_cast<Configuration::SIMULATION_TYPE>(
         vm["fast"].as<bool>() || vm["parameters.fast"].as<bool>());
+    config.interacting = static_cast<Configuration::INTERACTING>(
+        vm["int"].as<bool>() || vm["parameters.interacting"].as<bool>());
+    config.ref_frame = static_cast<Configuration::REFERENCE_FRAME>(
+        vm["rot"].as<bool>() || vm["parameters.rotating"].as<bool>());
   }
 
   return vm;
