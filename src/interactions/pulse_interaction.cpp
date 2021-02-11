@@ -8,8 +8,10 @@ PulseInteraction::PulseInteraction(
     const double dt,
     const double hbar,
     const double omega,
-    const bool rotating)
-    : InteractionBase(dots, obss, dt), pulse(std::move(pulse)), hbar(hbar), omega(omega), rotating(rotating)
+    const bool rotating,
+    const bool rwa)
+    : InteractionBase(dots, obss, dt), pulse(std::move(pulse)), hbar(hbar), omega(omega), 
+      rotating(rotating), rwa(rwa)
 {
 }
 
@@ -20,7 +22,7 @@ const InteractionBase::ResultArray &PulseInteraction::evaluate(
 
   for(size_t i = 0; i < dots->size(); ++i)
     results[i] =
-        (*pulse)((*dots)[i].position(), time, 0, rotating).dot((*dots)[i].dipole()) / hbar;
+        (*pulse)((*dots)[i].position(), time, rotating, rwa).dot((*dots)[i].dipole()) / hbar;
 
   return results;
 }
@@ -31,7 +33,7 @@ const InteractionBase::ResultArray &PulseInteraction::evaluate_field(
   const double time = time_idx * dt;
 
   for(size_t i = 0; i < obss->size(); ++i){
-    auto pulse0 = (*pulse)((*obss)[i].position(), time, 0, rotating);
+    auto pulse0 = (*pulse)((*obss)[i].position(), time, rotating, rwa);
     if ( flag ) {
       Eigen::Vector3d wavevector = pulse->wavevec();
       results[i] =

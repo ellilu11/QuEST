@@ -16,6 +16,7 @@ struct Configuration {
   enum class SIMULATION_TYPE { DIRECT, FAST } sim_type;
   enum class INTERACTING { FALSE, TRUE } interacting;
   enum class REFERENCE_FRAME { FIX, ROT } ref_frame;
+  enum class RWA { FALSE, TRUE } rwa;
   bool report_time_data;
  
   // File paths

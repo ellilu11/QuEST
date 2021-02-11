@@ -11,18 +11,18 @@
 class Pulse {
  public:
   Pulse() = default;
-  Pulse(const double, const double, const double, const double,
+  Pulse(const double, const double, const double, const double, const double,
         const Eigen::Vector3d &, const Eigen::Vector3d &);
 
-  Eigen::Vector3cd operator()(const Eigen::Vector3d &, const double, const int, const bool) const;
+  Eigen::Vector3cd operator()(const Eigen::Vector3d &, const double, const bool, const bool) const;
  
-  const Eigen::Vector3d &wavevec() const { return wavevector; }
+  const Eigen::Vector3d &wavevec() const { return wavevector.normalized(); }
 
   friend std::ostream &operator<<(std::ostream &, const Pulse &);
   friend std::istream &operator>>(std::istream &, Pulse &);
 
  private:
-  double amplitude, delay, width, freq;
+  double amplitude, delay, width, freq, c0;
   Eigen::Vector3d wavevector, polarization;
 };
 

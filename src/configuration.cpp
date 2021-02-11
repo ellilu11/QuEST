@@ -15,6 +15,7 @@ po::variables_map parse_configs(int argc, char *argv[]) {
     ("fast,f",   po::bool_switch()->default_value(false), "employ fast methods to calculate potentials")
     ("int,i",    po::bool_switch()->default_value(false), "compute inter-dot interactions")
     ("rot,r",    po::bool_switch()->default_value(false), "employ the rotating frame")
+    ("rwa,w",    po::bool_switch()->default_value(true), "employ the rotating wave approximation")
     ("time,t",   po::bool_switch(&config.report_time_data)->default_value(false), "report execution time data");
   ;
 
@@ -48,6 +49,7 @@ po::variables_map parse_configs(int argc, char *argv[]) {
     ("parameters.fast",                po::bool_switch()->default_value(false), "in-file alias of --fast")
     ("parameters.interacting",         po::bool_switch()->default_value(false), "in-file alias of --int")
     ("parameters.rotating",            po::bool_switch()->default_value(false), "in-file alias of --rot")
+    ("parameters.rwa",                 po::bool_switch()->default_value(true), "in-file alias of --rwa")
     ("parameters.num_corrector_steps", po::value<int>(&config.num_corrector_steps)->required(), "# corrector steps, 0: error threshold based")
   ;
 
@@ -108,6 +110,8 @@ po::variables_map parse_configs(int argc, char *argv[]) {
         vm["int"].as<bool>() || vm["parameters.interacting"].as<bool>());
     config.ref_frame = static_cast<Configuration::REFERENCE_FRAME>(
         vm["rot"].as<bool>() || vm["parameters.rotating"].as<bool>());
+    config.rwa = static_cast<Configuration::RWA>(
+        vm["rwa"].as<bool>() || vm["parameters.rwa"].as<bool>());
   }
 
   return vm;

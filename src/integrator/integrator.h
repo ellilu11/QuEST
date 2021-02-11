@@ -77,7 +77,7 @@ void Integrator::PredictorCorrector<soltype>::solve(
     
     if (!(step%outstep)) {
        history->write_step_to_file(step);
-       rhs->evaluate_field(step);
+       // rhs->evaluate_field(step);
 		}
      
     // if (step%(time_idx_ubound/num_logsteps) == 0)

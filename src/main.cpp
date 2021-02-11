@@ -38,6 +38,10 @@ int main(int argc, char *argv[])
               << ((config.ref_frame == Configuration::REFERENCE_FRAME::ROT) 
                 ? "ROT" 
                 : "FIX") << std::endl;
+		cout << "  RWA: "
+              << ((config.rwa == Configuration::RWA::TRUE) 
+                ? "TRUE" 
+                : "FALSE") << std::endl;
 	
     cout << "  Timestep: " << config.dt << std::endl;
 		cout << "  Simulation time: " << config.total_time << std::endl;
@@ -52,6 +56,8 @@ int main(int argc, char *argv[])
 
     const bool rotating = 
       config.ref_frame == Configuration::REFERENCE_FRAME::ROT ? true : false;
+    const bool rwa = 
+      config.rwa == Configuration::RWA::TRUE ? true : false;
 
     const double beta = 1.79e-04;
 
@@ -59,21 +65,20 @@ int main(int argc, char *argv[])
     auto qds = make_shared<DotVector>(import_dots("./dots/dots"+idstr+".cfg"));
     qds->resize(config.num_particles);
     auto rhs_funcs = rhs_functions(*qds, config.omega, beta, rotating);
-
-    const bool getflux = 0;
-   
+  
     std::shared_ptr<DotVector> obs;
     obs = make_shared<DotVector>(import_dots("./dots/dots"+idstr+".cfg"));
     // obs = make_shared<DotVector>(import_dots("./dots/obss_line.cfg"));
-
     cout << "  Num sources: " << config.num_particles << std::endl;
     cout << "  Num observers: " << obs->size() << std::endl;	
+    
+    const bool getflux = 0;
     // Eigen::Vector3d pos = (*obs)[0].position();
     // cout << "  Observer radius: " << pos.norm() << std::endl;
 
     // == HISTORY ====================================================
 
-    int task_idx = atoi(argv[6]);
+    int task_idx = stoi(idstr);
     int window = 22;
     int min_time_to_keep =
         // config.num_timesteps + window;
@@ -91,7 +96,7 @@ int main(int argc, char *argv[])
 
     const double propagation_constant = config.mu0 / (4 * M_PI * config.hbar);
 
-    auto pulse1 = make_shared<Pulse>(read_pulse_config("pulse_miyajima.cfg"));
+    auto pulse1 = make_shared<Pulse>(read_pulse_config("pulse.cfg"));
  
     cout << "Setting up interactions..." << endl;
  
@@ -162,7 +167,9 @@ int main(int argc, char *argv[])
     }
 
     std::vector<std::shared_ptr<InteractionBase>> interactions{ 
-      make_shared<PulseInteraction>(qds, nullptr, pulse1, config.interpolation_order, config.dt, config.hbar, config.omega, rotating) };
+      make_shared<PulseInteraction>(qds, nullptr, pulse1, 
+                                    config.interpolation_order, config.dt, config.hbar, config.omega, 
+                                    rotating, rwa) };
 		  // selfwise}; //no selfwise!
 
     if (config.interacting == Configuration::INTERACTING::TRUE)
@@ -197,8 +204,10 @@ int main(int argc, char *argv[])
     }
 
     std::vector<std::shared_ptr<InteractionBase>> efld_interactions{ 
-      make_shared<PulseInteraction>(qds, obs, pulse1, config.interpolation_order, config.dt, config.hbar, config.omega, rotating),
-		  selfwise_fld } ; // no selfwise!
+      make_shared<PulseInteraction>(qds, obs, pulse1, 
+                                    config.interpolation_order, config.dt, config.hbar, config.omega, 
+                                    rotating, rwa) };
+		  // selfwise_fld } ; // no selfwise!
 
     if (config.interacting == Configuration::INTERACTING::TRUE)
       efld_interactions.push_back( pairwise_fld );
@@ -219,8 +228,9 @@ int main(int argc, char *argv[])
     }
 
     std::vector<std::shared_ptr<InteractionBase>> bfld_interactions{ 
-      make_shared<PulseInteraction>(qds, obs, pulse1, config.interpolation_order, config.dt, config.hbar, config.omega, rotating),
-		  } ; // no selfwise!
+      make_shared<PulseInteraction>(qds, obs, pulse1, 
+                                    config.interpolation_order, config.dt, config.hbar, config.omega, 
+                                    rotating, rwa) };
 
     if (config.interacting == Configuration::INTERACTING::TRUE)
       bfld_interactions.push_back( pairwise_bfld );

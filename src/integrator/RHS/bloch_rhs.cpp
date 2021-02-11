@@ -27,8 +27,8 @@ Integrator::BlochRHS::BlochRHS(
       num_obs(obss->size()),
       getflux(getflux)
 {
-  outfile.open("./out/fld" + std::to_string(task_idx) + ".dat");
-  outfile << std::scientific << std::setprecision(15);
+  // outfile.open("./out/fld" + std::to_string(task_idx) + ".dat");
+  // outfile << std::scientific << std::setprecision(15);
 
   // fluxfile.open("./out/flux" + std::to_string(task_idx) + ".dat");
   // fluxfile << std::scientific << std::setprecision(15);
@@ -96,10 +96,8 @@ void Integrator::BlochRHS::evaluate_field(const int step)
       };
 
   int idx = 0; // efld_interactions.size() - 1;
-  
-  // std::cout << idx << std::endl;
 
-  set_dipole_of_dots( obss, Eigen::Vector3d(hbar, 0, 0) );
+  /*set_dipole_of_dots( obss, Eigen::Vector3d(hbar, 0, 0) );
   auto efldx = 
       //efld_interactions[idx]->evaluate_field(step); 
       std::accumulate(
@@ -139,11 +137,11 @@ void Integrator::BlochRHS::evaluate_field(const int step)
     outfile << std::real( efld.dot( efld ) ) << " "; // Eigen dot product is adjoint inner product!
             // << std::imag( efld.dot( efld ) ) << " ";
 
-    /*outfile << std::real( efldx[obs] * std::conj(efldx[obs]) ) +
+    outfile << std::real( efldx[obs] * std::conj(efldx[obs]) ) +
                std::real( efldy[obs] * std::conj(efldy[obs]) ) +
                std::real( efldz[obs] * std::conj(efldz[obs]) ) << " ";
-*/
-    /* Eigen::Vector3cd efld(efldx[obs], efldy[obs], efldz[obs]);
+
+     Eigen::Vector3cd efld(efldx[obs], efldy[obs], efldz[obs]);
     Eigen::Vector3cd bfld(bfldx[obs], bfldy[obs], bfldz[obs]);
 
     Eigen::Vector3d poynting = (efld.real()).cross(bfld.real()) / ( mu0 ); // Fix frame
@@ -179,15 +177,15 @@ void Integrator::BlochRHS::evaluate_field(const int step)
     } else {
       double energy_density = ( efld.squaredNorm() * eps0 + bfld.squaredNorm() / mu0 ) / 2.0;
       energy = energy + measure * energy_density;
-    } */
+    }
   }
     
-/*  if (getflux)
+  if (getflux)
     std::cout << flux << std::endl;
   else 
     std::cout << energy << std::endl;
-*/
-  outfile << std::endl;
 
+  outfile << std::endl;
+*/
 }
 
