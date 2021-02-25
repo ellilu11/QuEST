@@ -23,8 +23,17 @@ int main(int argc, char *argv[])
     cout << setprecision(15) << scientific;
     auto vm = parse_configs(argc, argv);
 
+    string idstr(argv[1]);
+    const bool rotating = // atoi(argv[2]);
+      config.ref_frame == Configuration::REFERENCE_FRAME::ROT ? true : false;
+    const bool rwa = 
+      config.rwa == Configuration::RWA::TRUE ? true : false;
+
+    const double beta = 1.79e-04;
+
     cout << "Initializing..." << endl;
     cout << "  Omega: " << config.omega << std::endl;
+    // cout << "  Beta: " << beta << std::endl;
  
     cout << "  Solve type: "
               << ((config.sim_type == Configuration::SIMULATION_TYPE::FAST) 
@@ -34,8 +43,12 @@ int main(int argc, char *argv[])
               << ((config.interacting == Configuration::INTERACTING::TRUE) 
                 ? "TRUE" 
                 : "FALSE") << std::endl;
+	  cout << "  Self-interacting particles: "
+              << ((config.self_interacting == Configuration::SELF_INTERACTING::TRUE) 
+                ? "TRUE" 
+                : "FALSE") << std::endl;
 		cout << "  Reference frame: "
-              << ((config.ref_frame == Configuration::REFERENCE_FRAME::ROT) 
+              << (rotating 
                 ? "ROT" 
                 : "FIX") << std::endl;
 		cout << "  RWA: "
@@ -54,14 +67,6 @@ int main(int argc, char *argv[])
 			cout << "  AIM border: " << config.border << endl;
 		}
 
-    const bool rotating = 
-      config.ref_frame == Configuration::REFERENCE_FRAME::ROT ? true : false;
-    const bool rwa = 
-      config.rwa == Configuration::RWA::TRUE ? true : false;
-
-    const double beta = 1.79e-04;
-
-    string idstr(argv[1]);
     auto qds = make_shared<DotVector>(import_dots("./dots/dots"+idstr+".cfg"));
     qds->resize(config.num_particles);
     auto rhs_funcs = rhs_functions(*qds, config.omega, beta, rotating);
@@ -96,7 +101,7 @@ int main(int argc, char *argv[])
 
     const double propagation_constant = config.mu0 / (4 * M_PI * config.hbar);
 
-    auto pulse1 = make_shared<Pulse>(read_pulse_config("pulse.cfg"));
+    auto pulse1 = make_shared<Pulse>(read_pulse_config("pulse_miyajima.cfg"));
  
     cout << "Setting up interactions..." << endl;
  
@@ -170,7 +175,9 @@ int main(int argc, char *argv[])
       make_shared<PulseInteraction>(qds, nullptr, pulse1, 
                                     config.interpolation_order, config.dt, config.hbar, config.omega, 
                                     rotating, rwa) };
-		  // selfwise}; //no selfwise!
+
+    if (config.self_interacting == Configuration::SELF_INTERACTING::TRUE)
+      interactions.push_back( selfwise );
 
     if (config.interacting == Configuration::INTERACTING::TRUE)
       interactions.push_back( pairwise );
@@ -207,7 +214,9 @@ int main(int argc, char *argv[])
       make_shared<PulseInteraction>(qds, obs, pulse1, 
                                     config.interpolation_order, config.dt, config.hbar, config.omega, 
                                     rotating, rwa) };
-		  // selfwise_fld } ; // no selfwise!
+
+    if (config.self_interacting == Configuration::SELF_INTERACTING::TRUE)
+      efld_interactions.push_back( selfwise_fld );
 
     if (config.interacting == Configuration::INTERACTING::TRUE)
       efld_interactions.push_back( pairwise_fld );
@@ -232,6 +241,7 @@ int main(int argc, char *argv[])
                                     config.interpolation_order, config.dt, config.hbar, config.omega, 
                                     rotating, rwa) };
 
+    // no self B-fld
     if (config.interacting == Configuration::INTERACTING::TRUE)
       bfld_interactions.push_back( pairwise_bfld );
 

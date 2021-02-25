@@ -16,7 +16,7 @@ class Pulse {
 
   Eigen::Vector3cd operator()(const Eigen::Vector3d &, const double, const bool, const bool) const;
  
-  const Eigen::Vector3d &wavevec() const { return wavevector.normalized(); }
+  const Eigen::Vector3d wavevec() const { return freq/c0 * wavevector.normalized(); }
 
   friend std::ostream &operator<<(std::ostream &, const Pulse &);
   friend std::istream &operator>>(std::istream &, Pulse &);

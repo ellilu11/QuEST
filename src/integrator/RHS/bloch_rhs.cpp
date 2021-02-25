@@ -27,17 +27,14 @@ Integrator::BlochRHS::BlochRHS(
       num_obs(obss->size()),
       getflux(getflux)
 {
-  // outfile.open("./out/fld" + std::to_string(task_idx) + ".dat");
-  // outfile << std::scientific << std::setprecision(15);
+  outfile.open("./out/fld" + std::to_string(task_idx) + ".dat");
+  outfile << std::scientific << std::setprecision(15);
 
-  // fluxfile.open("./out/flux" + std::to_string(task_idx) + ".dat");
-  // fluxfile << std::scientific << std::setprecision(15);
 }
 
 Integrator::BlochRHS::~BlochRHS()
 {
   outfile.close();
-  fluxfile.close();
 }
 
 void Integrator::BlochRHS::evaluate(const int step) const
@@ -95,97 +92,47 @@ void Integrator::BlochRHS::evaluate_field(const int step)
         return r + interaction->evaluate_field(step, 1);
       };
 
-  int idx = 0; // efld_interactions.size() - 1;
+  // int idx = 0; // efld_interactions.size() - 1;
 
-  /*set_dipole_of_dots( obss, Eigen::Vector3d(hbar, 0, 0) );
+  set_dipole_of_dots( obss, Eigen::Vector3d(hbar, 0, 0) );
   auto efldx = 
-      //efld_interactions[idx]->evaluate_field(step); 
-      std::accumulate(
-        efld_interactions.begin(), efld_interactions.end(), nil, eval_and_sum);
+    // efld_interactions[idx]->evaluate_field(step); 
+    std::accumulate(
+      efld_interactions.begin(), efld_interactions.end(), nil, eval_and_sum);
   auto bfldx = 
-      bfld_interactions[idx]->evaluate_field(step, 1);
-      // std::accumulate(
-      //  bfld_interactions.begin(), bfld_interactions.end(), nil, eval_and_sum_bfld);
+    // bfld_interactions[idx]->evaluate_field(step, 1);
+    std::accumulate(
+      bfld_interactions.begin(), bfld_interactions.end(), nil, eval_and_sum_bfld);
  
   set_dipole_of_dots( obss, Eigen::Vector3d(0, hbar, 0) );
   auto efldy = 
-      // efld_interactions[idx]->evaluate_field(step); 
-      std::accumulate(
-        efld_interactions.begin(), efld_interactions.end(), nil, eval_and_sum);
+    // efld_interactions[idx]->evaluate_field(step); 
+    std::accumulate(
+      efld_interactions.begin(), efld_interactions.end(), nil, eval_and_sum);
   auto bfldy = 
-      bfld_interactions[idx]->evaluate_field(step, 1);
-      // std::accumulate(
-      //  bfld_interactions.begin(), bfld_interactions.end(), nil, eval_and_sum_bfld);
+    // bfld_interactions[idx]->evaluate_field(step, 1);
+    std::accumulate(
+      bfld_interactions.begin(), bfld_interactions.end(), nil, eval_and_sum_bfld);
   
   set_dipole_of_dots( obss, Eigen::Vector3d(0, 0, hbar) );
   auto efldz = 
-      // efld_interactions[idx]->evaluate_field(step); 
-      std::accumulate(
-        efld_interactions.begin(), efld_interactions.end(), nil, eval_and_sum);
+    // efld_interactions[idx]->evaluate_field(step); 
+    std::accumulate(
+      efld_interactions.begin(), efld_interactions.end(), nil, eval_and_sum);
   auto bfldz = 
-      bfld_interactions[idx]->evaluate_field(step, 1);
-      // std::accumulate(
-      //  bfld_interactions.begin(), bfld_interactions.end(), nil, eval_and_sum_bfld);
-
-  double flux = 0.0;
-  double energy = 0.0;
-  double time = step*dt;
+    // bfld_interactions[idx]->evaluate_field(step, 1);
+    std::accumulate(
+      bfld_interactions.begin(), bfld_interactions.end(), nil, eval_and_sum_bfld);
 
   for(int obs = 0; obs < num_obs; ++obs) {
     Eigen::Vector3cd efld(efldx[obs], efldy[obs], efldz[obs]);
-
-    outfile << std::real( efld.dot( efld ) ) << " "; // Eigen dot product is adjoint inner product!
-            // << std::imag( efld.dot( efld ) ) << " ";
-
-    outfile << std::real( efldx[obs] * std::conj(efldx[obs]) ) +
-               std::real( efldy[obs] * std::conj(efldy[obs]) ) +
-               std::real( efldz[obs] * std::conj(efldz[obs]) ) << " ";
-
-     Eigen::Vector3cd efld(efldx[obs], efldy[obs], efldz[obs]);
     Eigen::Vector3cd bfld(bfldx[obs], bfldy[obs], bfldz[obs]);
 
-    Eigen::Vector3d poynting = (efld.real()).cross(bfld.real()) / ( mu0 ); // Fix frame
-    Eigen::Vector3d poynting = ( efld.cross(bfld.conjugate()) + 
-                                 0.0 * efld.cross(bfld) * std::exp(2.0*iu*omega*time) ).real() / ( 2.0*mu0 ); // Rot frame
-
-    double pnorm = poynting.norm();
- 
-    Eigen::Vector3d pos = (*obss)[obs].position();
-    double r0 = pos.norm();
-    Eigen::Vector3d rhat = pos / pos.norm();
-    double measure = (*obss)[obs].frequency(); 
-
-    if ( step == 4000000 )
-      outfile << std::real(efldx[obs]) << " " 
-              << std::real(efldy[obs]) << " " 
-              << std::real(efldz[obs]) << " "    
-              << std::real(bfldx[obs]) << " " 
-              << std::real(bfldy[obs]) << " " 
-              << std::real(bfldz[obs]) << " "
-              << poynting[0] << " " 
-              << poynting[1] << " " 
-              << poynting[2] << " "
-              << rhat[0] << " "
-              << rhat[1] << " "
-              << rhat[2] << " ";
-
-    if (getflux) {
-      double flux_per_area = poynting.dot(rhat) ;
-      flux = flux + measure * flux_per_area;
-      if ( step == 4000000 )
-        outfile << flux_per_area << std::endl;
-    } else {
-      double energy_density = ( efld.squaredNorm() * eps0 + bfld.squaredNorm() / mu0 ) / 2.0;
-      energy = energy + measure * energy_density;
-    }
+    outfile << efld.real().transpose() << " "
+            << bfld.real().transpose() << " ";
   }
     
-  if (getflux)
-    std::cout << flux << std::endl;
-  else 
-    std::cout << energy << std::endl;
-
   outfile << std::endl;
-*/
+
 }
 

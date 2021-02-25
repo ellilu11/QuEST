@@ -36,6 +36,7 @@ const InteractionBase::ResultArray &PulseInteraction::evaluate_field(
     auto pulse0 = (*pulse)((*obss)[i].position(), time, rotating, rwa);
     if ( flag ) {
       Eigen::Vector3d wavevector = pulse->wavevec();
+      // std::cout << wavevector.transpose() << std::endl;
       results[i] =
         (wavevector.cross(pulse0)).dot((*obss)[i].dipole()) / ( omega * hbar );
     } else 

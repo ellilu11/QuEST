@@ -65,18 +65,16 @@ int main(int argc, char *argv[])
 {
   const double c0 = 299.792458;
   const double omega = 4823.67; // 2278.9013;
-  const double lambda = 2 * M_PI * c0 / omega;
-  const double T1 = 1000000.0, T2 = 2000000.0;
-  const double dip = 0.0055; // 5.2917721e-4;
+  const double lambda = 0.26; // 2 * M_PI * c0 / omega;
+  const double T1 = 10000.0, T2 = 20000.0;
+  const double dip = 0.002536; // 5.2917721e-4;
   const double dipx = dip, dipy = 0.0, dipz = 0.0;
   const int num_dots = atoi(argv[1]);
 
   const unsigned seed =
       std::chrono::system_clock::now().time_since_epoch().count();
     
-  // const double r, ph;
-
-  const double ds = 0.10 * lambda;// 0.10 * lambda;
+  const double ds = 1.0 * lambda;// 0.10 * lambda;
   const double xlen = ds; // ds;
   const double ylen = xlen;
   const double zlen = xlen; // std::max( xlen, 0.015 * num_dots * ds );  
@@ -87,30 +85,17 @@ int main(int argc, char *argv[])
  
   std::default_random_engine generator(seed);
   std::uniform_real_distribution<double> 
-      // rsqdist(0, R*R), phdist(0, 2*M_PI), 
       xdist(-xlen/2, xlen/2), ydist(-ylen/2, ylen/2),
       zdist(-zlen/2, zlen/2);
-  // std::uniform_real_distribution<double> u(0, 1);
-  // std::uniform_real_distribution<double> v(0, 1);
 
   Qdot qd;
   std::vector<Qdot> dots;
   dots.reserve(num_dots);
 
   for(int i = 0; i < num_dots; ++i) {
-    /*double r = sqrt(rsqdist(generator));
-    double phpos= phdist(generator);*/
-
-    /*double th = acos( 2*u(generator) - 1 );
-    double ph = 2 * M_PI * v(generator);
-    double dipx = dip * sin(th) * cos(ph);
-    double dipy = dip * sin(th) * sin(ph);
-    double dipz = dip * cos(th);*/
 
     bool lt_minflag = 1;
     while (lt_minflag){
-        //qd = {{r * cos(phpos), r * sin(phpos), zdist(generator), omega,
-        //        T1, T2, dipx, dipy, dipz}};
  
         qd = {{xdist(generator), ydist(generator), zdist(generator), omega,
                     T1, T2, dipx, dipy, dipz}};
@@ -120,31 +105,8 @@ int main(int argc, char *argv[])
     dots.push_back(qd);
   }
 
-  // additionally, generate random points on surface of outer sphere
-/*  const int num_obs = atoi(argv[2]);
- 
-  std::vector<Qdot> obss;
-  obss.reserve(num_obs);
-
-  const double R = 10 * xlen;
-  std::uniform_real_distribution<double> u(0, 1);
-  std::uniform_real_distribution<double> v(0, 1);
-
-  for(int i = 0; i < num_obs; ++i){
-
-    double th = acos( 2*u(generator) - 1 );
-    double ph = 2 * M_PI * v(generator);
-    double x = R * sin(th) * cos(ph);
-    double y = R * sin(th) * sin(ph);
-    double z = R * cos(th);
-    qd = {{x, y, z, 0, 0, 0, 0, 0, 0}};
-    obss.push_back(qd);
-
-  } 
-
-
   // additionally, generate evenly spaced observer "dots" on surface of outer sphere
-  const int nph = atoi(argv[2]);
+  /*const int nph = atoi(argv[2]);
   const int nth = atoi(argv[3]);
   for(int iph = 0; iph < nph; ++iph){
     for(int ith = 1; ith < nth; ++ith){
@@ -160,10 +122,7 @@ int main(int argc, char *argv[])
   // generate a dot at each pole of the sphere
   obss.push_back({{0, 0, R, 0, 0, 0, 0, 0, 0}});
   obss.push_back({{0, 0, -R, 0, 0, 0, 0, 0, 0}});
-
- */
-
-
+*/
   /*std::sort(dots.begin(), dots.end(), [](const Qdot &a, const Qdot &b) {
     return a[0] * a[0] + a[1] * a[1] + a[2] * a[2] <
            b[0] * b[0] + b[1] * b[1] + b[2] * b[2];

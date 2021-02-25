@@ -78,7 +78,6 @@ void DirectInteraction::build_fldcoeff_table(
       floor_delays_srcobs[pair_idx] = delay.first;
 
       lagrange.evaluate_derivative_table_at_x(delay.second, dt);
-      // lagrange.evaluate_derivative_table_at_x(0.0, dt);
 
       std::vector<Eigen::Matrix3cd> interp_dyads(
           kernel.coefficients(dr, lagrange));
@@ -90,10 +89,6 @@ void DirectInteraction::build_fldcoeff_table(
         cross_coeffs[pair_idx][i] = 
             (rhat.cross(fldcoeffs[pair_idx][i])).conjugate(); // not sure why need conjugate
       
-        // if (obs == 0 && src == 0) 
-        //  std::cout << i << " " << fldcoeffs[pair_idx][i].transpose() <<
-        //  std::endl << cross_coeffs[pair_idx][i].transpose() << std::endl;
- 
       }
     }
   } 

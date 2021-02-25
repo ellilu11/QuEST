@@ -55,6 +55,10 @@ class QuantumDot {
   const double &frequency() const { return freq; }
   void set_dipole(const Eigen::Vector3d dip) { dipr = dip; }
   void set_freq(const double freq_) { freq = freq_; }
+  void set_damping(const double damping1, const double damping2) { 
+    damping.first = damping1;
+    damping.second = damping2;
+  }
 
   friend Eigen::Vector3d separation(const QuantumDot &, const QuantumDot &);
   friend int max_transit_steps_between_dots(const std::shared_ptr<DotVector>,
@@ -64,10 +68,10 @@ class QuantumDot {
   friend std::ostream &operator<<(std::ostream &, const QuantumDot &);
   friend std::istream &operator>>(std::istream &, QuantumDot &);
 
+
+ private:
   Eigen::Vector3d pos;
   Eigen::Vector3d dipr;
- 
- private:
   double freq;
   std::pair<double, double> damping;
   Eigen::Vector3d dipi;

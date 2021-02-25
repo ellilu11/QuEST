@@ -12,14 +12,12 @@ Pulse::Pulse(const double amplitude, const double delay,
       wavevector(wavevector.normalized()),
       polarization(polarization.normalized())
 {
-
 }
 
 Eigen::Vector3cd Pulse::operator()(const Eigen::Vector3d &r,
                                    const double t, const bool rotating, const bool rwa) const
 {
-  const double wavemag = freq/c0;
-  const double arg = wavemag*wavevector.dot(r) - freq * (t - delay);
+  const double arg = freq/c0*wavevector.dot(r) - freq * (t - delay);
   const double width_factor = 1.0;
 
   Eigen::Vector3cd amp_vector = 
