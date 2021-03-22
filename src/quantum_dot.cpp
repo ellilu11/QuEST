@@ -19,25 +19,15 @@ matrix_elements QuantumDot::liouville_rhs(const matrix_elements &rho,
                                           const bool rotating) const
 {
   const cmplx m0 = -iu * (rabi * std::conj(rho[1]) - std::conj(rabi) * rho[1]) -
-                   0.0 * (rho[0] - 1.0) / damping.first;
+                   (rho[0] - 1.0) / damping.first;
 
-  cmplx m1_temp = -iu * (rabi * (1.0 - 2.0 * rho[0])) - 0.0 * rho[1] / damping.second;
+  cmplx m1_temp = -iu * (rabi * (1.0 - 2.0 * rho[0])) - rho[1] / damping.second;
 
   m1_temp -=
       rotating ? iu * rho[1] * (laser_freq - freq) : iu * rho[1] * (-freq);
 
   const cmplx m1 = m1_temp;
  
-/*  const cmplx m0 = -iu * (rabi * conj(rho[1]) - conj(rabi) * rho[1] ) -
-                   (rho[0] - 1.0) / (damping.first);
-
-  cmplx m1_temp = 
-    -iu * (rabi * (1.0 - 2.0 * rho[0])) - rho[1] / (damping.second);
-    
-  m1_temp += rotating ? -iu * rho[1] * (laser_freq - freq) : iu * rho[1] * freq;
-
-  const cmplx m1 = m1_temp;
-*/
   return matrix_elements(m0, m1);
 }
 
@@ -85,7 +75,7 @@ DotVector import_dots(const std::string &fname)
 }
 
 
-void set_dipolevec(std::shared_ptr<DotVector> dots, const Eigen::Vector3d dip)
+void set_dipole_of_dots(std::shared_ptr<DotVector> dots, const Eigen::Vector3d dip)
 {
   for (int dot = 0; dot < (*dots).size(); ++dot)
     (*dots)[dot].set_dipole(dip);

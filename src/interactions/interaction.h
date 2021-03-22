@@ -12,21 +12,26 @@ class InteractionBase {
 
   InteractionBase(
     const std::shared_ptr<const DotVector> dots, 
+    const std::shared_ptr<const DotVector> obss, 
     const double dt)
-      : dots(std::move(dots)), 
-        results(dots ? dots->size() : 0),
+      : dots(std::move(dots)),
+        obss(std::move(obss)),
+        results(obss ? obss->size() : (dots ? dots->size() : 0) ),
         past_terms_of_convolution(dots ? dots->size() : 0), 
         dt(dt){};
   const cmplx &operator[](const int i) const { return results[i]; }
   virtual const ResultArray &evaluate(const int) = 0;
-  virtual const ResultArray &evaluate_present_field(const int) = 0;
+  virtual const ResultArray &evaluate_present(const int) = 0;
+  virtual const ResultArray &evaluate_field(const int, const bool=0) = 0;
   virtual ~InteractionBase(){};
 
-//  virtual boost::multi_array<cmplx, 2> &coefficients() = 0;
-//  boost::multi_array<cmplx, 2> coeffs;
- 
  protected:
-  std::shared_ptr<const DotVector> dots;
+  static int coord2idxsq(int row, int col, int rowlen)
+  {
+    return row*rowlen + col;
+  } 
+
+  std::shared_ptr<const DotVector> dots, obss;
   ResultArray results;
   ResultArray past_terms_of_convolution;
   double dt;

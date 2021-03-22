@@ -11,14 +11,15 @@
 
 struct Configuration {
   // Parameters
-  int num_particles, num_timesteps, interpolation_order;
+  int num_particles, num_timesteps, interpolation_order, num_corrector_steps;
   double dt, total_time;
   enum class SIMULATION_TYPE { DIRECT, FAST } sim_type;
+  enum class INTERACTING { FALSE, TRUE } interacting;
+  enum class SELF_INTERACTING { FALSE, TRUE } self_interacting;
+  enum class REFERENCE_FRAME { FIX, ROT } ref_frame;
+  enum class RWA { FALSE, TRUE } rwa;
   bool report_time_data;
-  bool interacting;
-  // enum class INTERACTING { TRUE, FALSE } interacting;
-  bool rotating;
-
+ 
   // File paths
   std::string qd_path, pulse_path;
 

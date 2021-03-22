@@ -43,5 +43,5 @@ set_git_macros(quest)
 
 include(examples/CMakeLists.txt)
 include(src/CMakeLists.txt)
-include(test/CMakeLists.txt)
+# include(test/CMakeLists.txt)
 include(tools/CMakeLists.txt)

@@ -64,23 +64,24 @@ bool lt_min(const Qdot &qd, const std::vector<Qdot> &dots, const double mindist)
 int main(int argc, char *argv[])
 {
   const double c0 = 299.792458;
-  const double omega = 2278.9013;
-  const double lambda = 2 * M_PI * c0 / omega;
-  const double T1 = 10000.0, T2 = 20000.0;
-  const double dip = 5.2917721e-4 * 1.0;
+  const double omega = 4823.67; // 2278.9013;
+  const double lambda = 0.26; // 2 * M_PI * c0 / omega;
+  const double T1 = 10.0, T2 = 20.0;
+  const double dip = 0.002536; // 5.2917721e-4;
   const double dipx = dip, dipy = 0.0, dipz = 0.0;
   const int num_dots = atoi(argv[1]);
 
   const unsigned seed =
       std::chrono::system_clock::now().time_since_epoch().count();
     
-  const double ds = 0.10 * lambda;// 0.10 * lambda;
+  const double ds = 1.0 * lambda;// 0.10 * lambda;
   const double xlen = ds; // ds;
   const double ylen = xlen;
   const double zlen = xlen; // std::max( xlen, 0.015 * num_dots * ds );  
   const double MINDIST = 0.0030;
 
   std::cout << "xlen: " << xlen/lambda << " ylen: " << ylen/lambda << " zlen: " << zlen/lambda << std::endl;
+  // std::cout << "rlen: " << R/ds << " zlen: " << zlen/ds << std::endl;
  
   std::default_random_engine generator(seed);
   std::uniform_real_distribution<double> 

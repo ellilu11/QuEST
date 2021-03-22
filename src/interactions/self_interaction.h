@@ -8,6 +8,7 @@ class SelfInteraction final : public HistoryInteraction {
  public:
   SelfInteraction(
       std::shared_ptr<const DotVector>,
+      std::shared_ptr<const DotVector>,
       std::shared_ptr<const Integrator::History<Eigen::Vector2cd>>,
       Propagation::Kernel<cmplx> &,
       const int,
@@ -16,16 +17,18 @@ class SelfInteraction final : public HistoryInteraction {
       const double = 0);
 
   const ResultArray &evaluate(const int) final;
-  const ResultArray &evaluate_present_field(const int) final;
-//  boost::multi_array<cmplx, 2> &coefficients() final { return coeffs; }
+  const ResultArray &evaluate_present(const int) final;
+  const ResultArray &evaluate_field(const int, const bool=0) final;
 
  private:
-  int num_src;
+  int num_src, num_obs, num_srcobs;
 
   boost::multi_array<cmplx, 2> coeffs;
+  boost::multi_array<Eigen::Vector3cd, 2> fldcoeffs;
   double omega;
 
   void build_coeff_table(Propagation::Kernel<cmplx> &);
+  void build_fldcoeff_table(Propagation::Kernel<cmplx> &);
 
 };
 

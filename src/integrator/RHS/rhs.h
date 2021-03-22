@@ -17,8 +17,9 @@ class Integrator::RHS {
 
   RHS(const double dt, const std::shared_ptr<History<soltype>> history)
       : dt(dt), history(std::move(history)){};
-  virtual const ResultArray evaluate(const int) const = 0;
-  virtual const ResultArray evaluate_present(const int) const = 0;
+  virtual void evaluate(const int) const = 0;
+  virtual void evaluate_present(const int) const = 0;
+  virtual void evaluate_field(const int) = 0;
 
 protected:
   double dt;

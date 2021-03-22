@@ -164,7 +164,6 @@ void Integrator::History<soltype>::write_step_to_file(const int timestep)
 
   outfile << "\n";
   if(timestep > num_timesteps*0.90)
-  // if(timestep == num_timesteps - 1)
     outfile.flush();  // QUESTION: why is this needed?
 }
 

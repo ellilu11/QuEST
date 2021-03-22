@@ -52,8 +52,13 @@ class QuantumDot {
   const Eigen::Vector3d &position() const { return pos; }
   const Eigen::Vector3d &dipole() const { return dipr; }
   const Eigen::Vector3d &dipole_imag() const { return dipi; }
+  const double &frequency() const { return freq; }
   void set_dipole(const Eigen::Vector3d dip) { dipr = dip; }
   void set_freq(const double freq_) { freq = freq_; }
+  void set_damping(const double damping1, const double damping2) { 
+    damping.first = damping1;
+    damping.second = damping2;
+  }
 
   friend Eigen::Vector3d separation(const QuantumDot &, const QuantumDot &);
   friend int max_transit_steps_between_dots(const std::shared_ptr<DotVector>,
@@ -63,17 +68,17 @@ class QuantumDot {
   friend std::ostream &operator<<(std::ostream &, const QuantumDot &);
   friend std::istream &operator>>(std::istream &, QuantumDot &);
 
+
+ private:
   Eigen::Vector3d pos;
   Eigen::Vector3d dipr;
- 
- private:
   double freq;
   std::pair<double, double> damping;
   Eigen::Vector3d dipi;
 };
 
 DotVector import_dots(const std::string &);
-void set_dipolevec(std::shared_ptr<DotVector>, const Eigen::Vector3d dip);
+void set_dipole_of_dots(std::shared_ptr<DotVector>, const Eigen::Vector3d dip);
 std::vector<BlochFunctionType> rhs_functions(const DotVector &, const double, const double, const bool);
 
 #endif
