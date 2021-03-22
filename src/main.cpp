@@ -101,7 +101,7 @@ int main(int argc, char *argv[])
 
     const double propagation_constant = config.mu0 / (4 * M_PI * config.hbar);
 
-    auto pulse1 = make_shared<Pulse>(read_pulse_config("pulse_hb.cfg"));
+    auto pulse1 = make_shared<Pulse>(read_pulse_config("pulse_miyajima.cfg"));
  
     cout << "Setting up interactions..." << endl;
  

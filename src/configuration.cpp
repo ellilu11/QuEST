@@ -11,7 +11,7 @@ po::variables_map parse_configs(int argc, char *argv[]) {
   cmd_line_description.add_options()
     ("help", "print this help message")
     ("version,v", "print version string")
-    ("config,c",  po::value<string>(&config_path)->default_value("input_hb.cfg"), "path to configuration file")
+    ("config,c",  po::value<string>(&config_path)->default_value("input.cfg"), "path to configuration file")
     ("fast,f",    po::bool_switch()->default_value(false), "employ fast methods to calculate potentials")
     ("int,i",     po::bool_switch()->default_value(false), "compute inter-dot interactions")
     ("self,s",    po::bool_switch()->default_value(false), "compute self interactions")

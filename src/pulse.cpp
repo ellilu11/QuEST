@@ -21,7 +21,7 @@ Eigen::Vector3cd Pulse::operator()(const Eigen::Vector3d &r,
   const double width_factor = 1.0;
 
   Eigen::Vector3cd amp_vector = 
-      amplitude/width_factor * polarization; // * gaussian(arg / ( width*width_factor ) );
+      amplitude/width_factor * polarization * gaussian(arg / ( width*width_factor ) );
   return amp_vector * (rotating
       ? (rwa ? 0.5 : cos(arg) * exp(iu*freq*t))
       : cos(arg) );
