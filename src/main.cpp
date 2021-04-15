@@ -97,14 +97,14 @@ int main(int argc, char *argv[])
     auto history = make_shared<Integrator::History<Eigen::Vector2cd>>(
         config.num_particles, window, config.num_timesteps, min_time_to_keep, 2, task_idx);
     history->fill(Eigen::Vector2cd::Zero());
-    history->initialize_past( Eigen::Vector2cd(0.5,0) );
+    history->initialize_past( Eigen::Vector2cd(0.5,0.5) );
     // history->initialize_past( qd_path );
 
     // == INTERACTIONS ===============================================
 
     const double propagation_constant = config.mu0 / (4 * M_PI * config.hbar);
 
-    auto pulse1 = make_shared<Pulse>(read_pulse_config("pulse_miyajima.bkp"));
+    auto pulse1 = make_shared<Pulse>(read_pulse_config("pulse_miyajima.cfg"));
  
     cout << "Setting up interactions..." << endl;
  
