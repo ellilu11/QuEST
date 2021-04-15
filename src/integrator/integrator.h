@@ -42,7 +42,7 @@ class Integrator::PredictorCorrector {
   void log_percentage_complete(const int) const;
 };
 
-constexpr double EPS = 1e-12;
+constexpr double EPS = 1e-10;
 
 template <class soltype>
 Integrator::PredictorCorrector<soltype>::PredictorCorrector(
@@ -84,7 +84,7 @@ void Integrator::PredictorCorrector<soltype>::solve(
     if (step%(time_idx_ubound/num_logsteps) == 0)
       std::cout << step / (time_idx_ubound/num_logsteps) << std::endl;
 
-  // if(log_level >= log_level_t::LOG_INFO) log_percentage_complete(step);
+    //if(log_level >= log_level_t::LOG_INFO) log_percentage_complete(step);
   }
 }
 
@@ -114,7 +114,8 @@ void Integrator::PredictorCorrector<soltype>::solve_step(const int step)
       
       m++;
 
-    } while( (history_diff.norm() / num_solutions) > EPS );
+    } while( (history_diff.norm() / history_prev.norm() ) > EPS );
+    // } while( (history_diff.norm() / num_solutions ) > EPS );
     // std::cout << m << " " ;
 
   } else {

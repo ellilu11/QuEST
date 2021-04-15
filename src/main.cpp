@@ -29,11 +29,14 @@ int main(int argc, char *argv[])
     const bool rwa = 
       config.rwa == Configuration::RWA::TRUE ? true : false;
 
-    const double beta = 1.79e-04;
+    const double dip = 0.002536;
+    const double beta = // 1.00e-3;
+                        config.mu0 * pow(dip,2) * pow(config.omega,3) 
+                          / ( 6.0 * M_PI * config.hbar * config.c0 ); // 1.79e-04;
 
     cout << "Initializing..." << endl;
     cout << "  Omega: " << config.omega << std::endl;
-    // cout << "  Beta: " << beta << std::endl;
+    cout << "  Beta: " << beta << std::endl;
  
     cout << "  Solve type: "
               << ((config.sim_type == Configuration::SIMULATION_TYPE::FAST) 
@@ -94,14 +97,14 @@ int main(int argc, char *argv[])
     auto history = make_shared<Integrator::History<Eigen::Vector2cd>>(
         config.num_particles, window, config.num_timesteps, min_time_to_keep, 2, task_idx);
     history->fill(Eigen::Vector2cd::Zero());
-    history->initialize_past( Eigen::Vector2cd(1,0) );
+    history->initialize_past( Eigen::Vector2cd(0.5,0) );
     // history->initialize_past( qd_path );
 
     // == INTERACTIONS ===============================================
 
     const double propagation_constant = config.mu0 / (4 * M_PI * config.hbar);
 
-    auto pulse1 = make_shared<Pulse>(read_pulse_config("pulse_miyajima.cfg"));
+    auto pulse1 = make_shared<Pulse>(read_pulse_config("pulse_miyajima.bkp"));
  
     cout << "Setting up interactions..." << endl;
  

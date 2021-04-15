@@ -395,14 +395,16 @@ class Propagation::SelfRotatingEFIE : public Propagation::SelfEFIE {
     if ( dr.norm() == 0.0){
       for(int i = 0; i <= interp.order(); ++i) {
         this->coefs_[i] = 
+          beta_ / pow( 0.002536, 2 ) / pow(omega_,3) * Eigen::Matrix3d::Identity() * 
           // beta_ / pow( 5.2917721e-4, 2 ) * Eigen::Matrix3d::Identity() * 
-          k2_ * 2.0 * Eigen::Matrix3d::Identity() / ( 3.0 * c_ ) * 
+          // k2_ * 2.0 * Eigen::Matrix3d::Identity() / ( 3.0 * c_ ) * 
             ( 1.0 * iu * pow(omega_,3) * interp.evaluations[0][i] +
               3.0 * pow(omega_,2) * interp.evaluations[1][i] -
               3.0 * iu * omega_ * interp.evaluations[2][i] -
-              interp.evaluations[3][i] ) ;
+              1.0 * interp.evaluations[3][i] ) ;
       }
     }
+
   return this->coefs_;
   }
 
