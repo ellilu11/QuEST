@@ -151,14 +151,19 @@ void Integrator::History<soltype>::write_step_to_file(const int timestep)
 {
   for(int n = 0; n < num_particles; ++n){
     //outfile << prep_for_output(get_value(n, timestep, 0)) << " ";
+    double rho00 = (get_value(n, timestep, 0))[0].real(); 
     double rho01_real = (get_value(n, timestep, 0))[1].real();
     double rho01_imag = (get_value(n, timestep, 0))[1].imag();
     // double rho01_abs = sqrt( pow(rho01_real,2) + pow(rho01_imag,2) );
 
     outfile // << timestep << " "
-            << (get_value(n, timestep, 0))[0].real() << " "
+            << rho00 << " "
             << rho01_real << " "
-            << rho01_imag << " ";
+            << rho01_imag << " "
+            << (get_value(n, timestep, 1))[0].real() << " "
+            << (get_value(n, timestep, 1))[1].real() << " "
+            << (get_value(n, timestep, 1))[1].imag() << " ";
+
             // << rho01_abs << " ";
   }
 
