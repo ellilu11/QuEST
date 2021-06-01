@@ -42,9 +42,12 @@ void DirectInteraction::build_coeff_table(
 
     std::pair<int, double> delay(split_double(dist / (c0 * dt)));
 
-    floor_delays[pair_idx] = delay.first;
+    std::cout << delay.first << " " << delay.second << std::endl;
 
-    lagrange.evaluate_derivative_table_at_x(delay.second, dt);
+    floor_delays[pair_idx] = 0.0; // delay.first;
+
+    // lagrange.evaluate_derivative_table_at_x(delay.second, dt);
+    lagrange.evaluate_derivative_table_at_x(0.0, dt);
 
     std::vector<Eigen::Matrix3cd> interp_dyads(
         kernel.coefficients(dr, lagrange));
@@ -78,6 +81,7 @@ void DirectInteraction::build_fldcoeff_table(
       floor_delays_srcobs[pair_idx] = delay.first;
 
       lagrange.evaluate_derivative_table_at_x(delay.second, dt);
+      // lagrange.evaluate_derivative_table_at_x(0.0, dt);
 
       std::vector<Eigen::Matrix3cd> interp_dyads(
           kernel.coefficients(dr, lagrange));
@@ -116,27 +120,27 @@ const InteractionBase::ResultArray &DirectInteraction::evaluate(
       rho_obs = (history->get_value(obs, s, 0))[RHO_01];
       rho_src = (history->get_value(src, s, 0))[RHO_01];
 
-      if ( !omega ){
+      /*if ( !omega ){
         past_terms_of_convolution[src] += 2.0 * std::real( rho_obs * coeffs[pair_idx][i] );
         past_terms_of_convolution[obs] += 2.0 * std::real( rho_src * coeffs[pair_idx][i] );
-			} else {
+			} else {*/
         past_terms_of_convolution[src] += rho_obs * coeffs[pair_idx][i] ;
 	      past_terms_of_convolution[obs] += rho_src * coeffs[pair_idx][i] ;
 	
-    	}
+    	// }
     }
    
     const int s = std::max(time_idx - floor_delays[pair_idx], -history->window);
     rho_obs = (history->get_value(obs, s, 0))[RHO_01];
     rho_src = (history->get_value(src, s, 0))[RHO_01];
 
-    if ( !omega ){
+    /*if ( !omega ){
       results[src] += 2.0 * std::real( rho_obs * coeffs[pair_idx][0] );
       results[obs] += 2.0 * std::real( rho_src * coeffs[pair_idx][0] );
-    } else {
+    } else {*/
       results[src] += rho_obs * coeffs[pair_idx][0] ;
 	    results[obs] += rho_src * coeffs[pair_idx][0] ;
-    } 
+    // } 
   }
 
   results += past_terms_of_convolution;
@@ -162,14 +166,13 @@ const InteractionBase::ResultArray &DirectInteraction::evaluate_present(
     rho_obs = (history->get_value(obs, s, 0))[RHO_01];
     rho_src = (history->get_value(src, s, 0))[RHO_01];
 
-    if ( !omega ){
+    /*if ( !omega ){
       results[src] += 2.0 * std::real( rho_obs * coeffs[pair_idx][0] );
       results[obs] += 2.0 * std::real( rho_src * coeffs[pair_idx][0] );
-    } else {
+    } else {*/
 	    results[src] += rho_obs * coeffs[pair_idx][0] ;
 	    results[obs] += rho_src * coeffs[pair_idx][0] ;
-			
-    }    
+    // }    
   }
  
   results += past_terms_of_convolution;

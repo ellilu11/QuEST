@@ -29,7 +29,7 @@ int main(int argc, char *argv[])
     const bool rwa = 
       config.rwa == Configuration::RWA::TRUE ? true : false;
 
-    const double dip = 0.002536;
+    const double dip = 5.2917721e-4; // 0.002536;
     const double beta = // 1.00e-3;
                         config.mu0 * pow(dip,2) * pow(config.omega,3) 
                           / ( 6.0 * M_PI * config.hbar * config.c0 ); // 1.79e-04;
@@ -104,7 +104,7 @@ int main(int argc, char *argv[])
 
     const double propagation_constant = config.mu0 / (4 * M_PI * config.hbar);
 
-    auto pulse1 = make_shared<Pulse>(read_pulse_config("pulse.cfg"));
+    auto pulse1 = make_shared<Pulse>(read_pulse_config("pulse_miyajima.cfg"));
  
     cout << "Setting up interactions..." << endl;
  

@@ -159,11 +159,10 @@ void Integrator::History<soltype>::write_step_to_file(const int timestep)
     outfile // << timestep << " "
             << rho00 << " "
             << rho01_real << " "
-            << rho01_imag << " "
-            << (get_value(n, timestep, 1))[0].real() << " "
-            << (get_value(n, timestep, 1))[1].real() << " "
-            << (get_value(n, timestep, 1))[1].imag() << " ";
-
+            << rho01_imag << " ";
+            // << (get_value(n, timestep, 1))[0].real() << " "
+            // << (get_value(n, timestep, 1))[1].real() << " "
+            // << (get_value(n, timestep, 1))[1].imag() << " ";
             // << rho01_abs << " ";
   }
 

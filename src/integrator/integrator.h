@@ -42,7 +42,8 @@ class Integrator::PredictorCorrector {
   void log_percentage_complete(const int) const;
 };
 
-constexpr double EPS = 1e-10;
+constexpr double EPS0 = 1e-12;
+constexpr double EPS1 = 1e-12;
 
 template <class soltype>
 Integrator::PredictorCorrector<soltype>::PredictorCorrector(
@@ -77,8 +78,9 @@ void Integrator::PredictorCorrector<soltype>::solve(
     solve_step(step);
     
     if (!(step%outstep)) {
-       history->write_step_to_file(step);
-       rhs->evaluate_field(step);
+      history->write_step_to_file(step);
+      // rhs->evaluate_final(step);
+      // rhs->evaluate_field(step);
 		}
      
     if (step%(time_idx_ubound/num_logsteps) == 0)
@@ -99,30 +101,44 @@ void Integrator::PredictorCorrector<soltype>::solve_step(const int step)
   if ( num_corrector_steps == 0 ) { // if zero, terminate corrector based on L2 error of rho_01
 
     int m = 0;
-    Eigen::VectorXcd history_prev(num_solutions); 
-    Eigen::VectorXcd history_diff(num_solutions);
+    Eigen::VectorXcd rho00_prev(num_solutions); 
+    Eigen::VectorXcd rho00_diff(num_solutions);
+
+    Eigen::VectorXcd rho01_prev(num_solutions); 
+    Eigen::VectorXcd rho01_diff(num_solutions);
 
     do{
-      for( int sol_idx = 0; sol_idx < num_solutions; ++sol_idx ) // how to extract a column from history array?
-        history_prev[sol_idx] = (history->get_value(sol_idx, step, 0))[1];
+      for( int sol_idx = 0; sol_idx < num_solutions; ++sol_idx ){ // how to extract a column from history array?
+        rho00_prev[sol_idx] = (history->get_value(sol_idx, step, 0))[0];
+        rho01_prev[sol_idx] = (history->get_value(sol_idx, step, 0))[1];
+      }
 
       corrector(step);
       rhs->evaluate_present(step);
 
-      for( int sol_idx = 0; sol_idx < num_solutions; ++sol_idx )
-        history_diff[sol_idx] = (history->get_value(sol_idx, step, 0))[1] - history_prev[sol_idx];
-      
+      for( int sol_idx = 0; sol_idx < num_solutions; ++sol_idx ){
+        rho00_diff[sol_idx] = (history->get_value(sol_idx, step, 0))[0] - rho00_prev[sol_idx];
+        rho01_diff[sol_idx] = (history->get_value(sol_idx, step, 0))[1] - rho01_prev[sol_idx];
+      }      
+
       m++;
 
-    } while( (history_diff.norm() / history_prev.norm() ) > EPS );
+    } while( (rho00_diff.norm() / rho00_prev.norm() ) > EPS0 ||
+             ((rho01_diff.real()).norm() / (rho01_prev.real()).norm() ) > EPS1 || 
+             ((rho01_diff.imag()).norm() / (rho01_prev.imag()).norm() ) > EPS1 );   
     // } while( (history_diff.norm() / num_solutions ) > EPS );
-    // std::cout << m << " " ;
-
+    /*if (step%10000 == 0) 
+      std::cout << m << " "
+                << (rho00_diff.norm() / rho00_prev.norm() ) << " "
+                << ((rho01_diff.real()).norm() / (rho01_prev.real()).norm() ) << " "
+                << ((rho01_diff.imag()).norm() / (rho01_prev.imag()).norm() ) << std::endl;
+*/
   } else {
     for(int m = 0; m < num_corrector_steps; ++m) {
       corrector(step);
       rhs->evaluate_present(step);
-   }
+
+    }
   }
 }
 

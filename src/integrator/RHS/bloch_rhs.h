@@ -15,7 +15,7 @@ namespace Integrator {
 
 class Integrator::BlochRHS : public Integrator::RHS<Eigen::Vector2cd> {
  public:
-  BlochRHS(const double, const double, const double, const double, const double,
+ BlochRHS(const double, const double, const double, const double, const double,
            const int,
            const std::shared_ptr<History<Eigen::Vector2cd>>,
            std::vector<std::shared_ptr<InteractionBase>>,
@@ -27,6 +27,7 @@ class Integrator::BlochRHS : public Integrator::RHS<Eigen::Vector2cd> {
            const bool);
   ~BlochRHS();
   void evaluate(const int) const override;
+  void evaluate_final(const int) const override;
   void evaluate_present(const int) const override;
   void evaluate_field(const int) override;
   std::vector<BlochFunctionType> rhs_functions;
