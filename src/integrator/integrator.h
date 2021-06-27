@@ -67,8 +67,8 @@ template <class soltype>
 void Integrator::PredictorCorrector<soltype>::solve(
     const log_level_t log_level)
 {
-  int num_outsteps = // time_idx_ubound; 
-                    std::min( 10000, time_idx_ubound );
+  int num_outsteps = time_idx_ubound; 
+                    //std::min( 10000, time_idx_ubound );
   int outstep = time_idx_ubound / num_outsteps;
 
   int num_logsteps = 100;
@@ -104,13 +104,13 @@ void Integrator::PredictorCorrector<soltype>::solve_step(const int step)
 
     do{
       for( int sol_idx = 0; sol_idx < num_solutions; ++sol_idx ) // how to extract a column from history array?
-        history_prev[sol_idx] = (history->get_value(sol_idx, step, 0))[1];
+        history_prev[sol_idx] = (history->get_value(sol_idx, step, 0))[0];
 
       corrector(step);
       rhs->evaluate_present(step);
 
       for( int sol_idx = 0; sol_idx < num_solutions; ++sol_idx )
-        history_diff[sol_idx] = (history->get_value(sol_idx, step, 0))[1] - history_prev[sol_idx];
+        history_diff[sol_idx] = (history->get_value(sol_idx, step, 0))[0] - history_prev[sol_idx];
       
       m++;
 
