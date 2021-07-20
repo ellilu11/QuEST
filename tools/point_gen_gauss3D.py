@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 
 # Parameters
 dir = '/mnt/home/luelliot/QuEST/build/dots/'
-filestr = dir+'dots'+sys.argv[1]+'.cfg'
+filestr = dir+'dots'+sys.argv[2]+'.cfg'
 dotfile = open(filestr, 'w')
 
 def main() :
@@ -18,11 +18,13 @@ def main() :
   dipz = 0
   
   c0 = 299.792458
-  waveleng = 2.0*np.pi*c0/omega
+  n = 1.54 
+  c = c0/n
+  waveleng = 2.0*np.pi*c/omega
   mu = [0,0,0]
   cov = [[0.5*waveleng, 0, 0], [0, 0.5*waveleng, 0], [0, 0, 0.5*waveleng]]
 
-  ndots = 200
+  ndots = int(sys.argv[1])
   X, Y, Z = np.random.multivariate_normal(mu, cov, ndots).T
   R = np.sqrt(X**2+Y**2+Z**2)
   idxsort = np.argsort(R)
