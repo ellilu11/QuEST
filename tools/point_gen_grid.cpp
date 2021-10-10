@@ -75,8 +75,9 @@ int main(int argc, char *argv[])
 
   const unsigned seed =
       std::chrono::system_clock::now().time_since_epoch().count();
-    
-  const double dist0 = 2.0e-1; // 2.0 * lambda / ns; // 5.0e-3; // mean distance between dots;
+  
+  const double L = 5.0;  
+  const double dist0 = L / ns; // 2.0 * lambda / ns; // 2.0e-1; // mean distance between dots;
 	const double r0 = 0.0*dist0; 
 
   std::cout << "dist0: " << dist0 << " r0: " << r0 << std::endl;

@@ -128,8 +128,14 @@ void Integrator::BlochRHS::evaluate_field(const int step)
     Eigen::Vector3cd efld(efldx[obs], efldy[obs], efldz[obs]);
     Eigen::Vector3cd bfld(bfldx[obs], bfldy[obs], bfldz[obs]);
 
-    outfile << efld.real().transpose() << " "
-            << bfld.real().transpose() << " ";
+    double efld_abs = 
+      // std::sqrt( 
+                 std::pow( efldx[obs].real(), 2) +
+                 std::pow( efldy[obs].real(), 2) +
+                 std::pow( efldz[obs].real(), 2); // );
+                  
+    outfile << efld_abs << " ";
+            // << bfld.real().transpose() << " ";
   }
     
   outfile << std::endl;

@@ -22,7 +22,7 @@ class Pulse {
   friend std::istream &operator>>(std::istream &, Pulse &);
 
  private:
-  double amplitude, delay, width, freq, c0;
+  double amplitude, delay, width, freq, c0, dipfactor;
   Eigen::Vector3d wavevector, polarization;
 };
 

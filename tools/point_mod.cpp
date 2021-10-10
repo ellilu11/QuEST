@@ -24,8 +24,8 @@ int main(int argc, char *argv[])
 
   const double hbar = 0.65821193;
   const double omega0 = 4823.67;
-  const double dip = 0.002536 * 1.5;
-	const double delta = 0.0 / hbar; // 0.759634; // 1.51927;
+  const double dip = 0.002536 * 1.00;
+	const double delta = 0.00 / hbar; // 0.759634; // 1.51927;
   const double T1 = 20;
   const double T2 = 2*T1;
   std::cout << "Sigma omega: " << delta << std::endl;
@@ -37,7 +37,7 @@ int main(int argc, char *argv[])
   std::normal_distribution<double> omega(omega0, delta);
 
   for(int i = 0; i < dots->size(); ++i){
-    // (*dots)[i].set_freq( omega(generator) );
+    (*dots)[i].set_freq( omega(generator) );
     (*dots)[i].set_dipole( Eigen::Vector3d(dip,0,0) );
     (*dots)[i].set_damping( T1, T2 );
   }

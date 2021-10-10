@@ -239,8 +239,8 @@ class Propagation::RotatingEFIE : public Propagation::EFIE<cmplx> {
 	    // if ( dr.norm() > dist0_ ) {
         this->coefs_[i] = 
             -k2_ * std::exp(-iu * omega_ * dr.norm() / c_) *
-              (dyads[0].cast<cmplx>() * interp.evaluations[0][i] +
-               dyads[1].cast<cmplx>() * (interp.evaluations[1][i] +
+              (0.0 * dyads[0].cast<cmplx>() * interp.evaluations[0][i] +
+               0.0 * dyads[1].cast<cmplx>() * (interp.evaluations[1][i] +
                                        iu * omega_ * interp.evaluations[0][i]) +
                dyads[2].cast<cmplx>() *
                  (interp.evaluations[2][i] +

@@ -13,7 +13,7 @@ def main() :
   omega = 4823.67
   T1 = 20
   T2 = 2*T1
-  dipx = 0.002536
+  dipx = 0.002536 * 1.0
   dipy = 0
   dipz = 0
   

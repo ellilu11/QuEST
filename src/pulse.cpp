@@ -20,18 +20,21 @@ Eigen::Vector3cd Pulse::operator()(const Eigen::Vector3d &r,
   const double arg = freq/c0*wavevector.dot(r) - freq * (t - delay);
   const double width_factor = 1.0;
 
+  // std::cout << dipfactor << std::endl;
+
   Eigen::Vector3cd amp_vector = 
-      amplitude/width_factor * polarization * gaussian(arg / ( width*width_factor ) );
+      amplitude/width_factor/dipfactor * polarization * gaussian(arg / ( width*width_factor ) );
   return amp_vector * (rotating
       ? (rwa ? 0.5 : cos(arg) * exp(iu*freq*t))
       : cos(arg) );
+
 }
 
 
 std::ostream &operator<<(std::ostream &os, const Pulse &p)
 {
   os << p.amplitude << " " << p.delay << " " << p.width << " " << p.freq << " " << p.c0 << " "
-     << p.wavevector.transpose() << " " << p.polarization.transpose();
+     << p.wavevector.transpose() << " " << p.polarization.transpose() << " " << p.dipfactor;
   return os;
 }
 
@@ -39,7 +42,7 @@ std::istream &operator>>(std::istream &is, Pulse &p)
 {
   is >> p.amplitude >> p.delay >> p.width >> p.freq >> p.c0 >>
       p.wavevector[0] >> p.wavevector[1] >> p.wavevector[2] >> 
-      p.polarization[0] >> p.polarization[1] >> p.polarization[2];
+      p.polarization[0] >> p.polarization[1] >> p.polarization[2] >> p.dipfactor;
   return is;
 }
 

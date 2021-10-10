@@ -78,12 +78,13 @@ void Integrator::PredictorCorrector<soltype>::solve(
     
     if (!(step%outstep)) {
        history->write_step_to_file(step);
-       rhs->evaluate_field(step);
-		}
+	     // rhs->evaluate_field(step);
+    }
      
     if (step%(time_idx_ubound/num_logsteps) == 0)
       std::cout << step / (time_idx_ubound/num_logsteps) << std::endl;
 
+    //if (step > (time_idx_ubound - 10) )
     //if(log_level >= log_level_t::LOG_INFO) log_percentage_complete(step);
   }
 }

@@ -63,18 +63,18 @@ bool lt_min(const Qdot &qd, const std::vector<Qdot> &dots, const double mindist)
 
 int main(int argc, char *argv[])
 {
-  const double c0 = 299.792458;
-  const double omega = 2278.9013;
+  const double c0 = 194.6704; // 299.792458;
+  const double omega = 4823.67; // 2278.9013;
   const double lambda = 2 * M_PI * c0 / omega;
-  const double T1 = 10000.0, T2 = 20000.0;
-  const double dip = 5.2917721e-4 * 1.0;
+  const double T1 = 20.0, T2 = 40.0;
+  const double dip = 0.002536; // 5.2917721e-4 * 1.0;
   const double dipx = dip, dipy = 0.0, dipz = 0.0;
   const int num_dots = atoi(argv[1]);
 
   const unsigned seed =
       std::chrono::system_clock::now().time_since_epoch().count();
     
-  const double dist0 = 1.0e-4; // mean long. distance between dots;
+  const double dist0 = 5.0e-3; // mean long. distance between dots;
 	const double sigma = 0.0; // 0.1*dist0; // stdev of long. distance between dots
   const double R = 0.0; // 1.0e-2; // transverse radius
 
@@ -99,7 +99,8 @@ int main(int argc, char *argv[])
     double xpos = r * std::cos(phi);
     double ypos = r * std::sin(phi); 
 
-  	qd = {{xpos, ypos, zpos, omega,
+  	// qd = {{xpos, ypos, zpos, omega,
+  	qd = {{xpos, zpos, ypos, omega,
                     T1, T2, dipx, dipy, dipz}};
     dots.push_back(qd);
 		zpos += dist(generator);
