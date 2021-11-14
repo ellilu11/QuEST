@@ -21,8 +21,10 @@ def main() :
   n = 1.54 
   c = c0/n
   waveleng = 2.0*np.pi*c/omega
+  sigma = 0.5*waveleng
+  sigsq = sigma*sigma
   mu = [0,0,0]
-  cov = [[0.5*waveleng, 0, 0], [0, 0.5*waveleng, 0], [0, 0, 0.5*waveleng]]
+  cov = [[sigsq, 0, 0], [0, sigsq, 0], [0, 0, sigsq]]
 
   ndots = int(sys.argv[1])
   X, Y, Z = np.random.multivariate_normal(mu, cov, ndots).T

@@ -40,6 +40,7 @@ void DirectInteraction::build_coeff_table(
 
     double dist = dr.norm();
 
+    // std::pair<int, double> delay(split_double(0.0));
     std::pair<int, double> delay(split_double(dist / (c0 * dt)));
 
     floor_delays[pair_idx] = delay.first;
