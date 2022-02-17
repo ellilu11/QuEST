@@ -20,11 +20,12 @@ using namespace std;
 
 int main(int argc, char *argv[])
 {
-    cout << setprecision(15) << scientific;
+    cout << setprecision(18) << scientific;
     auto vm = parse_configs(argc, argv);
 
     string idstr(argv[1]);
-    const bool rotating = // atoi(argv[2]);
+    string dip_idstr(argv[2]);
+    const bool rotating = 
       config.ref_frame == Configuration::REFERENCE_FRAME::ROT ? true : false;
     const bool rwa = 
       config.rwa == Configuration::RWA::TRUE ? true : false;
@@ -75,8 +76,8 @@ int main(int argc, char *argv[])
     auto rhs_funcs = rhs_functions(*qds, config.omega, beta, rotating);
   
     std::shared_ptr<DotVector> obs;
-    // obs = make_shared<DotVector>(import_dots("./dots/dots"+idstr+".cfg"));
-    obs = make_shared<DotVector>(import_dots("./dots/obss_line.cfg"));
+    obs = make_shared<DotVector>(import_dots("./dots/dots"+idstr+".cfg"));
+    // obs = make_shared<DotVector>(import_dots("./dots/obss_line.cfg"));
     cout << "  Num sources: " << config.num_particles << std::endl;
     cout << "  Num observers: " << obs->size() << std::endl;	
     
@@ -98,13 +99,26 @@ int main(int argc, char *argv[])
         config.num_particles, window, config.num_timesteps, min_time_to_keep, 2, task_idx);
     history->fill(Eigen::Vector2cd::Zero());
     history->initialize_past( Eigen::Vector2cd(1,0) );
-    // history->initialize_past( qd_path );
+                              // Eigen::Vector2cd(0.15,0) );
+    /*const double TH0 = 0.5*M_PI;
+    const double TH1 = 0.6*M_PI;
+    const double PH0 = 0.1*M_PI;
+    const double PH1 = 0;
+
+    double rho00_0 = ( 1 - cos(TH0) ) / 2;
+    double rho00_1 = ( 1 - cos(TH1) ) / 2;
+    std::complex<double> rho01_0(cos(PH0)*sin(TH0)/2, sin(PH0)*sin(TH0)/2);
+    std::complex<double> rho01_1(cos(PH1)*sin(TH1)/2, sin(PH1)*sin(TH1)/2);
+
+    history->initialize_past( Eigen::Vector2cd(rho00_0, rho01_0),
+                              Eigen::Vector2cd(rho00_1, rho01_1) );
+    */// history->initialize_past( qd_path );
 
     // == INTERACTIONS ===============================================
 
     const double propagation_constant = config.mu0 / (4 * M_PI * config.hbar);
 
-    auto pulse1 = make_shared<Pulse>(read_pulse_config("pulse_miyajima.cfg"));
+    auto pulse1 = make_shared<Pulse>(read_pulse_config("pulse.cfg"));
  
     cout << "Setting up interactions..." << endl;
  

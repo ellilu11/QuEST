@@ -64,8 +64,10 @@ bool lt_min(const Qdot &qd, const std::vector<Qdot> &dots, const double mindist)
 int main(int argc, char *argv[])
 {
   const double c0 = 299.792458;
+  const double n = 1.54;
+  const double c = c0 / n;
   const double omega = 4823.67; // 2278.9013;
-  const double lambda = 2 * M_PI * c0 / omega;
+  const double lambda = 2 * M_PI * c / omega;
   const double T1 = 20.0, T2 = 2*T1;
   const double dip = 0.002536; //5.2917721e-4 * 1.0;
   const double dipx = dip, dipy = 0.0, dipz = 0.0;
@@ -77,7 +79,7 @@ int main(int argc, char *argv[])
   const unsigned seed =
       std::chrono::system_clock::now().time_since_epoch().count();
     
-	const double dr = 0.1;
+	const double dr = 0.2 * lambda;
   const double dth = 2.0*M_PI/num_pt;
 
   std::cout << "dr: " << dr << " dth: " << dth << std::endl;

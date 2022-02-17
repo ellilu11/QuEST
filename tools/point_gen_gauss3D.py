@@ -11,7 +11,7 @@ dotfile = open(filestr, 'w')
 def main() :
 
   omega = 4823.67
-  T1 = 20
+  T1 = 8.31
   T2 = 2*T1
   dipx = 0.002536 * 1.0
   dipy = 0

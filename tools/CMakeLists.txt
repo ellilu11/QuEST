@@ -1,8 +1,17 @@
 add_executable(point_gen EXCLUDE_FROM_ALL "")
-target_sources(point_gen PUBLIC "${CMAKE_CURRENT_LIST_DIR}/point_mod.cpp")
-#target_sources(point_gen PUBLIC "${CMAKE_CURRENT_LIST_DIR}/point_gen_grid.cpp")
+target_sources(point_gen PUBLIC "${CMAKE_CURRENT_LIST_DIR}/point_gen.cpp")
 target_compile_features(point_gen PUBLIC ${CPP_FEATURES})
 target_include_directories(point_gen PUBLIC ${EIGEN3_INCLUDE_DIR})
+
+add_executable(point_mod EXCLUDE_FROM_ALL "")
+target_sources(point_mod PUBLIC "${CMAKE_CURRENT_LIST_DIR}/point_mod.cpp")
+target_compile_features(point_mod PUBLIC ${CPP_FEATURES})
+target_include_directories(point_mod PUBLIC ${EIGEN3_INCLUDE_DIR})
+
+add_executable(pulse_mod EXCLUDE_FROM_ALL "")
+target_sources(pulse_mod PUBLIC "${CMAKE_CURRENT_LIST_DIR}/pulse_mod.cpp")
+target_compile_features(pulse_mod PUBLIC ${CPP_FEATURES})
+target_include_directories(pulse_mod PUBLIC ${EIGEN3_INCLUDE_DIR})
 
 find_package(SILO)
 if(${SILO_FOUND})

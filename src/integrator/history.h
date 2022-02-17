@@ -32,6 +32,7 @@ class Integrator::History {
 
   void fill(const soltype &);
   void initialize_past(const soltype &);
+  // void initialize_past(const soltype &, const soltype &);
   soltype &set_value(const int, const int, const int);
   soltype get_value(const int, const int, const int) const;
 
@@ -73,7 +74,7 @@ Integrator::History<soltype>::History(const int num_particles,
       boost::extents[num_particles][time_idx_ubound][num_derivatives]);
 
   outfile.open("./out/out" + std::to_string(task_idx) + ".dat");
-  outfile << std::scientific << std::setprecision(15);
+  outfile << std::scientific << std::setprecision(18);
 
 }
 
@@ -96,6 +97,17 @@ void Integrator::History<soltype>::initialize_past(const soltype &val)
     for(int t = -window; t <= 0; ++t) { set_value(n, t, DERIV_0) = val; }
   }
 }
+
+/*template <class soltype>
+void Integrator::History<soltype>::initialize_past(const soltype &val, const soltype &val2)
+{
+  const int ndots = static_cast<int>(array_.shape()[PARTICLES]);
+  for(int n = 0; n < ndots - 1; ++n) {
+    for(int t = -window; t <= 0; ++t) { set_value(n, t, DERIV_0) = val; }
+  }
+  for(int t = -window; t <= 0; ++t) { set_value(ndots-1, t, DERIV_0) = val2; }
+
+}*/
 
 template <class soltype>
 int Integrator::History<soltype>::time_idx_in_array(const int time_idx) const

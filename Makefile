@@ -235,6 +235,32 @@ point_gen/fast:
 .PHONY : point_gen/fast
 
 #=============================================================================
+# Target rules for targets named point_mod
+
+# Build rule for target.
+point_mod: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 point_mod
+.PHONY : point_mod
+
+# fast build rule for target.
+point_mod/fast:
+	$(MAKE) -f CMakeFiles/point_mod.dir/build.make CMakeFiles/point_mod.dir/build
+.PHONY : point_mod/fast
+
+#=============================================================================
+# Target rules for targets named pulse_mod
+
+# Build rule for target.
+pulse_mod: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 pulse_mod
+.PHONY : pulse_mod
+
+# fast build rule for target.
+pulse_mod/fast:
+	$(MAKE) -f CMakeFiles/pulse_mod.dir/build.make CMakeFiles/pulse_mod.dir/build
+.PHONY : pulse_mod/fast
+
+#=============================================================================
 # Target rules for targets named aim_check
 
 # Build rule for target.

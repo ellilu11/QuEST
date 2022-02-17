@@ -50,7 +50,7 @@ Integrator::PredictorCorrector<soltype>::PredictorCorrector(
     const int num_corrector_steps,
     const int n_lambda,
     const int n_time,
-    const double radius,
+    const double radius, // 3.15, 6.00, 9-10?
     const std::shared_ptr<Integrator::History<soltype>> history,
     std::unique_ptr<Integrator::RHS<soltype>> rhs)
     : num_solutions(history->num_particles),
