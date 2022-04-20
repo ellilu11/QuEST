@@ -64,9 +64,11 @@ bool lt_min(const Qdot &qd, const std::vector<Qdot> &dots, const double mindist)
 int main(int argc, char *argv[])
 {
   const double c0 = 299.792458;
+  const double n = 1.54;
+  const double c = c0 / n;
   const double omega = 4823.67;
-  const double lambda = 2 * M_PI * c0 / omega;
-  const double T1 = 20.0, T2 = 40.0;
+  const double lambda = 2 * M_PI * c / omega;
+  const double T1 = 0.0, T2 = 0.0;
   const double dip = 0.002536; // 5.2917721e-4 * 1.0;
   const double dipx = dip, dipy = 0.0, dipz = 0.0;
   const int num_dots = atoi(argv[1]);
@@ -76,7 +78,7 @@ int main(int argc, char *argv[])
   const unsigned seed =
       std::chrono::system_clock::now().time_since_epoch().count();
   
-  const double L = 5.0;  
+  const double L = 10 * lambda;  
   const double dist0 = L / ns; // 2.0 * lambda / ns; // 2.0e-1; // mean distance between dots;
 	const double r0 = 0.0*dist0; 
 
@@ -117,7 +119,7 @@ int main(int argc, char *argv[])
 
   std::string taskstr(argv[2]);
 
-  std::ofstream fd("./dots/obss.cfg");
+  std::ofstream fd("./dots/obss2D.cfg");
   // std::ofstream fd("./dots/dots"+taskstr+".cfg");
   fd << std::setprecision(12);
 

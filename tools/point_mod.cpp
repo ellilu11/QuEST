@@ -18,6 +18,7 @@ using std::endl;
 int main(int argc, char *argv[])
 {
   std::string taskstr(argv[1]);
+  int didx = std::stoi(argv[2]);
 
   auto dots = make_shared<DotVector>(import_dots("./dots/dots"+taskstr+".cfg"));
   // auto dots = make_shared<DotVector>(import_dots("../build/dots/dots"+taskstr+".cfg"));
@@ -31,14 +32,19 @@ int main(int argc, char *argv[])
                         ( 3.0 * M_PI * c * hbar / mu0 );
   // 0.120341;
 
-  const double dip_factor = 2.50;
+  // const double dip_factor = 2.00;
+  const vector<double> dipfactors{ 0.5, 1.0, 1.5, 2.0, 2.5 };
+  const double dip_factor = 1.0; // dipfactors[didx];
   const double dip = dip0 * dip_factor;
-  // const vector<double> dipfactors{ 0.5, 0.7, 1.0, 1.5, 2.0 }; 
-
-  const double T1 = 1 / ( Gamma * pow(dip_factor,2) );
+  const double T1 = 1.0 / ( Gamma * pow(dip_factor,2) );
   const double T2 = 2*T1;
  
-  const double delta = 0.00 / hbar; // 0.759634; // 1.51927;
+  const vector<double> deltas{ 0.0, 0.01, 0.1, 0.2, 0.5, 1.0, 2.0, 5.0, 10.0 };
+  const double delta = deltas[didx] / hbar;
+
+  std::cout << "Delta: " << delta * hbar << std::endl;
+ 
+  // const double delta = 0.00 / hbar; // 0.759634; // 1.51927;
   std::cout << "Gamma: " << Gamma << std::endl;
   std::cout << "T1, T2: " << T1 << ", " << T2 << std::endl;
   std::cout << "Sigma omega: " << delta << std::endl;

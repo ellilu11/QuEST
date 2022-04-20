@@ -98,17 +98,6 @@ void Integrator::History<soltype>::initialize_past(const soltype &val)
   }
 }
 
-/*template <class soltype>
-void Integrator::History<soltype>::initialize_past(const soltype &val, const soltype &val2)
-{
-  const int ndots = static_cast<int>(array_.shape()[PARTICLES]);
-  for(int n = 0; n < ndots - 1; ++n) {
-    for(int t = -window; t <= 0; ++t) { set_value(n, t, DERIV_0) = val; }
-  }
-  for(int t = -window; t <= 0; ++t) { set_value(ndots-1, t, DERIV_0) = val2; }
-
-}*/
-
 template <class soltype>
 int Integrator::History<soltype>::time_idx_in_array(const int time_idx) const
 {
@@ -167,8 +156,8 @@ void Integrator::History<soltype>::write_step_to_file(const int timestep)
     double rho01_imag = (get_value(n, timestep, 0))[1].imag();
     // double rho01_abs = sqrt( pow(rho01_real,2) + pow(rho01_imag,2) );
 
-    outfile // << timestep << " "
-            << (get_value(n, timestep, 0))[0].real() << " "
+    // if ( n==0 ) outfile << timestep * 2.56844e-5 << " ";
+    outfile << (get_value(n, timestep, 0))[0].real() << " "
             << rho01_real << " "
             << rho01_imag << " ";
             // << rho01_abs << " ";

@@ -1,4 +1,5 @@
 #include "weights.h"
+#include <iostream>
 
 std::complex<double> semidisk(const double t)
 {
@@ -93,6 +94,14 @@ Integrator::Weights::Weights(const int n_lambda, const int n_time,
   // Eigen defaults to column major, hence the (n_time x 2) ordering
   ps = Eigen::Map<Eigen::ArrayXXd>(predictors.data(), n_time, 2).transpose();
   cs = Eigen::Map<Eigen::ArrayXXd>(correctors.data(), n_time, 2).transpose();
+
+  for(int h = 0; h < 22; ++h)
+    std::cout << ps(0, h) << " " << ps(1,h) << std::endl;
+
+  std::cout << std::endl;
+
+  for(int h = 0; h < 22; ++h)
+    std::cout << cs(0, h) << " " << cs(1,h) << std::endl;
 
   ps.row(1) *= step_factor;
   cs.row(1) *= step_factor;

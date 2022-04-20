@@ -76,8 +76,8 @@ int main(int argc, char *argv[])
     auto rhs_funcs = rhs_functions(*qds, config.omega, beta, rotating);
   
     std::shared_ptr<DotVector> obs;
-    obs = make_shared<DotVector>(import_dots("./dots/dots"+idstr+".cfg"));
-    // obs = make_shared<DotVector>(import_dots("./dots/obss_line.cfg"));
+    // obs = make_shared<DotVector>(import_dots("./dots/dots"+idstr+".cfg"));
+    obs = make_shared<DotVector>(import_dots("./dots/obss1D.cfg"));
     cout << "  Num sources: " << config.num_particles << std::endl;
     cout << "  Num observers: " << obs->size() << std::endl;	
     
