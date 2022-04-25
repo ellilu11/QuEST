@@ -31,7 +31,7 @@ int main(int argc, char *argv[])
                         ( 3.0 * M_PI * c * hbar / mu0 );
   // 0.120341;
 
-  const double dip_factor = 2.50;
+  const double dip_factor = 1.00;
   const double dip = dip0 * dip_factor;
   // const vector<double> dipfactors{ 0.5, 0.7, 1.0, 1.5, 2.0 }; 
 
