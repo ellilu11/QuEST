@@ -64,9 +64,9 @@ void Integrator::BlochRHS::build_Hamiltonian()
   }
 }
 
-matrix_cmplx Integrator::BlochRHS::bloch_rhs( const matrix_cmplx rho,
-                                              const std::vector<cmplx> rabi,
-                                              const double step) const
+matrix_cmplx Integrator::BlochRHS::rhsfunc( const matrix_cmplx rho,
+                                            const std::vector<cmplx> rabi,
+                                            const double step) const
 {
 
   // update the Hamiltonian using pulse and rabi here
@@ -93,7 +93,7 @@ void Integrator::BlochRHS::evaluate(const int step) const
   auto projected_rabi = std::accumulate(
       interactions.begin(), interactions.end(), nil, eval_and_sum);
 
-  history->set_value(step, 1) = bloch_rhs(
+  history->set_value(step, 1) = rhsfunc(
         history->get_value(step, 0),
 	      projected_rabi, 
         step);

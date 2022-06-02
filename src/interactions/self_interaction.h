@@ -2,7 +2,6 @@
 #define SELF_INTERACTION_H
 
 #include "history_interaction.h"
-#include "../quantum_obs.h"
 
 class SelfInteraction final : public HistoryInteraction {
  public:

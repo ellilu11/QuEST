@@ -33,8 +33,8 @@ class Integrator::History {
   void fill(const soltype &);
   void initialize_past(const soltype &);
   // void initialize_past(const soltype &, const soltype &);
-  soltype &set_value(const int, const int, const int);
-  soltype get_value(const int, const int, const int) const;
+  soltype &set_value(const int, const int);
+  soltype get_value(const int, const int) const;
 
   void write_step_to_file(const int);
 

@@ -7,7 +7,15 @@
 //#include <iterator>
 #include <vector>
 
-#include "quantum_dot.h"
+#include "configuration.h"
+#include "integrator/RHS/bloch_rhs.h"
+#include "integrator/history.h"
+#include "integrator/integrator.h"
+//#include "interactions/AIM/aim_interaction.h"
+#include "interactions/direct_interaction.h"
+#include "interactions/green_function.h"
+#include "interactions/pulse_interaction.h"
+#include "interactions/self_interaction.h"
 
 using namespace std;
 
@@ -72,11 +80,70 @@ int main(int argc, char *argv[])
 
   std::cout << rhodt << std::endl;
 */
-  // === DOTS ==============================================================
+
+  // === PARAMETERS ======================================================= 
+ 
+  auto vm = parse_configs(argc, argv);
+
+  string idstr(argv[1]);
+  string dip_idstr(argv[2]);
+  const bool rotating = 
+    config.ref_frame == Configuration::REFERENCE_FRAME::ROT ? true : false;
+  const bool rwa = 
+    config.rwa == Configuration::RWA::TRUE ? true : false;
+
+  const double dip = 0.002536;
+  const double beta = // 1.00e-3;
+                      config.mu0 * pow(dip,2) * pow(config.omega,3) 
+                        / ( 6.0 * M_PI * config.hbar * config.c0 ); // 1.79e-04;
+
+  cout << "Initializing..." << endl;
+  cout << "  Omega: " << config.omega << std::endl;
+  cout << "  Beta: " << beta << std::endl;
+
+  cout << "  Solve type: "
+            << ((config.sim_type == Configuration::SIMULATION_TYPE::FAST) 
+              ? "FAST" 
+              : "SLOW") << std::endl;
+  cout << "  Interacting particles: "
+            << ((config.interacting == Configuration::INTERACTING::TRUE) 
+              ? "TRUE" 
+              : "FALSE") << std::endl;
+  cout << "  Self-interacting particles: "
+            << ((config.self_interacting == Configuration::SELF_INTERACTING::TRUE) 
+              ? "TRUE" 
+              : "FALSE") << std::endl;
+  cout << "  Reference frame: "
+            << (rotating 
+              ? "ROT" 
+              : "FIX") << std::endl;
+  cout << "  RWA: "
+            << ((config.rwa == Configuration::RWA::TRUE) 
+              ? "TRUE" 
+              : "FALSE") << std::endl;
+
+  cout << "  Timestep: " << config.dt << std::endl;
+  cout << "  Simulation time: " << config.total_time << std::endl;
+  cout << "  Num timesteps: " << config.num_timesteps << std::endl;
+  cout << "  Interp order: " << config.interpolation_order << std::endl;
+  cout << "  Num corrector steps: " << config.num_corrector_steps << std::endl;
+  if (config.sim_type == Configuration::SIMULATION_TYPE::FAST) {
+    cout << "  AIM grid spacing: " << config.grid_spacing << endl;
+    cout << "  AIM expansion order: " << config.expansion_order << endl;
+    cout << "  AIM border: " << config.border << endl;
+  }
+
+ // === DOTS ==============================================================
 
   auto qds = make_shared<DotVector>(import_dots("./dots/dots"+idstr+".cfg"));
   qds->resize(config.num_particles);
   
+  std::shared_ptr<DotVector> obs;
+  obs = make_shared<DotVector>(import_dots("./dots/dots"+idstr+".cfg"));
+  // obs = make_shared<DotVector>(import_dots("./dots/obssXZ.cfg"));
+  cout << "  Num sources: " << config.num_particles << std::endl;
+  cout << "  Num observers: " << obs->size() << std::endl;	
+ 
   int task_idx = stoi(idstr);
   int window = 22;
   int min_time_to_keep =
@@ -89,21 +156,22 @@ int main(int argc, char *argv[])
   init << 1, 0, 0, 0;
 
   matrix_cmplx init_tensor = init;
-  for (int i = 1; i < num_particles; ++i)
+  for (int i = 1; i < config.num_particles; ++i)
     init_tensor = kroneckerProduct(init_tensor, init).eval();
 
   // === HISTORY ==========================================================
 
+  const int power_num = pow(2,config.num_particles); 
   auto history = make_shared<Integrator::History<matrix_cmplx>>( 
       config.num_particles, window, config.num_timesteps, min_time_to_keep, 2, task_idx);
-  history->fill(Eigen::MaxtrixXcd::Zero());
+  history->fill(Eigen::MatrixXcd::Zero(power_num,power_num));
   history->initialize_past(init_tensor);
 
   // === INTERACTIONS =====================================================
  
   const double propagation_constant = config.mu0 / (4 * M_PI * config.hbar);
 
-  auto pulse1 = make_shared<Pulse>(read_pulse_config("pulse.cfg"));
+  auto pulse = make_shared<Pulse>(read_pulse_config("pulse.cfg"));
 
   cout << "Setting up interactions..." << endl;
 
@@ -116,7 +184,7 @@ int main(int argc, char *argv[])
   if (config.sim_type == Configuration::SIMULATION_TYPE::FAST) {
    // AIM interaction 
   } else {
-    if (config.ref_frame == Configuration::REFERENCE_FRAME::ROT) {
+    /*if (config.ref_frame == Configuration::REFERENCE_FRAME::ROT) {
         Propagation::RotatingEFIE dyadic(config.c0, propagation_constant, config.omega, beta, 0.0);
         Propagation::SelfRotatingEFIE dyadic_self(config.c0, propagation_constant, config.omega, beta);
 
@@ -133,12 +201,12 @@ int main(int argc, char *argv[])
                                                     config.interpolation_order, config.c0, config.dt);
         pairwise = make_shared<DirectInteraction>(qds, nullptr, history, dyadic,
                                                       config.interpolation_order, config.c0, config.dt); 
-    }
+    }*/
 
   }
 
   std::vector<std::shared_ptr<InteractionBase>> interactions{};
-    /*make_shared<PulseInteraction>(qds, nullptr, pulse1, 
+    /*make_shared<PulseInteraction>(qds, nullptr, pulse, 
                                   config.interpolation_order, config.dt, config.hbar, config.omega, 
                                   rotating, rwa) };
 */
@@ -152,21 +220,29 @@ int main(int argc, char *argv[])
 
   cout << "  Elapsed time: " << elapsed_time << "s" << std::endl;
 
+  // === SRC-OBS INTERACTIONS =============================================
+
+  std::vector<std::shared_ptr<InteractionBase>> efld_interactions{};
+  std::vector<std::shared_ptr<InteractionBase>> bfld_interactions{};
+ 
   // === INTEGRATOR =======================================================
 
   cout << "Setting up integrator..." << endl;
 
-  std::unique_ptr<Integrator::RHS<Eigen::Vector2cd>> bloch_rhs =
-      std::make_unique<Integrator::BlochRHS>(
-          config.hbar, config.mu0, config.c0, config.omega, config.dt, 
-          config.num_timesteps, 
-          history, 
-          pulse,
-          std::move(interactions), std::move(efld_interactions), std::move(bfld_interactions), 
-          obs, 
-          task_idx, getflux);
+  std::unique_ptr<Integrator::RHS<matrix_cmplx>> bloch_rhs =
+    std::make_unique<Integrator::BlochRHS>(
+      config.hbar, config.mu0, config.c0, config.omega, config.dt, 
+      config.num_timesteps, 
+      history, 
+      pulse,
+      std::move(interactions), 
+      std::move(efld_interactions), 
+      std::move(bfld_interactions), 
+      obs, 
+      task_idx, 
+      0);
 
-  Integrator::PredictorCorrector<Eigen::Vector2cd> solver_pc(
+  Integrator::PredictorCorrector<matrix_cmplx> solver_pc(
       config.dt, config.num_corrector_steps, 18, window, 3.15, history, std::move(bloch_rhs));
 
   start_time = std::clock();

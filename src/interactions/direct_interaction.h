@@ -2,7 +2,6 @@
 #define DIRECT_INTERACTION_H
 
 #include "history_interaction.h"
-#include "../quantum_obs.h"
 
 class DirectInteraction final : public HistoryInteraction {
  public:

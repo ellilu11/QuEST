@@ -31,9 +31,9 @@ class Integrator::BlochRHS : public Integrator::RHS<matrix_cmplx> {
   ~BlochRHS();
  
   void build_Hamiltonian();
-  matrix_cmplx bloch_rhs( const matrix_cmplx,
-                          const std::vector<cmplx>,
-                          const double);
+  matrix_cmplx rhsfunc( const matrix_cmplx,
+                        const std::vector<cmplx>,
+                        const double);
 
   void evaluate(const int) const override;
   void evaluate_present(const int) const override;
