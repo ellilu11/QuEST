@@ -1,4 +1,5 @@
 #include "bloch_rhs.h"
+#include "../../main.cpp"
 #include "../../quantum_dot.h"
 
 Integrator::BlochRHS::BlochRHS(
@@ -9,17 +10,18 @@ Integrator::BlochRHS::BlochRHS(
     const double dt, 
     const int num_timesteps,
     const std::shared_ptr<Integrator::History<matrix_cmplx>> history,
+    const std::shared_ptr<const Pulse> pulse,
     std::vector<std::shared_ptr<InteractionBase>> interactions,
     std::vector<std::shared_ptr<InteractionBase>> efld_interactions,
     std::vector<std::shared_ptr<InteractionBase>> bfld_interactions,
-    std::vector<BlochFunctionType> rhs_functions,
     std::shared_ptr<DotVector> obss,
     const int task_idx,
     const bool getflux)
     : Integrator::RHS<Eigen::Vector2cd>(dt, history),
-      hbar(hbar), mu0(mu0), eps0(1.0/(mu0*c0*c0)), omega(omega),
+      hbar(hbar), mu0(mu0), eps0(1.0/(mu0*c0*c0)), omega(omega), dt(dt),
       num_timesteps(num_timesteps),
       num_solutions(history->num_particles),
+      pulse(std::move(pulse)),
       interactions(std::move(interactions)),
       efld_interactions(std::move(efld_interactions)),
       bfld_interactions(std::move(bfld_interactions)),
@@ -30,6 +32,7 @@ Integrator::BlochRHS::BlochRHS(
 {
   outfile.open("./out/fld" + std::to_string(task_idx) + ".dat");
   outfile << std::scientific << std::setprecision(15);
+  build_Hamiltonian();
 
 }
 
@@ -59,7 +62,6 @@ void Integrator::BlochRHS::build_Hamiltonian()
     }
     H += H_i;
   }
-
 }
 
 matrix_cmplx Integrator::BlochRHS::bloch_rhs( const matrix_cmplx rho,
@@ -67,10 +69,9 @@ matrix_cmplx Integrator::BlochRHS::bloch_rhs( const matrix_cmplx rho,
                                               const double step) const
 {
 
-  // update the Hamiltonian using rabi here
-  // ...
-  // ...
-  // ...
+  // update the Hamiltonian using pulse and rabi here
+  // assume for now that pulse for all dots is at origin, and that RWA applies
+  H *= (*pulse)(Eigen::Vector3d::Zero(), step*dt, 0, 0) / 2;
 
   matrix_cmplx rhodt = -iu * ( H * rho.adjoint() - rho * H.adjoint() ); // plus damping terms
 

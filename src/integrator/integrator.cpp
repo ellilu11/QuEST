@@ -1,12 +1,13 @@
 #include <string>
 #include "integrator.h"
 
-constexpr int NUM_CORRECTOR_STEPS = 20;
+// constexpr int NUM_CORRECTOR_STEPS = 20;
 constexpr double EPS = 1e-12;
 
 template <class soltype>
 Integrator::PredictorCorrector<soltype>::PredictorCorrector(
     const double dt,
+    const int num_corrector_steps, 
     const int n_lambda,
     const int n_time,
     const double radius,
@@ -54,18 +55,21 @@ void Integrator::PredictorCorrector<soltype>::solve_step(const int step) const
 
   for( int sol_idx = 0; sol_idx < num_solutions; ++sol_idx )
     history_prev[sol_idx] = history->array_[sol_idx][step][0][1]; 
-  // int m = 0;
 
-  // for(int m = 0; m < NUM_CORRECTOR_STEPS; ++m) {
-  do{   
-    corrector(step);
-    rhs->evaluate(step);
-    for( int sol_idx = 0; sol_idx < num_solutions; ++sol_idx )
-      history_diff[sol_idx] = history->array_[sol_idx][step][0][1] - history_prev[sol_idx]; 
-    // if (step == 100000) std::cout << cmplx_norm(history_diff) << std::endl;  
+  /// if ( num_corrector_steps > 0 ){
+    for(int m = 0; m < num_corrector_steps; ++m){
+      corrector(step);
+      rhs->evaluate(step);
+    }
+  /* } else {
+    do{   
+      corrector(step);
+      rhs->evaluate(step);
+      history_diff = history->array_[step][0][1] - history_prev; 
 
-   //m++;
-  } while ( cmplx_norm(history_diff) > EPS );
+    //m++;
+    } while ( cmplx_norm(history_diff) > EPS );
+  }*/
 }
 
 template <class soltype>
@@ -73,12 +77,10 @@ void Integrator::PredictorCorrector<soltype>::predictor(const int step) const
 {
   const int start = step - weights.width();
 
-  for(int sol_idx = 0; sol_idx < num_solutions; ++sol_idx) {
-    for(int h = 0; h < static_cast<int>(weights.width()); ++h) {
-      history->array_[step][0] +=
-          history->array_[start + h][0] * weights.ps(0, h) +
-          history->array_[start + h][1] * weights.ps(1, h) * dt;
-    }
+  for(int h = 0; h < static_cast<int>(weights.width()); ++h) {
+    history->array_[step][0] +=
+        history->array_[start + h][0] * weights.ps(0, h) +
+        history->array_[start + h][1] * weights.ps(1, h) * dt;
   }
 }
 
@@ -87,14 +89,12 @@ void Integrator::PredictorCorrector<soltype>::corrector(const int step) const
 {
   const int start = step - weights.width();
 
-  for(int sol_idx = 0; sol_idx < num_solutions; ++sol_idx) {
-    history->array_[sol_idx][step][0] =
-        weights.future_coef * history->array_[sol_idx][step][1] * dt;
-    for(int h = 0; h < static_cast<int>(weights.width()); ++h) {
-      history->array_[sol_idx][step][0] +=
-          history->array_[sol_idx][start + h][0] * weights.cs(0, h) +
-          history->array_[sol_idx][start + h][1] * weights.cs(1, h) * dt;
-    }
+  history->array_[step][0] =
+      weights.future_coef * history->array_[step][1] * dt;
+  for(int h = 0; h < static_cast<int>(weights.width()); ++h) {
+    history->array_[step][0] +=
+        history->array_[start + h][0] * weights.cs(0, h) +
+        history->array_[start + h][1] * weights.cs(1, h) * dt;
   }
 }
 

@@ -11,26 +11,6 @@ QuantumDot::QuantumDot(const Eigen::Vector3d &pos,
 {
 }
 
-matrix_cmplx QuantumDot::liouville_rhs(//const matrix_elements &rho,
-                                           const matrix_cmplx rho,
-                                           const cmplx pulse,
-                                           // const std::vector<cmplx> rabi,
-                                           const int time_idx,
-                                           const double laser_freq,
-                                           const double damping_rr,
-                                           const bool rotating) const
-{
-
-  Eigen::Matrix2cd sigp, sigm, Id;
-  Id = Eigen::Matrix2cd::Identity();
-  sigp << 0, 0, 1, 0;
-  sigm << 0, 1, 0, 0;
-
-  matrix_cmplx rhodt = rho; // -iu * ( H * rho.adjoint() - rho * H.adjoint() ); // plus damping terms
-
-  return rhodt;
-}
-
 Eigen::Vector3d separation(const QuantumDot &d1, const QuantumDot &d2)
 {
   return d2.pos - d1.pos;

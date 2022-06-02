@@ -11,6 +11,8 @@
 
 using namespace std;
 
+typedef Eigen::MatrixXcd matrix_cmplx;
+
 int main(int argc, char *argv[])
 {
   cout << setprecision(18) << scientific;
@@ -29,7 +31,7 @@ int main(int argc, char *argv[])
 
   history->initialize_past( Eigen::Vector2cd(rho00_0, rho01_0),
                             Eigen::Vector2cd(rho00_1, rho01_1) );
-  */
+  
 
   const int num_particles = 10;
   const int power_num = pow(2,num_particles); 
@@ -69,7 +71,7 @@ int main(int argc, char *argv[])
     -iu * ( H * init_tensor.adjoint() ); // plus damping terms
 
   std::cout << rhodt << std::endl;
-
+*/
   // === DOTS ==============================================================
 
   auto qds = make_shared<DotVector>(import_dots("./dots/dots"+idstr+".cfg"));
@@ -97,9 +99,85 @@ int main(int argc, char *argv[])
   history->fill(Eigen::MaxtrixXcd::Zero());
   history->initialize_past(init_tensor);
 
-  // std::unique
-
+  // === INTERACTIONS =====================================================
  
-    // ===================================================================
+  const double propagation_constant = config.mu0 / (4 * M_PI * config.hbar);
+
+  auto pulse1 = make_shared<Pulse>(read_pulse_config("pulse.cfg"));
+
+  cout << "Setting up interactions..." << endl;
+
+  std::clock_t start_time;
+  start_time = std::clock();
+
+  std::shared_ptr<InteractionBase> selfwise;
+  std::shared_ptr<InteractionBase> pairwise;
+
+  if (config.sim_type == Configuration::SIMULATION_TYPE::FAST) {
+   // AIM interaction 
+  } else {
+    if (config.ref_frame == Configuration::REFERENCE_FRAME::ROT) {
+        Propagation::RotatingEFIE dyadic(config.c0, propagation_constant, config.omega, beta, 0.0);
+        Propagation::SelfRotatingEFIE dyadic_self(config.c0, propagation_constant, config.omega, beta);
+
+        selfwise = make_shared<SelfInteraction>(qds, nullptr, history, dyadic_self,
+                                                   config.interpolation_order, config.c0, config.dt, config.omega);
+        pairwise = make_shared<DirectInteraction>(qds, nullptr, history, dyadic,
+                                                   config.interpolation_order, config.c0, config.dt, config.omega);
+    
+    } else {
+        Propagation::EFIE<cmplx> dyadic(config.c0, propagation_constant, beta, 0.0);
+        Propagation::SelfEFIE dyadic_self(config.c0, propagation_constant, beta);
+       
+        selfwise = make_shared<SelfInteraction>(qds, nullptr, history, dyadic_self,
+                                                    config.interpolation_order, config.c0, config.dt);
+        pairwise = make_shared<DirectInteraction>(qds, nullptr, history, dyadic,
+                                                      config.interpolation_order, config.c0, config.dt); 
+    }
+
+  }
+
+  std::vector<std::shared_ptr<InteractionBase>> interactions{};
+    /*make_shared<PulseInteraction>(qds, nullptr, pulse1, 
+                                  config.interpolation_order, config.dt, config.hbar, config.omega, 
+                                  rotating, rwa) };
+*/
+  if (config.self_interacting == Configuration::SELF_INTERACTING::TRUE)
+    interactions.push_back( selfwise );
+
+  if (config.interacting == Configuration::INTERACTING::TRUE)
+    interactions.push_back( pairwise );
+
+  double elapsed_time = ( std::clock() - start_time ) / (double) CLOCKS_PER_SEC;
+
+  cout << "  Elapsed time: " << elapsed_time << "s" << std::endl;
+
+  // === INTEGRATOR =======================================================
+
+  cout << "Setting up integrator..." << endl;
+
+  std::unique_ptr<Integrator::RHS<Eigen::Vector2cd>> bloch_rhs =
+      std::make_unique<Integrator::BlochRHS>(
+          config.hbar, config.mu0, config.c0, config.omega, config.dt, 
+          config.num_timesteps, 
+          history, 
+          pulse,
+          std::move(interactions), std::move(efld_interactions), std::move(bfld_interactions), 
+          obs, 
+          task_idx, getflux);
+
+  Integrator::PredictorCorrector<Eigen::Vector2cd> solver_pc(
+      config.dt, config.num_corrector_steps, 18, window, 3.15, history, std::move(bloch_rhs));
+
+  start_time = std::clock();
+
+  cout << "Solving P-C..." << endl;
+
+  solver_pc.solve();
+
+  elapsed_time = ( std::clock() - start_time ) / (double) CLOCKS_PER_SEC;
+
+  cout << "  Elapsed time: " << elapsed_time << "s" << std::endl;
+
   return 0;
 }
