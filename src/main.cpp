@@ -166,7 +166,7 @@ int main(int argc, char *argv[])
   for (int i = 1; i < config.num_particles; ++i)
     init_tensor = kroneckerProduct(init_tensor, init).eval();
 
-  history->initialize_past(init_tensor);
+  // history->initialize_past(init_tensor);
 
   // === INTERACTIONS =====================================================
  
@@ -182,35 +182,8 @@ int main(int argc, char *argv[])
   std::shared_ptr<InteractionBase> selfwise;
   std::shared_ptr<InteractionBase> pairwise;
 
-  if (config.sim_type == Configuration::SIMULATION_TYPE::FAST) {
-   // AIM interaction 
-  } else {
-    /*if (config.ref_frame == Configuration::REFERENCE_FRAME::ROT) {
-        Propagation::RotatingEFIE dyadic(config.c0, propagation_constant, config.omega, beta, 0.0);
-        Propagation::SelfRotatingEFIE dyadic_self(config.c0, propagation_constant, config.omega, beta);
-
-        selfwise = make_shared<SelfInteraction>(qds, nullptr, history, dyadic_self,
-                                                   config.interpolation_order, config.c0, config.dt, config.omega);
-        pairwise = make_shared<DirectInteraction>(qds, nullptr, history, dyadic,
-                                                   config.interpolation_order, config.c0, config.dt, config.omega);
-    
-    } else {
-        Propagation::EFIE<cmplx> dyadic(config.c0, propagation_constant, beta, 0.0);
-        Propagation::SelfEFIE dyadic_self(config.c0, propagation_constant, beta);
-       
-        selfwise = make_shared<SelfInteraction>(qds, nullptr, history, dyadic_self,
-                                                    config.interpolation_order, config.c0, config.dt);
-        pairwise = make_shared<DirectInteraction>(qds, nullptr, history, dyadic,
-                                                      config.interpolation_order, config.c0, config.dt); 
-    }*/
-
-  }
-
   std::vector<std::shared_ptr<InteractionBase>> interactions{};
-    /*make_shared<PulseInteraction>(qds, nullptr, pulse, 
-                                  config.interpolation_order, config.dt, config.hbar, config.omega, 
-                                  rotating, rwa) };
-*/
+  
   if (config.self_interacting == Configuration::SELF_INTERACTING::TRUE)
     interactions.push_back( selfwise );
 
@@ -243,14 +216,14 @@ int main(int argc, char *argv[])
       task_idx, 
       0);
 
-  /*Integrator::PredictorCorrector<matrix_cmplx> solver_pc(
+  Integrator::PredictorCorrector<matrix_cmplx> solver_pc(
       config.dt, config.num_corrector_steps, 18, window, 3.15, history, std::move(bloch_rhs));
 
   start_time = std::clock();
 
   cout << "Solving P-C..." << endl;
 
-  solver_pc.solve();*/
+  solver_pc.solve();
 
   elapsed_time = ( std::clock() - start_time ) / (double) CLOCKS_PER_SEC;
 

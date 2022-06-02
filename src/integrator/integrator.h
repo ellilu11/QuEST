@@ -6,6 +6,7 @@
 #include "logging.h"
 #include "math_utils.h"
 #include "weights.h"
+#include "weights.cpp"
 
 namespace Integrator {
   template <class soltype>

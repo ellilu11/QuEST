@@ -9,6 +9,7 @@
 #include <iostream>
 #include <memory>
 #include "../quantum_dot.h"
+//#include "RHS/bloch_rhs.h"
 
 namespace Integrator {
   template <class soltype>
@@ -47,14 +48,15 @@ class Integrator::History {
   std::ofstream outfile;
   int time_idx_in_array(const int) const;
   // friend int time_idx_in_array(const int);
-  template <class B = soltype>
-  typename std::enable_if<std::is_same<B, Eigen::Vector2cd>::value,
+  /*template <class B = soltype>
+  typename std::enable_if<std::is_same<B, matrix_cmplx>::value,
                           Eigen::RowVector2cd>::type
       prep_for_output(Eigen::Vector2cd);
 
   template <class B = soltype>
-  typename std::enable_if<!std::is_same<B, Eigen::Vector2cd>::value,
+  typename std::enable_if<!std::is_same<B, matrix_cmplx>::value,
                           soltype>::type prep_for_output(soltype);
+  */
 };
 
 template <class soltype>
@@ -127,6 +129,7 @@ soltype &Integrator::History<soltype>::set_value(const int time_idx,
   return array_[t][derivative_idx];
 }
 
+/*
 template <class soltype>
 template <class B>
 typename std::enable_if<std::is_same<B, Eigen::Vector2cd>::value,
@@ -144,20 +147,20 @@ Integrator::History<soltype>::prep_for_output(soltype element)
 {
   return element;
 }
+*/
 
 template <class soltype>
 void Integrator::History<soltype>::write_step_to_file(const int timestep)
 {
-  for(int n = 0; n < num_particles; ++n){
-    /*double rho01_real = (get_value(n, timestep, 0))[1].real();
-    double rho01_imag = (get_value(n, timestep, 0))[1].imag();
 
-    outfile // << timestep << " "
+  Eigen::MatrixXcd out = get_value(timestep, 0);
+
+  outfile << (out(0,0)).real();
+ /*   outfile // << timestep << " "
             << (get_value(n, timestep, 0))[0].real() << " "
             << rho01_real << " "
             << rho01_imag << " ";
             // << rho01_abs << " ";*/
-  }
 
   outfile << "\n";
   if(timestep > num_timesteps*0.90)
