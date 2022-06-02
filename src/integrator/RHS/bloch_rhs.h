@@ -13,11 +13,11 @@ namespace Integrator {
   class BlochRHS;
 }
 
-class Integrator::BlochRHS : public Integrator::RHS<Eigen::Vector2cd> {
+class Integrator::BlochRHS : public Integrator::RHS<matrix_cmplx> {
  public:
   BlochRHS(const double, const double, const double, const double, const double,
            const int,
-           const std::shared_ptr<History<Eigen::Vector2cd>>,
+           const std::shared_ptr<History<matrix_cmplx>>,
            std::vector<std::shared_ptr<InteractionBase>>,
            std::vector<std::shared_ptr<InteractionBase>>,
            std::vector<std::shared_ptr<InteractionBase>>,
@@ -26,6 +26,12 @@ class Integrator::BlochRHS : public Integrator::RHS<Eigen::Vector2cd> {
            const int, 
            const bool);
   ~BlochRHS();
+ 
+  void build_Hamiltonian();
+  matrix_cmplx bloch_rhs( const matrix_cmplx,
+                          const std::vector<cmplx>,
+                          const double);
+
   void evaluate(const int) const override;
   void evaluate_present(const int) const override;
   void evaluate_field(const int) override;
@@ -35,6 +41,7 @@ private:
   int num_solutions, num_obs;
   int num_timesteps;
   const double hbar, mu0, eps0, omega;
+  matrix_cmplx H;
   std::vector<std::shared_ptr<InteractionBase>> interactions, efld_interactions, bfld_interactions;
   std::shared_ptr<DotVector> obss;
   // std::vector<double> area_elements;

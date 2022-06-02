@@ -2,6 +2,7 @@
 #define QUANTUM_DOT_H
 
 #include <Eigen/Dense>
+#include <Eigen/KroneckerProduct>
 #include <fstream>
 #include <functional>
 #include <iostream>
@@ -12,7 +13,6 @@
 #include <vector>
 
 #include "common.h"
-#include "quantum_obs.h"
 
 class QuantumDot;
 
@@ -20,12 +20,14 @@ typedef std::vector<QuantumDot> DotVector;
 typedef std::pair<DotVector::iterator, DotVector::iterator> DotRange;
 typedef std::pair<DotVector::const_iterator, DotVector::const_iterator>
     const_DotRange;
-typedef Eigen::Vector2cd matrix_elements;
-typedef std::function<Eigen::Vector2cd(const Eigen::Vector2cd,
-                                       const std::complex<double>,
-                                       const int)>
+// typedef Eigen::KroneckerProduct<Eigen::Matrix2cd, Eigen::Matrix2cd> matrix_cmplx;
+typedef Eigen::MatrixXcd matrix_cmplx;
+
+typedef std::function<matrix_cmplx(const matrix_cmplx,
+                             const std::complex<double>,
+                             const int)>
     BlochFunctionType;
-enum MatrixElement { RHO_00, RHO_01 };
+//enum MatrixElement { RHO_00, RHO_01 };
 
 class QuantumDot {
  public:
@@ -40,14 +42,14 @@ class QuantumDot {
              const Eigen::Vector3d &,
              const Eigen::Vector3d &);
 
-  matrix_elements liouville_rhs(const matrix_elements &,
+  matrix_cmplx liouville_rhs(const matrix_cmplx,
                                 const cmplx,
+                                // const std::vector<cmplx>,
                                 const int,
                                 const double, 
                                 const double,
                                 const bool) const;
 
-  friend class ObserverDot;
 
   const Eigen::Vector3d &position() const { return pos; }
   const Eigen::Vector3d &dipole() const { return dipr; }
@@ -79,6 +81,6 @@ class QuantumDot {
 
 DotVector import_dots(const std::string &);
 void set_dipole_of_dots(std::shared_ptr<DotVector>, const Eigen::Vector3d dip);
-std::vector<BlochFunctionType> rhs_functions(const DotVector &, const double, const double, const bool);
+// std::vector<BlochFunctionType> rhs_functions(const DotVector &, const double, const double, const bool);
 
 #endif

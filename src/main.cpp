@@ -1,4 +1,5 @@
 #include <Eigen/Dense>
+#include <Eigen/KroneckerProduct>
 #include <complex>
 #include <iomanip>
 #include <iostream>
@@ -6,287 +7,99 @@
 //#include <iterator>
 #include <vector>
 
-#include "configuration.h"
-#include "integrator/RHS/bloch_rhs.h"
-#include "integrator/history.h"
-#include "integrator/integrator.h"
-//#include "interactions/AIM/aim_interaction.h"
-#include "interactions/direct_interaction.h"
-#include "interactions/green_function.h"
-#include "interactions/pulse_interaction.h"
-#include "interactions/self_interaction.h"
+#include "quantum_dot.h"
 
 using namespace std;
 
 int main(int argc, char *argv[])
 {
-    cout << setprecision(18) << scientific;
-    auto vm = parse_configs(argc, argv);
+  cout << setprecision(18) << scientific;
 
-    string idstr(argv[1]);
-    string dip_idstr(argv[2]);
-    const bool rotating = 
-      config.ref_frame == Configuration::REFERENCE_FRAME::ROT ? true : false;
-    const bool rwa = 
-      config.rwa == Configuration::RWA::TRUE ? true : false;
+  // ================ UNIT TESTING ================================
 
-    const double dip = 0.002536;
-    const double beta = // 1.00e-3;
-                        config.mu0 * pow(dip,2) * pow(config.omega,3) 
-                          / ( 6.0 * M_PI * config.hbar * config.c0 ); // 1.79e-04;
+  /*const double TH0 = 0.5*M_PI;
+  const double TH1 = 0.6*M_PI;
+  const double PH0 = 0.1*M_PI;
+  const double PH1 = 0;
 
-    cout << "Initializing..." << endl;
-    cout << "  Omega: " << config.omega << std::endl;
-    cout << "  Beta: " << beta << std::endl;
- 
-    cout << "  Solve type: "
-              << ((config.sim_type == Configuration::SIMULATION_TYPE::FAST) 
-                ? "FAST" 
-                : "SLOW") << std::endl;
-	  cout << "  Interacting particles: "
-              << ((config.interacting == Configuration::INTERACTING::TRUE) 
-                ? "TRUE" 
-                : "FALSE") << std::endl;
-	  cout << "  Self-interacting particles: "
-              << ((config.self_interacting == Configuration::SELF_INTERACTING::TRUE) 
-                ? "TRUE" 
-                : "FALSE") << std::endl;
-		cout << "  Reference frame: "
-              << (rotating 
-                ? "ROT" 
-                : "FIX") << std::endl;
-		cout << "  RWA: "
-              << ((config.rwa == Configuration::RWA::TRUE) 
-                ? "TRUE" 
-                : "FALSE") << std::endl;
-	
-    cout << "  Timestep: " << config.dt << std::endl;
-		cout << "  Simulation time: " << config.total_time << std::endl;
-    cout << "  Num timesteps: " << config.num_timesteps << std::endl;
-		cout << "  Interp order: " << config.interpolation_order << std::endl;
-  	cout << "  Num corrector steps: " << config.num_corrector_steps << std::endl;
-    if (config.sim_type == Configuration::SIMULATION_TYPE::FAST) {
-			cout << "  AIM grid spacing: " << config.grid_spacing << endl;
-			cout << "  AIM expansion order: " << config.expansion_order << endl;
-			cout << "  AIM border: " << config.border << endl;
-		}
+  double rho00_0 = ( 1 - cos(TH0) ) / 2;
+  double rho00_1 = ( 1 - cos(TH1) ) / 2;
+  std::complex<double> rho01_0(cos(PH0)*sin(TH0)/2, sin(PH0)*sin(TH0)/2);
+  std::complex<double> rho01_1(cos(PH1)*sin(TH1)/2, sin(PH1)*sin(TH1)/2);
 
-    auto qds = make_shared<DotVector>(import_dots("./dots/dots"+idstr+".cfg"));
-    qds->resize(config.num_particles);
-    auto rhs_funcs = rhs_functions(*qds, config.omega, beta, rotating);
+  history->initialize_past( Eigen::Vector2cd(rho00_0, rho01_0),
+                            Eigen::Vector2cd(rho00_1, rho01_1) );
+  */
+
+  const int num_particles = 10;
+  const int power_num = pow(2,num_particles); 
+
+  Eigen::Matrix2cd init;
+  init << 1, 0, 0, 0;
+
+  matrix_cmplx init_tensor = init;
+  for (int i = 1; i < num_particles; ++i)
+    init_tensor = kroneckerProduct(init_tensor, init).eval();
+
+  Eigen::Matrix2cd sigp, sigm, Id;
+  Id = Eigen::Matrix2cd::Identity();
+  sigp << 0, 0, 1, 0;
+  sigm << 0, 1, 0, 0;
+
+  matrix_cmplx H = Eigen::MatrixXcd::Zero(power_num,power_num);
+
+  const double pulse = 1;
+
+  for (int i = 0; i < num_particles; ++i){
+    matrix_cmplx H_i = 
+      i == 0 ? sigp+sigm : Id;
+    for (int j = 1; j < num_particles; ++j){
+      if ( i == j )
+        H_i = kroneckerProduct(H_i, sigp+sigm).eval();
+      else
+        H_i = kroneckerProduct(H_i, Id).eval();
+    }
+    H += H_i;
+  }
+  H *= pulse;
+
+  std::cout << H << std::endl;
+
+  matrix_cmplx rhodt = // -iu * ( H * rho );
+    -iu * ( H * init_tensor.adjoint() ); // plus damping terms
+
+  std::cout << rhodt << std::endl;
+
+  // === DOTS ==============================================================
+
+  auto qds = make_shared<DotVector>(import_dots("./dots/dots"+idstr+".cfg"));
+  qds->resize(config.num_particles);
   
-    std::shared_ptr<DotVector> obs;
-    obs = make_shared<DotVector>(import_dots("./dots/dots"+idstr+".cfg"));
-    // obs = make_shared<DotVector>(import_dots("./dots/obss_line.cfg"));
-    cout << "  Num sources: " << config.num_particles << std::endl;
-    cout << "  Num observers: " << obs->size() << std::endl;	
-    
-    const bool getflux = 0;
-    // Eigen::Vector3d pos = (*obs)[0].position();
-    // cout << "  Observer radius: " << pos.norm() << std::endl;
-
-    // == HISTORY ====================================================
-
-    int task_idx = stoi(idstr);
-    int window = 22;
-    int min_time_to_keep =
-        // config.num_timesteps + window;
-        max_transit_steps_between_dots(qds, config.c0, config.dt) +
-        config.interpolation_order;
-    std::cout << "  Min time to keep: " << min_time_to_keep << std::endl;
-
-    auto history = make_shared<Integrator::History<Eigen::Vector2cd>>(
-        config.num_particles, window, config.num_timesteps, min_time_to_keep, 2, task_idx);
-    history->fill(Eigen::Vector2cd::Zero());
-    history->initialize_past( Eigen::Vector2cd(1,0) );
-                              // Eigen::Vector2cd(0.15,0) );
-    /*const double TH0 = 0.5*M_PI;
-    const double TH1 = 0.6*M_PI;
-    const double PH0 = 0.1*M_PI;
-    const double PH1 = 0;
-
-    double rho00_0 = ( 1 - cos(TH0) ) / 2;
-    double rho00_1 = ( 1 - cos(TH1) ) / 2;
-    std::complex<double> rho01_0(cos(PH0)*sin(TH0)/2, sin(PH0)*sin(TH0)/2);
-    std::complex<double> rho01_1(cos(PH1)*sin(TH1)/2, sin(PH1)*sin(TH1)/2);
-
-    history->initialize_past( Eigen::Vector2cd(rho00_0, rho01_0),
-                              Eigen::Vector2cd(rho00_1, rho01_1) );
-    */// history->initialize_past( qd_path );
-
-    // == INTERACTIONS ===============================================
-
-    const double propagation_constant = config.mu0 / (4 * M_PI * config.hbar);
-
-    auto pulse1 = make_shared<Pulse>(read_pulse_config("pulse.cfg"));
+  int task_idx = stoi(idstr);
+  int window = 22;
+  int min_time_to_keep =
+      // config.num_timesteps + window;
+      max_transit_steps_between_dots(qds, config.c0, config.dt) +
+      config.interpolation_order;
+  std::cout << "  Min time to keep: " << min_time_to_keep << std::endl;
  
-    cout << "Setting up interactions..." << endl;
+  Eigen::Matrix2cd init;
+  init << 1, 0, 0, 0;
+
+  matrix_cmplx init_tensor = init;
+  for (int i = 1; i < num_particles; ++i)
+    init_tensor = kroneckerProduct(init_tensor, init).eval();
+
+  // === HISTORY ==========================================================
+
+  auto history = make_shared<Integrator::History<matrix_cmplx>>( 
+      config.num_particles, window, config.num_timesteps, min_time_to_keep, 2, task_idx);
+  history->fill(Eigen::MaxtrixXcd::Zero());
+  history->initialize_past(init_tensor);
+
+  // std::unique
+
  
-    std::clock_t start_time;
-    start_time = std::clock();
-
-   	std::shared_ptr<InteractionBase> selfwise;
-    std::shared_ptr<InteractionBase> pairwise;
-
-    if (config.sim_type == Configuration::SIMULATION_TYPE::FAST) {
-      /*AIM::Grid grid(config.grid_spacing, config.expansion_order, h, *qds); 
-      const int transit_steps = grid.max_transit_steps(config.c0, config.dt) + 
-                                  config.interpolation_order;
-
-      if (config.ref_frame == Configuration::REFERENCE_FRAME::ROT) {
-        Propagation::RotatingEFIE dyadic(config.c0, propagation_constant, config.omega, beta, 0.0);
-        Propagation::SelfRotatingEFIE dyadic_self(config.c0, propagation_constant, config.omega, beta);
-
-        selfwise = make_shared<SelfInteraction>(qds, history, dyadic_self,
-                                                    config.interpolation_order, config.c0, config.dt, config.omega);
-        pairwise = make_shared<AIM::Interaction>(
-            qds, history, dyadic, config.grid_spacing, 
-            config.interpolation_order, config.expansion_order, config.border,
-            config.c0, config.dt, 0, 
-						AIM::Expansions::RotatingEFIE(transit_steps, config.c0, config.dt, config.omega),
-						AIM::Expansions::Zero(transit_steps),
-            AIM::Normalization::Helmholtz(config.omega/config.c0, propagation_constant),
-            config.omega);
- 
-     } else {
-        Propagation::EFIE<cmplx> dyadic(config.c0, propagation_constant, beta, 0.0);
-        Propagation::SelfEFIE dyadic_self(config.c0, propagation_constant, beta);
-       
-        selfwise = make_shared<SelfInteraction>(qds, history, dyadic_self,
-                                                    config.interpolation_order, config.c0, config.dt);
-        pairwise = make_shared<AIM::Interaction>(
-            qds, history, dyadic, grid_spacing, 
-            config.interpolation_order, config.expansion_order, config.border,
-            config.c0, config.dt, 0, 
-						AIM::Expansions::EFIE(transit_steps, config.c0, config.dt),
-						AIM::Expansions::Zero(transit_steps),
-            // AIM::Expansions::EFIE_TimeDeriv2(transit_steps, config.c0, config.dt), // "analytic" expansion function
-            // AIM::Expansions::EFIE_Retardation(transit_steps, config.c0), // fdtd expansion function
-            AIM::Normalization::Laplace(propagation_constant)
-           );
-      }*/
-    
-    } else {
-      if (config.ref_frame == Configuration::REFERENCE_FRAME::ROT) {
-          Propagation::RotatingEFIE dyadic(config.c0, propagation_constant, config.omega, beta, 0.0);
-          Propagation::SelfRotatingEFIE dyadic_self(config.c0, propagation_constant, config.omega, beta);
-
-          selfwise = make_shared<SelfInteraction>(qds, nullptr, history, dyadic_self,
-                                                     config.interpolation_order, config.c0, config.dt, config.omega);
-          pairwise = make_shared<DirectInteraction>(qds, nullptr, history, dyadic,
-                                                     config.interpolation_order, config.c0, config.dt, config.omega);
-      
-      } else {
-          Propagation::EFIE<cmplx> dyadic(config.c0, propagation_constant, beta, 0.0);
-          Propagation::SelfEFIE dyadic_self(config.c0, propagation_constant, beta);
-         
-          selfwise = make_shared<SelfInteraction>(qds, nullptr, history, dyadic_self,
-                                                      config.interpolation_order, config.c0, config.dt);
-          pairwise = make_shared<DirectInteraction>(qds, nullptr, history, dyadic,
-                                                        config.interpolation_order, config.c0, config.dt); 
-      }
-
-    }
-
-    std::vector<std::shared_ptr<InteractionBase>> interactions{ 
-      make_shared<PulseInteraction>(qds, nullptr, pulse1, 
-                                    config.interpolation_order, config.dt, config.hbar, config.omega, 
-                                    rotating, rwa) };
-
-    if (config.self_interacting == Configuration::SELF_INTERACTING::TRUE)
-      interactions.push_back( selfwise );
-
-    if (config.interacting == Configuration::INTERACTING::TRUE)
-      interactions.push_back( pairwise );
-
-    double elapsed_time = ( std::clock() - start_time ) / (double) CLOCKS_PER_SEC;
-
-    cout << "  Elapsed time: " << elapsed_time << "s" << std::endl;
-
-    // == SRC-OBS INTERACTIONS ===============================================
-
-    cout << "Setting up efld interactions..." << endl;
-   	std::shared_ptr<InteractionBase> selfwise_fld;
-    std::shared_ptr<InteractionBase> pairwise_fld;
-
-    if (config.ref_frame == Configuration::REFERENCE_FRAME::ROT) {
-      Propagation::RotatingEFIE dyadic(config.c0, propagation_constant, config.omega, beta, 0.0);
-      Propagation::SelfRotatingEFIE dyadic_self(config.c0, propagation_constant, config.omega, beta);
-
-      selfwise_fld = make_shared<SelfInteraction>(qds, obs, history, dyadic_self,
-                                                     config.interpolation_order, config.c0, config.dt, config.omega);
-      pairwise_fld = make_shared<DirectInteraction>(qds, obs, history, dyadic,
-                                                    config.interpolation_order, config.c0, config.dt, config.omega);
-    } else {
-      Propagation::EFIE<cmplx> dyadic(config.c0, propagation_constant, beta, 0.0);
-      Propagation::SelfEFIE dyadic_self(config.c0, propagation_constant, beta);
-
-      selfwise_fld = make_shared<SelfInteraction>(qds, obs, history, dyadic_self,
-                                                      config.interpolation_order, config.c0, config.dt);
-      pairwise_fld = make_shared<DirectInteraction>(qds, obs, history, dyadic,
-                                                      config.interpolation_order, config.c0, config.dt); 
-    }
-
-    std::vector<std::shared_ptr<InteractionBase>> efld_interactions{ 
-      make_shared<PulseInteraction>(qds, obs, pulse1, 
-                                    config.interpolation_order, config.dt, config.hbar, config.omega, 
-                                    rotating, rwa) };
-
-    if (config.self_interacting == Configuration::SELF_INTERACTING::TRUE)
-      efld_interactions.push_back( selfwise_fld );
-
-    if (config.interacting == Configuration::INTERACTING::TRUE)
-      efld_interactions.push_back( pairwise_fld );
-
-    cout << "Setting up bfld interactions..." << endl;
-    std::shared_ptr<InteractionBase> pairwise_bfld;
-
-    if (config.ref_frame == Configuration::REFERENCE_FRAME::ROT) {
-      Propagation::RotatingMFIE dyadic_mfie(config.c0, propagation_constant, config.omega);
-
-      pairwise_bfld = make_shared<DirectInteraction>(qds, obs, history, dyadic_mfie,
-                                                     config.interpolation_order, config.c0, config.dt, config.omega);
-    } else {
-      Propagation::MFIE<cmplx> dyadic_mfie(config.c0, propagation_constant);
-
-      pairwise_bfld = make_shared<DirectInteraction>(qds, obs, history, dyadic_mfie,
-                                                     config.interpolation_order, config.c0, config.dt);
-    }
-
-    std::vector<std::shared_ptr<InteractionBase>> bfld_interactions{ 
-      make_shared<PulseInteraction>(qds, obs, pulse1, 
-                                    config.interpolation_order, config.dt, config.hbar, config.omega, 
-                                    rotating, rwa) };
-
-    // no self B-fld
-    if (config.interacting == Configuration::INTERACTING::TRUE)
-      bfld_interactions.push_back( pairwise_bfld );
-
-    // == INTEGRATOR =================================================
-
-    cout << "Setting up integrator..." << endl;
- 
-    std::unique_ptr<Integrator::RHS<Eigen::Vector2cd>> bloch_rhs =
-        std::make_unique<Integrator::BlochRHS>(
-            config.hbar, config.mu0, config.c0, config.omega,
-            config.dt, config.num_timesteps, 
-            history, 
-            std::move(interactions), std::move(efld_interactions), std::move(bfld_interactions), 
-            std::move(rhs_funcs), obs, 
-            task_idx, getflux);
-
-    Integrator::PredictorCorrector<Eigen::Vector2cd> solver_pc(
-        config.dt, config.num_corrector_steps, 18, window, 3.15, history, std::move(bloch_rhs));
-
-    start_time = std::clock();
-
-    cout << "Solving P-C..." << endl;
- 
-    solver_pc.solve();
-
-    elapsed_time = ( std::clock() - start_time ) / (double) CLOCKS_PER_SEC;
-
-    cout << "  Elapsed time: " << elapsed_time << "s" << std::endl;
-
+    // ===================================================================
   return 0;
 }

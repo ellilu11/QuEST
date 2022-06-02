@@ -20,6 +20,7 @@ Integrator::PredictorCorrector<soltype>::PredictorCorrector(
       history(std::move(history)),
       rhs(std::move(rhs))
 {
+  build_Hamiltonian();
 }
 
 template <class soltype>
@@ -74,9 +75,9 @@ void Integrator::PredictorCorrector<soltype>::predictor(const int step) const
 
   for(int sol_idx = 0; sol_idx < num_solutions; ++sol_idx) {
     for(int h = 0; h < static_cast<int>(weights.width()); ++h) {
-      history->array_[sol_idx][step][0] +=
-          history->array_[sol_idx][start + h][0] * weights.ps(0, h) +
-          history->array_[sol_idx][start + h][1] * weights.ps(1, h) * dt;
+      history->array_[step][0] +=
+          history->array_[start + h][0] * weights.ps(0, h) +
+          history->array_[start + h][1] * weights.ps(1, h) * dt;
     }
   }
 }

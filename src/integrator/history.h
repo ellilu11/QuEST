@@ -15,10 +15,10 @@ namespace Integrator {
   class History;
 
   template <class soltype>
-  using soltype_array = boost::multi_array<soltype, 3>;
+  using soltype_array = boost::multi_array<soltype, 2>;
 
   inline namespace history_enums {
-    enum DIMENSION { PARTICLES, TIMES, DERIVATIVES };
+    enum DIMENSION { TIMES, DERIVATIVES };
     enum ORDER { DERIV_0, DERIV_1 };
   }  // namespace history_enums
 }  // namespace Integrator
@@ -71,7 +71,7 @@ Integrator::History<soltype>::History(const int num_particles,
   int time_idx_ubound = std::max(min_time_idx_ubound, window) + 10;
 
   array_.resize(
-      boost::extents[num_particles][time_idx_ubound][num_derivatives]);
+      boost::extents[time_idx_ubound][num_derivatives]);
 
   outfile.open("./out/out" + std::to_string(task_idx) + ".dat");
   outfile << std::scientific << std::setprecision(18);
@@ -93,21 +93,10 @@ void Integrator::History<soltype>::fill(const soltype &val)
 template <class soltype>
 void Integrator::History<soltype>::initialize_past(const soltype &val)
 {
-  for(int n = 0; n < static_cast<int>(array_.shape()[PARTICLES]); ++n) {
-    for(int t = -window; t <= 0; ++t) { set_value(n, t, DERIV_0) = val; }
-  }
+  // for(int n = 0; n < static_cast<int>(array_.shape()[PARTICLES]); ++n) {
+  for(int t = -window; t <= 0; ++t) { set_value(t, DERIV_0) = val; }
+  // }
 }
-
-/*template <class soltype>
-void Integrator::History<soltype>::initialize_past(const soltype &val, const soltype &val2)
-{
-  const int ndots = static_cast<int>(array_.shape()[PARTICLES]);
-  for(int n = 0; n < ndots - 1; ++n) {
-    for(int t = -window; t <= 0; ++t) { set_value(n, t, DERIV_0) = val; }
-  }
-  for(int t = -window; t <= 0; ++t) { set_value(ndots-1, t, DERIV_0) = val2; }
-
-}*/
 
 template <class soltype>
 int Integrator::History<soltype>::time_idx_in_array(const int time_idx) const
@@ -123,21 +112,19 @@ int Integrator::History<soltype>::time_idx_in_array(const int time_idx) const
 }
 
 template <class soltype>
-soltype Integrator::History<soltype>::get_value(const int particle_idx,
-                                                const int time_idx,
+soltype Integrator::History<soltype>::get_value(const int time_idx,
                                                 const int derivative_idx) const
 {
   int t = time_idx_in_array(time_idx);
-  return array_[particle_idx][t][derivative_idx];
+  return array_[t][derivative_idx];
 }
 
 template <class soltype>
-soltype &Integrator::History<soltype>::set_value(const int particle_idx,
-                                                 const int time_idx,
+soltype &Integrator::History<soltype>::set_value(const int time_idx,
                                                  const int derivative_idx)
 {
   int t = time_idx_in_array(time_idx);
-  return array_[particle_idx][t][derivative_idx];
+  return array_[t][derivative_idx];
 }
 
 template <class soltype>
@@ -162,16 +149,14 @@ template <class soltype>
 void Integrator::History<soltype>::write_step_to_file(const int timestep)
 {
   for(int n = 0; n < num_particles; ++n){
-    //outfile << prep_for_output(get_value(n, timestep, 0)) << " ";
-    double rho01_real = (get_value(n, timestep, 0))[1].real();
+    /*double rho01_real = (get_value(n, timestep, 0))[1].real();
     double rho01_imag = (get_value(n, timestep, 0))[1].imag();
-    // double rho01_abs = sqrt( pow(rho01_real,2) + pow(rho01_imag,2) );
 
     outfile // << timestep << " "
             << (get_value(n, timestep, 0))[0].real() << " "
             << rho01_real << " "
             << rho01_imag << " ";
-            // << rho01_abs << " ";
+            // << rho01_abs << " ";*/
   }
 
   outfile << "\n";

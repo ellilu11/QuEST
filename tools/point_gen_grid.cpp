@@ -64,9 +64,11 @@ bool lt_min(const Qdot &qd, const std::vector<Qdot> &dots, const double mindist)
 int main(int argc, char *argv[])
 {
   const double c0 = 299.792458;
+  const double n = 1.54;
+  const double c = c0 / n;
   const double omega = 4823.67;
-  const double lambda = 2 * M_PI * c0 / omega;
-  const double T1 = 20.0, T2 = 40.0;
+  const double lambda = 2 * M_PI * c / omega;
+  const double T1 = 0.0, T2 = 0.0;
   const double dip = 0.002536; // 5.2917721e-4 * 1.0;
   const double dipx = dip, dipy = 0.0, dipz = 0.0;
   const int num_dots = atoi(argv[1]);
@@ -76,11 +78,11 @@ int main(int argc, char *argv[])
   const unsigned seed =
       std::chrono::system_clock::now().time_since_epoch().count();
   
-  const double L = 5.0;  
+  const double L = 10 * lambda;  
   const double dist0 = L / ns; // 2.0 * lambda / ns; // 2.0e-1; // mean distance between dots;
 	const double r0 = 0.0*dist0; 
 
-  std::cout << "dist0: " << dist0 << " r0: " << r0 << std::endl;
+  std::cout << "L: " << L << " dist0: " << dist0 << " r0: " << r0 << std::endl;
  
   std::default_random_engine generator(seed);
   std::uniform_real_distribution<double> u(0, 1);
@@ -108,7 +110,7 @@ int main(int argc, char *argv[])
     double dy0 = r0*std::sin(theta)*std::sin(phi);
     double dz0 = r0*std::cos(theta);
 
-  	qd = {{x0+ix*dist0+dx0, y0+iy*dist0+dy0, 0, omega,
+  	qd = {{x0+ix*dist0+dx0, 0, y0+iy*dist0+dy0, omega,
                     T1, T2, dipx, dipy, dipz}};
     dots.push_back(qd);
   }
@@ -117,7 +119,7 @@ int main(int argc, char *argv[])
 
   std::string taskstr(argv[2]);
 
-  std::ofstream fd("./dots/obss.cfg");
+  std::ofstream fd("./dots/obssXZ.cfg");
   // std::ofstream fd("./dots/dots"+taskstr+".cfg");
   fd << std::setprecision(12);
 

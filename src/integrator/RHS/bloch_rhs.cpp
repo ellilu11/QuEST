@@ -1,4 +1,5 @@
 #include "bloch_rhs.h"
+#include "../../quantum_dot.h"
 
 Integrator::BlochRHS::BlochRHS(
     const double hbar, 
@@ -7,7 +8,7 @@ Integrator::BlochRHS::BlochRHS(
     const double omega,
     const double dt, 
     const int num_timesteps,
-    const std::shared_ptr<Integrator::History<Eigen::Vector2cd>> history,
+    const std::shared_ptr<Integrator::History<matrix_cmplx>> history,
     std::vector<std::shared_ptr<InteractionBase>> interactions,
     std::vector<std::shared_ptr<InteractionBase>> efld_interactions,
     std::vector<std::shared_ptr<InteractionBase>> bfld_interactions,
@@ -37,22 +38,63 @@ Integrator::BlochRHS::~BlochRHS()
   outfile.close();
 }
 
+void Integrator::BlochRHS::build_Hamiltonian()
+{
+  Eigen::Matrix2cd sigp, sigm, Id;
+
+  Id = Eigen::Matrix2cd::Identity();
+  sigp << 0, 0, 1, 0;
+  sigm << 0, 1, 0, 0;
+
+  H = Eigen::MatrixXcd::Zero(power_num,power_num);
+
+  for (int i = 0; i < num_solutions; ++i){
+    matrix_cmplx H_i = 
+      i == 0 ? sigp+sigm : Id;
+    for (int j = 1; j < num_solutions; ++j){
+      if ( i == j )
+        H_i = kroneckerProduct(H_i, sigp+sigm).eval();
+      else
+        H_i = kroneckerProduct(H_i, Id).eval();
+    }
+    H += H_i;
+  }
+
+}
+
+matrix_cmplx Integrator::BlochRHS::bloch_rhs( const matrix_cmplx rho,
+                                              const std::vector<cmplx> rabi,
+                                              const double step) const
+{
+
+  // update the Hamiltonian using rabi here
+  // ...
+  // ...
+  // ...
+
+  matrix_cmplx rhodt = -iu * ( H * rho.adjoint() - rho * H.adjoint() ); // plus damping terms
+
+  return rhodt;
+}
+
 void Integrator::BlochRHS::evaluate(const int step) const
 {
+ // cmplx rabi = 0;
+  // for (int i = 0; i < interactions.size(); ++i){ 
+
   auto eval_and_sum =
       [step](const InteractionBase::ResultArray &r,
              const std::shared_ptr<InteractionBase> &interaction) {
         return r + interaction->evaluate(step);
       };
   auto nil = InteractionBase::ResultArray::Zero(num_solutions, 1).eval();
-
+ 
   auto projected_rabi = std::accumulate(
       interactions.begin(), interactions.end(), nil, eval_and_sum);
 
-  for(int solution = 0; solution < num_solutions; ++solution) {
-    history->set_value(solution, step, 1) = rhs_functions[solution](
-        history->get_value(solution, step, 0),
-	      projected_rabi[solution],
+  history->set_value(step, 1) = bloch_rhs(
+        history->get_value(step, 0),
+	      projected_rabi, 
         step);
   }
 }
@@ -69,15 +111,15 @@ void Integrator::BlochRHS::evaluate_present(const int step) const
   auto projected_rabi = std::accumulate(
       interactions.begin(), interactions.end(), nil, eval_and_sum);
 
-  for(int solution = 0; solution < num_solutions; ++solution) {
-    history->set_value(solution, step, 1) = rhs_functions[solution](
-        history->get_value(solution, step, 0),
-	      projected_rabi[solution],
+  // for(int solution = 0; solution < num_solutions; ++solution) {
+  history->set_value(step, 1) = bloch_rhs(
+        history->get_value(step, 0),
+	      projected_rabi,
         step);
   }
 }
 
-void Integrator::BlochRHS::evaluate_field(const int step)
+/*void Integrator::BlochRHS::evaluate_field(const int step)
 {
   auto nil = InteractionBase::ResultArray::Zero(num_obs, 1).eval();
 
@@ -140,5 +182,5 @@ void Integrator::BlochRHS::evaluate_field(const int step)
     
   outfile << std::endl;
 
-}
+}*/
 

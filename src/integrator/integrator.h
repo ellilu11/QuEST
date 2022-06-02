@@ -22,6 +22,9 @@ class Integrator::PredictorCorrector {
                      const double,
                      const std::shared_ptr<Integrator::History<soltype>>,
                      std::unique_ptr<Integrator::RHS<soltype>>);
+ 
+  // void build_Hamiltonian();
+
   void solve(const log_level_t = log_level_t::LOG_NOTHING);
 
   void output_writer(const int) const;
@@ -68,7 +71,7 @@ void Integrator::PredictorCorrector<soltype>::solve(
     const log_level_t log_level)
 {
   int num_outsteps = // time_idx_ubound; 
-                    std::min( 10000, time_idx_ubound );
+                    std::min( 1000, time_idx_ubound );
   int outstep = time_idx_ubound / num_outsteps;
 
   int num_logsteps = 100;
@@ -78,7 +81,7 @@ void Integrator::PredictorCorrector<soltype>::solve(
     
     if (!(step%outstep)) {
        history->write_step_to_file(step);
-	     // rhs->evaluate_field(step);
+	     rhs->evaluate_field(step);
     }
      
     if (step%(time_idx_ubound/num_logsteps) == 0)

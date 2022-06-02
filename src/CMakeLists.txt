@@ -1,5 +1,5 @@
-include("${CMAKE_CURRENT_LIST_DIR}/integrator/CMakeLists.txt")
-include("${CMAKE_CURRENT_LIST_DIR}/interactions/CMakeLists.txt")
+#include("${CMAKE_CURRENT_LIST_DIR}/integrator/CMakeLists.txt")
+#include("${CMAKE_CURRENT_LIST_DIR}/interactions/CMakeLists.txt")
 
 target_sources(quest
   PRIVATE

@@ -11,25 +11,24 @@ QuantumDot::QuantumDot(const Eigen::Vector3d &pos,
 {
 }
 
-matrix_elements QuantumDot::liouville_rhs(const matrix_elements &rho,
-                                          const cmplx rabi,
-                                          const int time_idx,
-                                          const double laser_freq,
-                                          const double damping_rr,
-                                          const bool rotating) const
+matrix_cmplx QuantumDot::liouville_rhs(//const matrix_elements &rho,
+                                           const matrix_cmplx rho,
+                                           const cmplx pulse,
+                                           // const std::vector<cmplx> rabi,
+                                           const int time_idx,
+                                           const double laser_freq,
+                                           const double damping_rr,
+                                           const bool rotating) const
 {
-  const cmplx m0 = -iu * (-rabi * std::conj(rho[1]) + std::conj(rabi) * rho[1])
-                   - (rho[0] - 1.0) / damping.first;
 
-  cmplx m1_temp = -iu * (-rabi * (1.0 - 2.0 * rho[0]))
-                   - rho[1] / damping.second;
+  Eigen::Matrix2cd sigp, sigm, Id;
+  Id = Eigen::Matrix2cd::Identity();
+  sigp << 0, 0, 1, 0;
+  sigm << 0, 1, 0, 0;
 
-  m1_temp -=
-      rotating ? iu * rho[1] * (laser_freq - freq) : iu * rho[1] * (-freq);
+  matrix_cmplx rhodt = rho; // -iu * ( H * rho.adjoint() - rho * H.adjoint() ); // plus damping terms
 
-  const cmplx m1 = m1_temp;
- 
-  return matrix_elements(m0, m1);
+  return rhodt;
 }
 
 Eigen::Vector3d separation(const QuantumDot &d1, const QuantumDot &d2)
@@ -82,7 +81,7 @@ void set_dipole_of_dots(std::shared_ptr<DotVector> dots, const Eigen::Vector3d d
     (*dots)[dot].set_dipole(dip);
 }
 
-std::vector<BlochFunctionType> rhs_functions(const DotVector &dots,
+/*std::vector<BlochFunctionType> rhs_functions(const DotVector &dots,
                                              const double laser_frequency,
                                              const double damping_rr,
                                              const bool rotating)
@@ -98,4 +97,4 @@ std::vector<BlochFunctionType> rhs_functions(const DotVector &dots,
                                     laser_frequency, damping_rr, rotating);
                  });
   return funcs;
-}
+}*/
