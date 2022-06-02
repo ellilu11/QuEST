@@ -21,12 +21,11 @@ typedef std::pair<DotVector::iterator, DotVector::iterator> DotRange;
 typedef std::pair<DotVector::const_iterator, DotVector::const_iterator>
     const_DotRange;
 // typedef Eigen::KroneckerProduct<Eigen::Matrix2cd, Eigen::Matrix2cd> matrix_cmplx;
-typedef Eigen::MatrixXcd matrix_cmplx;
-
-typedef std::function<matrix_cmplx(const matrix_cmplx,
+// typedef Eigen::MatrixXcd matrix_cmplx;
+/*typedef std::function<matrix_cmplx(const matrix_cmplx,
                              const std::complex<double>,
                              const int)>
-    BlochFunctionType;
+    BlochFunctionType;*/
 //enum MatrixElement { RHO_00, RHO_01 };
 
 class QuantumDot {
@@ -41,15 +40,6 @@ class QuantumDot {
              const std::pair<double, double> &,
              const Eigen::Vector3d &,
              const Eigen::Vector3d &);
-
-  matrix_cmplx liouville_rhs(const matrix_cmplx,
-                                const cmplx,
-                                // const std::vector<cmplx>,
-                                const int,
-                                const double, 
-                                const double,
-                                const bool) const;
-
 
   const Eigen::Vector3d &position() const { return pos; }
   const Eigen::Vector3d &dipole() const { return dipr; }

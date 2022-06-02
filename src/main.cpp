@@ -8,7 +8,9 @@
 #include <vector>
 
 #include "configuration.h"
+#include "quantum_dot.h"
 #include "integrator/RHS/bloch_rhs.h"
+#include "integrator/RHS/bloch_rhs.cpp"
 #include "integrator/history.h"
 #include "integrator/integrator.h"
 //#include "interactions/AIM/aim_interaction.h"
@@ -18,8 +20,6 @@
 #include "interactions/self_interaction.h"
 
 using namespace std;
-
-typedef Eigen::MatrixXcd matrix_cmplx;
 
 int main(int argc, char *argv[])
 {
@@ -152,6 +152,13 @@ int main(int argc, char *argv[])
       config.interpolation_order;
   std::cout << "  Min time to keep: " << min_time_to_keep << std::endl;
  
+  // === HISTORY ==========================================================
+
+  const int power_num = pow(2,config.num_particles); 
+  auto history = make_shared<Integrator::History<matrix_cmplx>>( 
+      config.num_particles, window, config.num_timesteps, min_time_to_keep, 2, task_idx);
+  history->fill(Eigen::MatrixXcd::Zero(power_num,power_num));
+ 
   Eigen::Matrix2cd init;
   init << 1, 0, 0, 0;
 
@@ -159,12 +166,6 @@ int main(int argc, char *argv[])
   for (int i = 1; i < config.num_particles; ++i)
     init_tensor = kroneckerProduct(init_tensor, init).eval();
 
-  // === HISTORY ==========================================================
-
-  const int power_num = pow(2,config.num_particles); 
-  auto history = make_shared<Integrator::History<matrix_cmplx>>( 
-      config.num_particles, window, config.num_timesteps, min_time_to_keep, 2, task_idx);
-  history->fill(Eigen::MatrixXcd::Zero(power_num,power_num));
   history->initialize_past(init_tensor);
 
   // === INTERACTIONS =====================================================
@@ -242,14 +243,14 @@ int main(int argc, char *argv[])
       task_idx, 
       0);
 
-  Integrator::PredictorCorrector<matrix_cmplx> solver_pc(
+  /*Integrator::PredictorCorrector<matrix_cmplx> solver_pc(
       config.dt, config.num_corrector_steps, 18, window, 3.15, history, std::move(bloch_rhs));
 
   start_time = std::clock();
 
   cout << "Solving P-C..." << endl;
 
-  solver_pc.solve();
+  solver_pc.solve();*/
 
   elapsed_time = ( std::clock() - start_time ) / (double) CLOCKS_PER_SEC;
 

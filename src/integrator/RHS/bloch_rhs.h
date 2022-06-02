@@ -6,7 +6,6 @@
 #include <vector>
 
 #include "../../interactions/interaction.h"
-#include "../../main.cpp"
 #include "../../math_utils.h"
 #include "../../quantum_dot.h"
 #include "../../pulse.h"
@@ -14,6 +13,8 @@
 namespace Integrator {
   class BlochRHS;
 }
+
+typedef Eigen::MatrixXcd matrix_cmplx;
 
 class Integrator::BlochRHS : public Integrator::RHS<matrix_cmplx> {
  public:
@@ -32,11 +33,11 @@ class Integrator::BlochRHS : public Integrator::RHS<matrix_cmplx> {
  
   void build_Hamiltonian();
   matrix_cmplx rhsfunc( const matrix_cmplx,
-                        const std::vector<cmplx>,
-                        const double);
+                        const ResultArray,
+                        const int);
 
-  void evaluate(const int) const override;
-  void evaluate_present(const int) const override;
+  void evaluate(const int) override;
+  void evaluate_present(const int) override;
   void evaluate_field(const int) override;
   // std::vector<BlochFunctionType> rhs_functions;
 

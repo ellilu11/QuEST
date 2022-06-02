@@ -23,8 +23,6 @@ class Integrator::PredictorCorrector {
                      const std::shared_ptr<Integrator::History<soltype>>,
                      std::unique_ptr<Integrator::RHS<soltype>>);
  
-  // void build_Hamiltonian();
-
   void solve(const log_level_t = log_level_t::LOG_NOTHING);
 
   void output_writer(const int) const;

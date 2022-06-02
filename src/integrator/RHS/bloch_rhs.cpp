@@ -1,5 +1,4 @@
 #include "bloch_rhs.h"
-#include "../../main.cpp"
 #include "../../quantum_dot.h"
 
 Integrator::BlochRHS::BlochRHS(
@@ -17,7 +16,7 @@ Integrator::BlochRHS::BlochRHS(
     std::shared_ptr<DotVector> obss,
     const int task_idx,
     const bool getflux)
-    : Integrator::RHS<Eigen::Vector2cd>(dt, history),
+    : Integrator::RHS<matrix_cmplx>(dt, history),
       hbar(hbar), mu0(mu0), eps0(1.0/(mu0*c0*c0)), omega(omega), dt(dt),
       num_timesteps(num_timesteps),
       num_solutions(history->num_particles),
@@ -25,7 +24,6 @@ Integrator::BlochRHS::BlochRHS(
       interactions(std::move(interactions)),
       efld_interactions(std::move(efld_interactions)),
       bfld_interactions(std::move(bfld_interactions)),
-      rhs_functions(std::move(rhs_functions)),
       obss(std::move(obss)),
       num_obs(obss->size()),
       getflux(getflux)
@@ -33,7 +31,6 @@ Integrator::BlochRHS::BlochRHS(
   outfile.open("./out/fld" + std::to_string(task_idx) + ".dat");
   outfile << std::scientific << std::setprecision(15);
   build_Hamiltonian();
-
 }
 
 Integrator::BlochRHS::~BlochRHS()
@@ -49,6 +46,7 @@ void Integrator::BlochRHS::build_Hamiltonian()
   sigp << 0, 0, 1, 0;
   sigm << 0, 1, 0, 0;
 
+  const int power_num = pow(2, num_solutions);
   H = Eigen::MatrixXcd::Zero(power_num,power_num);
 
   for (int i = 0; i < num_solutions; ++i){
@@ -65,12 +63,12 @@ void Integrator::BlochRHS::build_Hamiltonian()
 }
 
 matrix_cmplx Integrator::BlochRHS::rhsfunc( const matrix_cmplx rho,
-                                            const std::vector<cmplx> rabi,
-                                            const double step) const
+                                            const ResultArray rabi,
+                                            const int step )
 {
 
   // update the Hamiltonian using pulse and rabi here
-  // assume for now that pulse for all dots is at origin, and that RWA applies
+  // assume for now that pulse hits all dots at origin, and that RWA applies
   H *= (*pulse)(Eigen::Vector3d::Zero(), step*dt, 0, 0) / 2;
 
   matrix_cmplx rhodt = -iu * ( H * rho.adjoint() - rho * H.adjoint() ); // plus damping terms
@@ -78,7 +76,7 @@ matrix_cmplx Integrator::BlochRHS::rhsfunc( const matrix_cmplx rho,
   return rhodt;
 }
 
-void Integrator::BlochRHS::evaluate(const int step) const
+void Integrator::BlochRHS::evaluate(const int step)
 {
  // cmplx rabi = 0;
   // for (int i = 0; i < interactions.size(); ++i){ 
@@ -97,10 +95,9 @@ void Integrator::BlochRHS::evaluate(const int step) const
         history->get_value(step, 0),
 	      projected_rabi, 
         step);
-  }
 }
 
-void Integrator::BlochRHS::evaluate_present(const int step) const
+void Integrator::BlochRHS::evaluate_present(const int step)
 {
   auto eval_and_sum =
       [step](const InteractionBase::ResultArray &r,
@@ -113,16 +110,15 @@ void Integrator::BlochRHS::evaluate_present(const int step) const
       interactions.begin(), interactions.end(), nil, eval_and_sum);
 
   // for(int solution = 0; solution < num_solutions; ++solution) {
-  history->set_value(step, 1) = bloch_rhs(
+  history->set_value(step, 1) = rhsfunc(
         history->get_value(step, 0),
 	      projected_rabi,
         step);
-  }
 }
 
-/*void Integrator::BlochRHS::evaluate_field(const int step)
+void Integrator::BlochRHS::evaluate_field(const int step)
 {
-  auto nil = InteractionBase::ResultArray::Zero(num_obs, 1).eval();
+/*  auto nil = InteractionBase::ResultArray::Zero(num_obs, 1).eval();
 
   auto eval_and_sum =
       [step](const InteractionBase::ResultArray &r,
@@ -182,6 +178,6 @@ void Integrator::BlochRHS::evaluate_present(const int step) const
   }
     
   outfile << std::endl;
-
-}*/
+*/
+}
 
