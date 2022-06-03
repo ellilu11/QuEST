@@ -1,5 +1,6 @@
 #include "bloch_rhs.h"
 #include "../../quantum_dot.h"
+#include "../../math_utils.h"
 
 Integrator::BlochRHS::BlochRHS(
     const double hbar, 
@@ -13,20 +14,23 @@ Integrator::BlochRHS::BlochRHS(
     std::vector<std::shared_ptr<InteractionBase>> interactions,
     std::vector<std::shared_ptr<InteractionBase>> efld_interactions,
     std::vector<std::shared_ptr<InteractionBase>> bfld_interactions,
+    std::shared_ptr<DotVector> srcs,
     std::shared_ptr<DotVector> obss,
     const int task_idx,
-    const bool getflux)
+    const bool rotating)
     : Integrator::RHS<matrix_cmplx>(dt, history),
       hbar(hbar), mu0(mu0), eps0(1.0/(mu0*c0*c0)), omega(omega), dt(dt),
       num_timesteps(num_timesteps),
       num_solutions(history->num_particles),
       pulse(std::move(pulse)),
       interactions(std::move(interactions)),
+      num_interactions(interactions.size()),
       efld_interactions(std::move(efld_interactions)),
       bfld_interactions(std::move(bfld_interactions)),
+      srcs(std::move(srcs)),
       obss(std::move(obss)),
       num_obs(obss->size()),
-      getflux(getflux)
+      rotating(rotating)
 {
   outfile.open("./out/fld" + std::to_string(task_idx) + ".dat");
   outfile << std::scientific << std::setprecision(15);
@@ -47,18 +51,47 @@ void Integrator::BlochRHS::build_Hamiltonian()
   sigm << 0, 1, 0, 0;
 
   const int power_num = pow(2, num_solutions);
-  H = Eigen::MatrixXcd::Zero(power_num,power_num);
+  H0 = std::vector<matrix_cmplx>(num_solutions);
+  Hint = std::vector<matrix_cmplx>(num_interactions);
+  auto Hintp = std::vector<matrix_cmplx>(num_interactions);
+  auto Hintm = std::vector<matrix_cmplx>(num_interactions);
 
+  // construct pulse Hamiltonian
   for (int i = 0; i < num_solutions; ++i){
-    matrix_cmplx H_i = 
+    H0[i] = 
       i == 0 ? sigp+sigm : Id;
     for (int j = 1; j < num_solutions; ++j){
-      if ( i == j )
-        H_i = kroneckerProduct(H_i, sigp+sigm).eval();
-      else
-        H_i = kroneckerProduct(H_i, Id).eval();
+      H0[i] = 
+        i == j ?
+          kroneckerProduct(H0[i], sigp+sigm).eval() :
+          kroneckerProduct(H0[i], Id).eval();
     }
-    H += H_i;
+  }
+
+  // construct interaction Hamiltonian
+  for (int pair = 0; pair < num_interactions; ++pair){
+    int src, obs;
+    std::tie(src, obs) = idx2coord(pair);
+    // std::cout << src << " " << obs << std::endl;
+
+    Hintp[pair] = 
+      obs == 0 ? sigp : Id;   
+    Hintm[pair] = 
+      obs == 0 ? sigm : Id;   
+ 
+    for (int i = 1; i < num_solutions; ++i){
+      if ( i == obs ){
+        Hintp[pair] = kroneckerProduct(Hintp[pair], sigp).eval();
+        Hintm[pair] = kroneckerProduct(Hintm[pair], sigm).eval();
+      } else if ( i == src ){
+        Hintp[pair] = kroneckerProduct(Hintp[pair], sigm).eval();
+        Hintm[pair] = kroneckerProduct(Hintm[pair], sigp).eval();
+      } else {
+        Hintp[pair] = kroneckerProduct(Hintp[pair], Id).eval();
+        Hintm[pair] = kroneckerProduct(Hintm[pair], Id).eval();
+      }
+    }
+    Hint[pair] = Hintp[pair] + Hintm[pair];
   }
 }
 
@@ -67,20 +100,32 @@ matrix_cmplx Integrator::BlochRHS::rhsfunc( const matrix_cmplx rho,
                                             const int step )
 {
 
-  // update the Hamiltonian using pulse and rabi here
-  // assume for now that pulse hits all dots at origin, and that RWA applies
-  H *= (*pulse)(Eigen::Vector3d::Zero(), step*dt, 0, 0) / 2;
+  const int power_num = std::pow(2,num_solutions);
+  matrix_cmplx rhodt = Eigen::MatrixXcd::Zero(power_num,power_num);
 
-  matrix_cmplx rhodt = -iu * ( H * rho.adjoint() - rho * H.adjoint() ); // plus damping terms
+  // pulse interactions
+  for (int i = 0; i < num_solutions; ++i){
+    cmplx rabi_pulse = (*srcs)[i].dipole().dot(
+                      (*pulse)((*srcs)[i].position(), step*dt, rotating, 1) ); 
+    matrix_cmplx Hpulse = H0[i] * rabi_pulse;    
+    rhodt += -iu / hbar * ( Hpulse * rho.adjoint() - rho * Hpulse.adjoint() ); 
+  }
+
+  // src-src interactions
+  for (int pair = 0; pair < num_interactions; ++pair){
+    matrix_cmplx Hpair = Hint[pair] * rabi[pair];
+    rhodt += -iu / hbar * ( Hpair * rho.adjoint() - rho * Hpair.adjoint() ); 
+  }
+
+  // damping terms 
+  //
+  //
 
   return rhodt;
 }
 
 void Integrator::BlochRHS::evaluate(const int step)
 {
- // cmplx rabi = 0;
-  // for (int i = 0; i < interactions.size(); ++i){ 
-
   auto eval_and_sum =
       [step](const InteractionBase::ResultArray &r,
              const std::shared_ptr<InteractionBase> &interaction) {

@@ -230,7 +230,7 @@ const InteractionBase::ResultArray &DirectInteraction::evaluate_field(
   return results;
 }
 
-int DirectInteraction::coord2idx(int row, int col)
+int coord2idx(int row, int col)
 {
   assert(row != col);
   if(col > row) std::swap(row, col);
@@ -238,7 +238,7 @@ int DirectInteraction::coord2idx(int row, int col)
   return row * (row - 1) / 2 + col;
 }
 
-std::pair<int, int> DirectInteraction::idx2coord(const int idx)
+std::pair<int, int> idx2coord(const int idx)
 {
   const int row = std::floor((std::sqrt(1 + 8 * idx) + 1) / 2.0);
   const int col = idx - row * (row - 1) / 2;

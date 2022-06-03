@@ -25,7 +25,7 @@ class Integrator::BlochRHS : public Integrator::RHS<matrix_cmplx> {
            std::vector<std::shared_ptr<InteractionBase>>,
            std::vector<std::shared_ptr<InteractionBase>>,
            std::vector<std::shared_ptr<InteractionBase>>,
-           // std::vector<BlochFunctionType>,
+           std::shared_ptr<DotVector>,
            std::shared_ptr<DotVector>,
            const int, 
            const bool);
@@ -34,7 +34,7 @@ class Integrator::BlochRHS : public Integrator::RHS<matrix_cmplx> {
   void build_Hamiltonian();
   matrix_cmplx rhsfunc( const matrix_cmplx,
                         const ResultArray,
-                        const int);
+                        const int );
 
   void evaluate(const int) override;
   void evaluate_present(const int) override;
@@ -44,16 +44,17 @@ class Integrator::BlochRHS : public Integrator::RHS<matrix_cmplx> {
 private:
   int num_solutions, num_obs;
   int num_timesteps;
+  int num_interactions;
   const double hbar, mu0, eps0, omega, dt;
-  matrix_cmplx H;
+  std::vector<matrix_cmplx> H0, Hint;
   std::shared_ptr<const Pulse> pulse;
 
   std::vector<std::shared_ptr<InteractionBase>> interactions, efld_interactions, bfld_interactions;
-  std::shared_ptr<DotVector> obss;
+  std::shared_ptr<DotVector> srcs, obss;
   // std::vector<double> area_elements;
+  const bool rotating;
 
   std::ofstream outfile, fluxfile;
-  const bool getflux;
 };
 
 #endif

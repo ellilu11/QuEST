@@ -39,48 +39,70 @@ int main(int argc, char *argv[])
 
   history->initialize_past( Eigen::Vector2cd(rho00_0, rho01_0),
                             Eigen::Vector2cd(rho00_1, rho01_1) );
-  
+ 
 
-  const int num_particles = 10;
-  const int power_num = pow(2,num_particles); 
-
-  Eigen::Matrix2cd init;
-  init << 1, 0, 0, 0;
-
-  matrix_cmplx init_tensor = init;
-  for (int i = 1; i < num_particles; ++i)
-    init_tensor = kroneckerProduct(init_tensor, init).eval();
+  const int num_solutions = 3;
+  const int num_interactions = num_solutions * (num_solutions - 1) / 2;
 
   Eigen::Matrix2cd sigp, sigm, Id;
+
   Id = Eigen::Matrix2cd::Identity();
   sigp << 0, 0, 1, 0;
   sigm << 0, 1, 0, 0;
 
-  matrix_cmplx H = Eigen::MatrixXcd::Zero(power_num,power_num);
-
-  const double pulse = 1;
-
-  for (int i = 0; i < num_particles; ++i){
-    matrix_cmplx H_i = 
+  const int power_num = pow(2, num_solutions);
+  auto H0 = std::vector<matrix_cmplx>(num_solutions);
+  auto Hint = std::vector<matrix_cmplx>(num_interactions);
+  auto Hintp = std::vector<matrix_cmplx>(num_interactions);
+  auto Hintm = std::vector<matrix_cmplx>(num_interactions);
+  matrix_cmplx HintTot = Eigen::MatrixXcd::Zero(power_num,power_num);
+ 
+  // construct pulse Hamiltonian
+  for (int i = 0; i < num_solutions; ++i){
+    H0[i] = 
       i == 0 ? sigp+sigm : Id;
-    for (int j = 1; j < num_particles; ++j){
-      if ( i == j )
-        H_i = kroneckerProduct(H_i, sigp+sigm).eval();
-      else
-        H_i = kroneckerProduct(H_i, Id).eval();
+    for (int j = 1; j < num_solutions; ++j){
+      H0[i] = 
+        i == j ?
+          kroneckerProduct(H0[i], sigp+sigm).eval() :
+          kroneckerProduct(H0[i], Id).eval();
     }
-    H += H_i;
   }
-  H *= pulse;
 
-  std::cout << H << std::endl;
+  // construct interaction Hamiltonian
+  for (int pair = 0; pair < num_interactions; ++pair){
+    int src, obs;
+    std::tie(src, obs) = idx2coord(pair);
+    std::cout << src << " " << obs << std::endl;
+
+    Hintp[pair] = 
+      obs == 0 ? sigp : Id;   
+    Hintm[pair] = 
+      obs == 0 ? sigm : Id;   
+ 
+    for (int i = 1; i < num_solutions; ++i){
+      if ( i == obs ){
+        Hintp[pair] = kroneckerProduct(Hintp[pair], sigp).eval();
+        Hintm[pair] = kroneckerProduct(Hintm[pair], sigm).eval();
+      } else if ( i == src ){
+        Hintp[pair] = kroneckerProduct(Hintp[pair], sigm).eval();
+        Hintm[pair] = kroneckerProduct(Hintm[pair], sigp).eval();
+      } else {
+        Hintp[pair] = kroneckerProduct(Hintp[pair], Id).eval();
+        Hintm[pair] = kroneckerProduct(Hintm[pair], Id).eval();
+      }
+    }
+    Hint[pair] = Hintp[pair] + Hintm[pair];
+    HintTot += Hint[pair];
+  }
+ 
+  std::cout << HintTot << std::endl;
 
   matrix_cmplx rhodt = // -iu * ( H * rho );
-    -iu * ( H * init_tensor.adjoint() ); // plus damping terms
+    -iu * ( HintTot * init_tensor.adjoint() ); // plus damping terms
 
   std::cout << rhodt << std::endl;
-*/
-
+  */
   // === PARAMETERS ======================================================= 
  
   auto vm = parse_configs(argc, argv);
@@ -166,7 +188,7 @@ int main(int argc, char *argv[])
   for (int i = 1; i < config.num_particles; ++i)
     init_tensor = kroneckerProduct(init_tensor, init).eval();
 
-  // history->initialize_past(init_tensor);
+  history->initialize_past(init_tensor);
 
   // === INTERACTIONS =====================================================
  
@@ -212,9 +234,10 @@ int main(int argc, char *argv[])
       std::move(interactions), 
       std::move(efld_interactions), 
       std::move(bfld_interactions), 
+      qds, 
       obs, 
       task_idx, 
-      0);
+      rotating);
 
   Integrator::PredictorCorrector<matrix_cmplx> solver_pc(
       config.dt, config.num_corrector_steps, 18, window, 3.15, history, std::move(bloch_rhs));

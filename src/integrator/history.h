@@ -42,6 +42,7 @@ class Integrator::History {
   int num_particles;
   int num_timesteps;
   int window;
+  int time_idx_ubound;
 
  private:
   soltype_array<soltype> array_;
@@ -70,7 +71,7 @@ Integrator::History<soltype>::History(const int num_particles,
 {
   // TODO: need to make the minimum: max_transit_steps_between_dots +
   // interpolation_order
-  int time_idx_ubound = std::max(min_time_idx_ubound, window) + 10;
+  time_idx_ubound = std::max(min_time_idx_ubound, window) + 10;
 
   array_.resize(
       boost::extents[time_idx_ubound][num_derivatives]);
@@ -95,18 +96,19 @@ void Integrator::History<soltype>::fill(const soltype &val)
 template <class soltype>
 void Integrator::History<soltype>::initialize_past(const soltype &val)
 {
-  // for(int n = 0; n < static_cast<int>(array_.shape()[PARTICLES]); ++n) {
-  for(int t = -window; t <= 0; ++t) { set_value(t, DERIV_0) = val; }
-  // }
+  for(int t = -window; t <= 0; ++t) { 
+    // std::cout << time_idx_in_array(t) << " ";
+    set_value(t, DERIV_0) = val; 
+  }
 }
 
 template <class soltype>
 int Integrator::History<soltype>::time_idx_in_array(const int time_idx) const
 {
   int time_base = 0;  // static_cast<int>(array_.index_bases()[1]);
-  int time_idx_ubound =
+  /*int time_idx_ubound =
       static_cast<int>(array_.index_bases()[1] + array_.shape()[1]);
-
+  */
   return (time_idx >= time_base) ? 
     //(time_idx-1) % time_idx_ubound + 1;
     time_idx % time_idx_ubound
@@ -155,13 +157,12 @@ void Integrator::History<soltype>::write_step_to_file(const int timestep)
 
   Eigen::MatrixXcd out = get_value(timestep, 0);
 
-  outfile << (out(0,0)).real();
- /*   outfile // << timestep << " "
-            << (get_value(n, timestep, 0))[0].real() << " "
-            << rho01_real << " "
-            << rho01_imag << " ";
-            // << rho01_abs << " ";*/
+  for (int i = 0; i < pow(2,num_particles); ++i){
 
+    outfile << (out(i,i)).real() << " ";
+            // << (out(0,1)).real() << " "
+            // << (out(0,1)).imag() << " ";
+  }
   outfile << "\n";
   if(timestep > num_timesteps*0.90)
     outfile.flush();  // QUESTION: why is this needed?
