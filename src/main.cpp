@@ -193,12 +193,12 @@ int main(int argc, char *argv[])
   history->initialize_past(init_tensor);
 
   // test trace functions
-  Eigen::MatrixXcd init2 = traceOverDim( init_tensor, config.num_particles, 2);
-  std::cout << init2 << std::endl;
+  // Eigen::MatrixXcd init2 = traceOverDim( init_tensor, config.num_particles, 2);
+  // std::cout << init2 << std::endl;
 
   // === INTERACTIONS =====================================================
  
-  /*const double propagation_constant = config.mu0 / (4 * M_PI * config.hbar);
+  const double propagation_constant = config.mu0 / (4 * M_PI * config.hbar);
 
   auto pulse = make_shared<Pulse>(read_pulse_config("pulse.cfg"));
 
@@ -207,13 +207,13 @@ int main(int argc, char *argv[])
   std::clock_t start_time;
   start_time = std::clock();
 
-  std::shared_ptr<InteractionBase> selfwise;
   std::shared_ptr<InteractionBase> pairwise;
 
   std::vector<std::shared_ptr<InteractionBase>> interactions{};
   
-  if (config.self_interacting == Configuration::SELF_INTERACTING::TRUE)
-    interactions.push_back( selfwise );
+  Propagation::RotatingEFIE dyadic(config.c0, propagation_constant, config.omega, beta, 0.0);
+  pairwise = make_shared<DirectInteraction>(qds, nullptr, history, dyadic,
+                                             config.interpolation_order, config.c0, config.dt, config.omega);
 
   if (config.interacting == Configuration::INTERACTING::TRUE)
     interactions.push_back( pairwise );
@@ -257,6 +257,6 @@ int main(int argc, char *argv[])
   elapsed_time = ( std::clock() - start_time ) / (double) CLOCKS_PER_SEC;
 
   cout << "  Elapsed time: " << elapsed_time << "s" << std::endl;
-*/
+
   return 0;
 }

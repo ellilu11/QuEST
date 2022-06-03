@@ -117,8 +117,7 @@ matrix_cmplx Integrator::BlochRHS::rhsfunc( const matrix_cmplx rho,
   for (int pair = 0; pair < num_interactions; ++pair){
     int src, obs;
     std::tie(src, obs) = idx2coord(pair);
-    Eigen::Vector3cd Efld_pair = Efld[pair];
-    cmplx rabi = (*srcs)[obs].dipole().dot( Efld_pair ) / hbar;
+    cmplx rabi = (*srcs)[obs].dipole().dot( Efld[pair] ) / hbar;
     matrix_cmplx Hpair = Hint[pair] * rabi;
     rhodt += -iu * ( Hpair * rho.adjoint() - rho * Hpair.adjoint() ); 
   }
@@ -139,8 +138,14 @@ void Integrator::BlochRHS::evaluate(const int step)
       };
   auto nil = InteractionBase::ResultArray::Zero(num_solutions, 1).eval();
  */
-  auto projected_efld = interactions[0]->evaluate(step);
-  /*std::accumulate(
+
+  ResultArray projected_efld;
+
+  if (num_interactions)
+    projected_efld = interactions[0]->evaluate(step);
+  else
+    projected_efld.setZero();
+  /*  std::accumulate(
       interactions.begin(), interactions.end(), nil, eval_and_sum);
 */
   history->set_value(step, 1) = rhsfunc(
@@ -158,8 +163,13 @@ void Integrator::BlochRHS::evaluate_present(const int step)
       };
   auto nil = InteractionBase::ResultArray::Zero(num_solutions, 1).eval();
 */
-  auto projected_efld = interactions[0]->evaluate(step);
-  /*std::accumulate(
+  ResultArray projected_efld;
+
+  if (num_interactions)
+    projected_efld = interactions[0]->evaluate(step);
+  else
+    projected_efld.setZero();
+  /*  std::accumulate(
       interactions.begin(), interactions.end(), nil, eval_and_sum);
   */
   history->set_value(step, 1) = rhsfunc(

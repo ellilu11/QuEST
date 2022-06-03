@@ -17,8 +17,8 @@ class InteractionBase {
     const double dt)
       : dots(std::move(dots)),
         obss(std::move(obss)),
-        num_src(dots->size()),
-        num_obs(obss->size()),
+        num_src((this->dots)->size()),
+        num_obs((this->obss) ? (this->obss)->size() : 0),
         num_interactions( num_src * (num_src-1) / 2 ),
         num_srcobs( num_src * num_obs ),
         results(obss ? obss->size() : (dots ? num_interactions : 0) ),
