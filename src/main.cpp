@@ -7,7 +7,9 @@
 //#include <iterator>
 #include <vector>
 
+#include "common.h"
 #include "configuration.h"
+#include "math_utils.h"
 #include "quantum_dot.h"
 #include "integrator/RHS/bloch_rhs.h"
 #include "integrator/RHS/bloch_rhs.cpp"
@@ -190,9 +192,13 @@ int main(int argc, char *argv[])
 
   history->initialize_past(init_tensor);
 
+  // test trace functions
+  Eigen::MatrixXcd init2 = traceOverDim( init_tensor, config.num_particles, 2);
+  std::cout << init2 << std::endl;
+
   // === INTERACTIONS =====================================================
  
-  const double propagation_constant = config.mu0 / (4 * M_PI * config.hbar);
+  /*const double propagation_constant = config.mu0 / (4 * M_PI * config.hbar);
 
   auto pulse = make_shared<Pulse>(read_pulse_config("pulse.cfg"));
 
@@ -251,6 +257,6 @@ int main(int argc, char *argv[])
   elapsed_time = ( std::clock() - start_time ) / (double) CLOCKS_PER_SEC;
 
   cout << "  Elapsed time: " << elapsed_time << "s" << std::endl;
-
+*/
   return 0;
 }

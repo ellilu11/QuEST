@@ -13,7 +13,7 @@ namespace Integrator {
 template <class soltype>
 class Integrator::RHS {
  public:
-	typedef Eigen::Array<cmplx, Eigen::Dynamic, 1> ResultArray;
+	// typedef Eigen::Array<Eigen::Vector3cd, Eigen::Dynamic, 1> ResultArray;
 
   RHS(const double dt, const std::shared_ptr<History<soltype>> history)
       : dt(dt), history(std::move(history)){};

@@ -140,6 +140,43 @@ double falling_factorial(const double x, const int n)
   return result;
 }
 
+matrix_cmplx traceOverDim( matrix_cmplx A, int ndims, int dim_idx ){
+
+  Eigen::Vector2cd sp, sm;
+  sp << 1, 0;
+  sm << 0, 1;
+  Eigen::Matrix2cd Id = Eigen::Matrix2cd::Identity();
+
+  matrix_cmplx Trp = 
+    dim_idx == 0 ? kroneckerProduct(sp, Id) : Id;
+  matrix_cmplx Trm = 
+    dim_idx == 0 ? kroneckerProduct(sm, Id) : Id;
+
+  for (int i = 1; i < ndims; ++i){
+    Trp = 
+      dim_idx == i 
+        ? kroneckerProduct( Trp, sp ).eval()
+        : kroneckerProduct( Trp, Id ).eval();
+    Trm = 
+      dim_idx == i 
+        ? kroneckerProduct( Trm, sm ).eval()
+        : kroneckerProduct( Trm, Id ).eval();
+  }
+  return Trp*A*Trp.adjoint() + Trm*A*Trm.adjoint() ;
+}
+
+
+matrix_cmplx traceOverDims( matrix_cmplx A, int ndims, int dim_idx ){
+
+  matrix_cmplx trA = A;
+
+  for (int i = 0; i < ndims; ++i)
+    if (i != dim_idx)
+      trA = traceOverDim( trA, ndims, i );
+
+  return trA;
+}
+
 double spherical_bessel(double arg, int order){
     switch (order){
         case 0:

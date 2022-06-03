@@ -5,16 +5,16 @@
 #include <algorithm>
 #include <vector>
 
+#include "../../common.h"
 #include "../../interactions/interaction.h"
 #include "../../math_utils.h"
 #include "../../quantum_dot.h"
 #include "../../pulse.h"
 #include "rhs.h"
+
 namespace Integrator {
   class BlochRHS;
 }
-
-typedef Eigen::MatrixXcd matrix_cmplx;
 
 class Integrator::BlochRHS : public Integrator::RHS<matrix_cmplx> {
  public:
@@ -51,7 +51,6 @@ private:
 
   std::vector<std::shared_ptr<InteractionBase>> interactions, efld_interactions, bfld_interactions;
   std::shared_ptr<DotVector> srcs, obss;
-  // std::vector<double> area_elements;
   const bool rotating;
 
   std::ofstream outfile, fluxfile;

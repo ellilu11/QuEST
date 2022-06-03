@@ -4,6 +4,7 @@
 #include <Eigen/Dense>
 #include <boost/multi_array.hpp>
 
+#include "../common.h"
 #include "../integrator/history.h"
 #include "../lagrange_set.h"
 #include "../math_utils.h"
@@ -16,7 +17,7 @@ class HistoryInteraction : public InteractionBase {
   HistoryInteraction(
       std::shared_ptr<const DotVector> dots,
       std::shared_ptr<const DotVector> obss,
-      std::shared_ptr<const Integrator::History<Eigen::Vector2cd>> history,
+      std::shared_ptr<const Integrator::History<matrix_cmplx>> history,
       const int interp_order,
       const double c0,
       const double dt)
@@ -26,7 +27,7 @@ class HistoryInteraction : public InteractionBase {
         c0(c0){};
 
  protected:
-  std::shared_ptr<const Integrator::History<Eigen::Vector2cd>> history;
+  std::shared_ptr<const Integrator::History<matrix_cmplx>> history;
   int interp_order;
   const double c0;
 

@@ -2,6 +2,7 @@
 #define MATH_UTILS_H
 
 #include <Eigen/Dense>
+#include <Eigen/KroneckerProduct>
 #include <cmath>
 #include <utility>
 #include <vector>
@@ -28,5 +29,9 @@ std::pair<int, int> idx2coord(const int);
 
 std::pair<int, double> split_double(const double);
 double falling_factorial(const double, int);
+
+matrix_cmplx traceOverDim(matrix_cmplx, int, int);
+matrix_cmplx traceOverDims(matrix_cmplx, int, int);
+
 double spherical_bessel(double, int);
 #endif

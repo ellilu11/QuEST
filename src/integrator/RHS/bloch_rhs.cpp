@@ -1,6 +1,8 @@
 #include "bloch_rhs.h"
+#include "../../common.h"
 #include "../../quantum_dot.h"
 #include "../../math_utils.h"
+#include "../../interactions/interaction.h"
 
 Integrator::BlochRHS::BlochRHS(
     const double hbar, 
@@ -62,9 +64,9 @@ void Integrator::BlochRHS::build_Hamiltonian()
       i == 0 ? sigp+sigm : Id;
     for (int j = 1; j < num_solutions; ++j){
       H0[i] = 
-        i == j ?
-          kroneckerProduct(H0[i], sigp+sigm).eval() :
-          kroneckerProduct(H0[i], Id).eval();
+        i == j 
+          ? kroneckerProduct(H0[i], sigp+sigm).eval()
+          : kroneckerProduct(H0[i], Id).eval();
     }
   }
 
@@ -96,7 +98,7 @@ void Integrator::BlochRHS::build_Hamiltonian()
 }
 
 matrix_cmplx Integrator::BlochRHS::rhsfunc( const matrix_cmplx rho,
-                                            const ResultArray rabi,
+                                            const ResultArray Efld,
                                             const int step )
 {
 
@@ -106,15 +108,19 @@ matrix_cmplx Integrator::BlochRHS::rhsfunc( const matrix_cmplx rho,
   // pulse interactions
   for (int i = 0; i < num_solutions; ++i){
     cmplx rabi_pulse = (*srcs)[i].dipole().dot(
-                      (*pulse)((*srcs)[i].position(), step*dt, rotating, 1) ); 
+                          (*pulse)((*srcs)[i].position(), step*dt, rotating, 1) ) / hbar; 
     matrix_cmplx Hpulse = H0[i] * rabi_pulse;    
-    rhodt += -iu / hbar * ( Hpulse * rho.adjoint() - rho * Hpulse.adjoint() ); 
+    rhodt += -iu * ( Hpulse * rho.adjoint() - rho * Hpulse.adjoint() ); 
   }
 
   // src-src interactions
   for (int pair = 0; pair < num_interactions; ++pair){
-    matrix_cmplx Hpair = Hint[pair] * rabi[pair];
-    rhodt += -iu / hbar * ( Hpair * rho.adjoint() - rho * Hpair.adjoint() ); 
+    int src, obs;
+    std::tie(src, obs) = idx2coord(pair);
+    Eigen::Vector3cd Efld_pair = Efld[pair];
+    cmplx rabi = (*srcs)[obs].dipole().dot( Efld_pair ) / hbar;
+    matrix_cmplx Hpair = Hint[pair] * rabi;
+    rhodt += -iu * ( Hpair * rho.adjoint() - rho * Hpair.adjoint() ); 
   }
 
   // damping terms 
@@ -126,38 +132,39 @@ matrix_cmplx Integrator::BlochRHS::rhsfunc( const matrix_cmplx rho,
 
 void Integrator::BlochRHS::evaluate(const int step)
 {
-  auto eval_and_sum =
+  /*auto eval_and_sum =
       [step](const InteractionBase::ResultArray &r,
              const std::shared_ptr<InteractionBase> &interaction) {
         return r + interaction->evaluate(step);
       };
   auto nil = InteractionBase::ResultArray::Zero(num_solutions, 1).eval();
- 
-  auto projected_rabi = std::accumulate(
+ */
+  auto projected_efld = interactions[0]->evaluate(step);
+  /*std::accumulate(
       interactions.begin(), interactions.end(), nil, eval_and_sum);
-
+*/
   history->set_value(step, 1) = rhsfunc(
         history->get_value(step, 0),
-	      projected_rabi, 
+	      projected_efld, 
         step);
 }
 
 void Integrator::BlochRHS::evaluate_present(const int step)
 {
-  auto eval_and_sum =
+  /*auto eval_and_sum =
       [step](const InteractionBase::ResultArray &r,
              const std::shared_ptr<InteractionBase> &interaction) {
         return r + interaction->evaluate_present(step);
       };
   auto nil = InteractionBase::ResultArray::Zero(num_solutions, 1).eval();
-
-  auto projected_rabi = std::accumulate(
+*/
+  auto projected_efld = interactions[0]->evaluate(step);
+  /*std::accumulate(
       interactions.begin(), interactions.end(), nil, eval_and_sum);
-
-  // for(int solution = 0; solution < num_solutions; ++solution) {
+  */
   history->set_value(step, 1) = rhsfunc(
         history->get_value(step, 0),
-	      projected_rabi,
+	      projected_efld,
         step);
 }
 

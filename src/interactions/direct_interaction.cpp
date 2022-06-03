@@ -4,7 +4,7 @@
 DirectInteraction::DirectInteraction(
     std::shared_ptr<const DotVector> dots,
     std::shared_ptr<const DotVector> obss,
-    std::shared_ptr<const Integrator::History<Eigen::Vector2cd>> history,
+    std::shared_ptr<const Integrator::History<matrix_cmplx>> history,
     Propagation::Kernel<cmplx> &kernel,
     const int interp_order,
     const double c0,
@@ -12,10 +12,9 @@ DirectInteraction::DirectInteraction(
     const double omega)
     : HistoryInteraction(
           std::move(dots), std::move(obss), std::move(history), interp_order, c0, dt),
-      num_src((this->dots)->size()),
-      num_obs((this->obss) ? (this->obss)->size() : 0),
-      num_interactions( num_src * (num_src - 1) / 2 ),
-      num_srcobs( num_src * num_obs ),
+      // num_src((this->dots)->size()),
+      // num_obs((this->obss) ? (this->obss)->size() : 0),
+      // num_interactions( num_src * (num_src - 1) / 2 ),
       omega(omega), 
       floor_delays(num_interactions),
       coeffs(boost::extents[num_interactions][interp_order + 1]),
@@ -51,10 +50,9 @@ void DirectInteraction::build_coeff_table(
         kernel.coefficients(dr, lagrange));
 
     Eigen::Vector3d dip_src = (*dots)[src].dipole();
-    Eigen::Vector3d dip_obs = (*dots)[obs].dipole();
 
     for(int i = 0; i <= interp_order; ++i)
-      coeffs[pair_idx][i] = dip_obs.dot( interp_dyads[i] * dip_src );
+      coeffs[pair_idx][i] = interp_dyads[i] * dip_src;
   }
 }
 
@@ -101,6 +99,7 @@ const InteractionBase::ResultArray &DirectInteraction::evaluate(
   constexpr int RHO_01 = 1;
   const double time0 = time_idx * dt;
   cmplx rho_src, rho_obs;
+  matrix_cmplx rho_matrix;
 
   results.setZero();
   past_terms_of_convolution.setZero();
@@ -114,30 +113,24 @@ const InteractionBase::ResultArray &DirectInteraction::evaluate(
           std::max(time_idx - floor_delays[pair_idx] - i, -history->window);
       const double time = (time_idx - i) * dt;
 
-      rho_obs = (history->get_value(obs, s, 0))[RHO_01];
-      rho_src = (history->get_value(src, s, 0))[RHO_01];
+      // work out trace 
+      rho_matrix = traceOverDims( history->get_value(s, 0), num_src, src );
+      rho_src = rho_matrix(0,1);
 
-      if ( !omega ){
-        past_terms_of_convolution[src] += 2.0 * std::real( rho_obs * coeffs[pair_idx][i] );
-        past_terms_of_convolution[obs] += 2.0 * std::real( rho_src * coeffs[pair_idx][i] );
-			} else {
-        past_terms_of_convolution[src] += rho_obs * coeffs[pair_idx][i] ;
-	      past_terms_of_convolution[obs] += rho_src * coeffs[pair_idx][i] ;
-	
-    	}
+      if ( !omega )
+        past_terms_of_convolution[pair_idx] += 2.0 * (rho_src * coeffs[pair_idx][i]).real() ;
+			else
+        past_terms_of_convolution[pair_idx] += rho_src * coeffs[pair_idx][i] ;
     }
    
     const int s = std::max(time_idx - floor_delays[pair_idx], -history->window);
-    rho_obs = (history->get_value(obs, s, 0))[RHO_01];
-    rho_src = (history->get_value(src, s, 0))[RHO_01];
+    rho_matrix = traceOverDims( history->get_value(s, 0), num_src, src );
+    rho_src = rho_matrix(0,1);
 
-    if ( !omega ){
-      results[src] += 2.0 * std::real( rho_obs * coeffs[pair_idx][0] );
-      results[obs] += 2.0 * std::real( rho_src * coeffs[pair_idx][0] );
-    } else {
-      results[src] += rho_obs * coeffs[pair_idx][0] ;
-	    results[obs] += rho_src * coeffs[pair_idx][0] ;
-    } 
+    if ( !omega )
+      results[pair_idx] += 2.0 * ( rho_src * coeffs[pair_idx][0] ).real();
+    else 
+      results[pair_idx] += rho_src * coeffs[pair_idx][0] ;
   }
 
   results += past_terms_of_convolution;
@@ -151,6 +144,7 @@ const InteractionBase::ResultArray &DirectInteraction::evaluate_present(
   constexpr int RHO_01 = 1;
   const double time0 = time_idx * dt;
   cmplx rho_src, rho_obs;
+  matrix_cmplx rho_matrix;
 
   results.setZero();
   
@@ -160,17 +154,14 @@ const InteractionBase::ResultArray &DirectInteraction::evaluate_present(
     std::tie(src, obs) = idx2coord(pair_idx);
 
     const int s = std::max(time_idx - floor_delays[pair_idx], -history->window);
-    rho_obs = (history->get_value(obs, s, 0))[RHO_01];
-    rho_src = (history->get_value(src, s, 0))[RHO_01];
+    // rho_src = (history->get_value(src, s, 0))[RHO_01];
+    rho_matrix = traceOverDims( history->get_value(s, 0), num_src, src );
+    rho_src = rho_matrix(0,1);
 
-    if ( !omega ){
-      results[src] += 2.0 * std::real( rho_obs * coeffs[pair_idx][0] );
-      results[obs] += 2.0 * std::real( rho_src * coeffs[pair_idx][0] );
-    } else {
-	    results[src] += rho_obs * coeffs[pair_idx][0] ;
-	    results[obs] += rho_src * coeffs[pair_idx][0] ;
-			
-    }    
+    if ( !omega )
+      results[pair_idx] += 2.0 * ( rho_src * coeffs[pair_idx][0] ).real();
+    else 
+	    results[pair_idx] += rho_src * coeffs[pair_idx][0] ;
   }
  
   results += past_terms_of_convolution;
@@ -181,7 +172,7 @@ const InteractionBase::ResultArray &DirectInteraction::evaluate_present(
 const InteractionBase::ResultArray &DirectInteraction::evaluate_field(
     const int time_idx, const bool flag)
 {
-  constexpr int RHO_01 = 1;
+  /*constexpr int RHO_01 = 1;
   const double time0 = time_idx * dt;
   cmplx rho_src, rho_obs;
 
@@ -226,23 +217,8 @@ const InteractionBase::ResultArray &DirectInteraction::evaluate_field(
       }
     }
   }
-
+*/
   return results;
 }
 
-int coord2idx(int row, int col)
-{
-  assert(row != col);
-  if(col > row) std::swap(row, col);
-
-  return row * (row - 1) / 2 + col;
-}
-
-std::pair<int, int> idx2coord(const int idx)
-{
-  const int row = std::floor((std::sqrt(1 + 8 * idx) + 1) / 2.0);
-  const int col = idx - row * (row - 1) / 2;
-
-  return std::pair<int, int>(row, col);
-}
 
