@@ -96,7 +96,6 @@ void DirectInteraction::build_fldcoeff_table(
 const InteractionBase::ResultArray &DirectInteraction::evaluate(
     const int time_idx)
 {
-  constexpr int RHO_01 = 1;
   const double time0 = time_idx * dt;
   cmplx rho_src, rho_obs;
   matrix_cmplx rho_matrix;
@@ -141,7 +140,6 @@ const InteractionBase::ResultArray &DirectInteraction::evaluate(
 const InteractionBase::ResultArray &DirectInteraction::evaluate_present(
     const int time_idx)
 {
-  constexpr int RHO_01 = 1;
   const double time0 = time_idx * dt;
   cmplx rho_src, rho_obs;
   matrix_cmplx rho_matrix;

@@ -1,4 +1,5 @@
 #include "math_utils.h"
+#include <iostream>
 
 int wrapmod(const int n, const int M) { return ((n % M) + M) % M; }
 std::vector<double> linspace(const double low,
@@ -146,11 +147,15 @@ matrix_cmplx traceOverDim( matrix_cmplx A, int ndims, int dim_idx ){
   sp << 1, 0;
   sm << 0, 1;
   Eigen::Matrix2cd Id = Eigen::Matrix2cd::Identity();
-
-  matrix_cmplx Trp = 
-    dim_idx == 0 ? kroneckerProduct(sp, Id) : Id;
-  matrix_cmplx Trm = 
-    dim_idx == 0 ? kroneckerProduct(sm, Id) : Id;
+  matrix_cmplx Trp, Trm;
+  
+  if (dim_idx == 0){
+    Trp = sp; 
+    Trm = sm; 
+  } else {
+    Trp = Id;
+    Trm = Id;
+  }
 
   for (int i = 1; i < ndims; ++i){
     Trp = 
@@ -162,17 +167,25 @@ matrix_cmplx traceOverDim( matrix_cmplx A, int ndims, int dim_idx ){
         ? kroneckerProduct( Trm, sm ).eval()
         : kroneckerProduct( Trm, Id ).eval();
   }
-  return Trp*A*Trp.adjoint() + Trm*A*Trm.adjoint() ;
+
+  std::cout << "Trp: " << Trp << std::endl << std::endl;
+  std::cout << "Trm: " << Trm << std::endl << std::endl;
+
+  return Trp*A*Trp.adjoint() + Trm*A*Trm.adjoint();
 }
 
 
-matrix_cmplx traceOverDims( matrix_cmplx A, int ndims, int dim_idx ){
+matrix_cmplx traceOverDims( matrix_cmplx A, int Ndims, int Dim_idx ){
 
   matrix_cmplx trA = A;
+  int ndims_traced = 0;
 
-  for (int i = 0; i < ndims; ++i)
-    if (i != dim_idx)
-      trA = traceOverDim( trA, ndims, i );
+  for (int i = 0; i < Ndims; ++i){
+    if (i != Dim_idx){
+      trA = traceOverDim( trA, Ndims-ndims_traced, i-ndims_traced );
+      ndims_traced++;
+    }
+  }
 
   return trA;
 }

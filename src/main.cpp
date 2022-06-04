@@ -47,10 +47,15 @@ int main(int argc, char *argv[])
   const int num_interactions = num_solutions * (num_solutions - 1) / 2;
 
   Eigen::Matrix2cd sigp, sigm, Id;
+  Eigen::Vector2cd sp, sm;
 
   Id = Eigen::Matrix2cd::Identity();
   sigp << 0, 0, 1, 0;
   sigm << 0, 1, 0, 0;
+  sp << 1, 0;
+  sm << 0, 1;
+
+  std::cout << kroneckerProduct(sp, Id) << std::endl;
 
   const int power_num = pow(2, num_solutions);
   auto H0 = std::vector<matrix_cmplx>(num_solutions);
@@ -110,7 +115,7 @@ int main(int argc, char *argv[])
   auto vm = parse_configs(argc, argv);
 
   string idstr(argv[1]);
-  string dip_idstr(argv[2]);
+  // string dip_idstr(argv[2]);
   const bool rotating = 
     config.ref_frame == Configuration::REFERENCE_FRAME::ROT ? true : false;
   const bool rwa = 
@@ -193,12 +198,12 @@ int main(int argc, char *argv[])
   history->initialize_past(init_tensor);
 
   // test trace functions
-  // Eigen::MatrixXcd init2 = traceOverDim( init_tensor, config.num_particles, 2);
-  // std::cout << init2 << std::endl;
+  Eigen::MatrixXcd init2 = traceOverDims( init_tensor, config.num_particles, 0 );
+  std::cout << init2 << std::endl;
 
   // === INTERACTIONS =====================================================
  
-  const double propagation_constant = config.mu0 / (4 * M_PI * config.hbar);
+  /*const double propagation_constant = config.mu0 / (4 * M_PI);
 
   auto pulse = make_shared<Pulse>(read_pulse_config("pulse.cfg"));
 
@@ -257,6 +262,6 @@ int main(int argc, char *argv[])
   elapsed_time = ( std::clock() - start_time ) / (double) CLOCKS_PER_SEC;
 
   cout << "  Elapsed time: " << elapsed_time << "s" << std::endl;
-
+*/
   return 0;
 }
