@@ -168,10 +168,12 @@ matrix_cmplx traceOverDim( matrix_cmplx A, int ndims, int dim_idx ){
         : kroneckerProduct( Trm, Id ).eval();
   }
 
-  std::cout << "Trp: " << Trp << std::endl << std::endl;
-  std::cout << "Trm: " << Trm << std::endl << std::endl;
+  // Trp = Trp.transpose();
+  // Trm = Trm.transpose();
+  // std::cout << "Trp: " << Trp << std::endl << std::endl;
+  // std::cout << "Trm: " << Trm << std::endl << std::endl;
 
-  return Trp*A*Trp.adjoint() + Trm*A*Trm.adjoint();
+  return Trp.transpose()*A*Trp + Trm.transpose()*A*Trm;
 }
 
 
@@ -185,8 +187,9 @@ matrix_cmplx traceOverDims( matrix_cmplx A, int Ndims, int Dim_idx ){
       trA = traceOverDim( trA, Ndims-ndims_traced, i-ndims_traced );
       ndims_traced++;
     }
+    // std::cout << i << std::endl << trA << std::endl << std::endl;
   }
-
+  
   return trA;
 }
 
