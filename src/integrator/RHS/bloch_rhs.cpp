@@ -36,7 +36,7 @@ Integrator::BlochRHS::BlochRHS(
 {
   outfile.open("./out/fld" + std::to_string(task_idx) + ".dat");
   outfile << std::scientific << std::setprecision(15);
-  build_Hamiltonian();
+  build_rhsmatrices();
 }
 
 Integrator::BlochRHS::~BlochRHS()
@@ -44,7 +44,7 @@ Integrator::BlochRHS::~BlochRHS()
   outfile.close();
 }
 
-void Integrator::BlochRHS::build_Hamiltonian()
+void Integrator::BlochRHS::build_rhsmatrices()
 {
   Eigen::Matrix2cd sigp, sigm, Id;
 
@@ -54,23 +54,45 @@ void Integrator::BlochRHS::build_Hamiltonian()
 
   const int power_num = pow(2, num_solutions);
   H0 = std::vector<matrix_cmplx>(num_solutions);
+  D0 = std::vector<matrix_cmplx>(num_solutions);
+  Dp = std::vector<matrix_cmplx>(num_solutions);
+  Dm = std::vector<matrix_cmplx>(num_solutions);
   Hint = std::vector<matrix_cmplx>(num_interactions);
+
   auto Hintp = std::vector<matrix_cmplx>(num_interactions);
   auto Hintm = std::vector<matrix_cmplx>(num_interactions);
 
-  // construct pulse Hamiltonian
+  // build pulse Hamiltonian and damping matrices
   for (int i = 0; i < num_solutions; ++i){
     H0[i] = 
       i == 0 ? sigp+sigm : Id;
+    D0[i] = 
+      i == 0 ? sigp*sigm : Id;
+    Dp[i] = 
+      i == 0 ? sigp : Id;
+    Dm[i] = 
+      i == 0 ? sigm : Id;
     for (int j = 1; j < num_solutions; ++j){
       H0[i] = 
         i == j 
           ? kroneckerProduct(H0[i], sigp+sigm).eval()
           : kroneckerProduct(H0[i], Id).eval();
+      D0[i] = 
+        i == j 
+          ? kroneckerProduct(D0[i], sigp*sigm).eval()
+          : kroneckerProduct(D0[i], Id).eval();
+      Dp[i] = 
+        i == j 
+          ? kroneckerProduct(Dp[i], sigp).eval()
+          : kroneckerProduct(Dp[i], Id).eval();
+      Dm[i] = 
+        i == j 
+          ? kroneckerProduct(Dm[i], sigm).eval()
+          : kroneckerProduct(Dm[i], Id).eval();
     }
   }
 
-  // construct interaction Hamiltonian
+  // build interaction Hamiltonian
   for (int pair = 0; pair < num_interactions; ++pair){
     int src, obs;
     std::tie(src, obs) = idx2coord(pair);
@@ -95,6 +117,7 @@ void Integrator::BlochRHS::build_Hamiltonian()
     }
     Hint[pair] = Hintp[pair] + Hintm[pair];
   }
+    
 }
 
 matrix_cmplx Integrator::BlochRHS::rhsfunc( const matrix_cmplx rho,
@@ -122,9 +145,10 @@ matrix_cmplx Integrator::BlochRHS::rhsfunc( const matrix_cmplx rho,
     rhodt += -iu * ( Hpair * rho.adjoint() - rho * Hpair.adjoint() ); 
   }
 
-  // damping terms 
-  //
-  //
+  // damping 
+  for (int i = 0; i < num_solutions; ++i)
+    rhodt -= ( D0[i] * rho + rho * D0[i] - 2 * Dm[i] * rho * Dp[i] )
+           / (*srcs)[i].damping().first; 
 
   return rhodt;
 }

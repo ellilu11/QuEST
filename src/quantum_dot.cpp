@@ -4,10 +4,10 @@ using namespace std;
 
 QuantumDot::QuantumDot(const Eigen::Vector3d &pos,
                        const double freq,
-                       const std::pair<double, double> &damping,
+                       const std::pair<double, double> &damp,
                        const Eigen::Vector3d &dipr,
                        const Eigen::Vector3d &dipi)
-    : pos(pos), freq(freq), damping(damping), dipr(dipr), dipi(dipi)
+    : pos(pos), freq(freq), damp(damp), dipr(dipr), dipi(dipi)
 {
 }
 
@@ -32,15 +32,15 @@ int max_transit_steps_between_dots(const std::shared_ptr<DotVector> dots,
 
 std::ostream &operator<<(std::ostream &os, const QuantumDot &qd)
 {
-  os << qd.pos.transpose() << " " << qd.freq << " " << qd.damping.first << " "
-     << qd.damping.second << " " << qd.dipr.transpose() << std::endl; // << " " << qd.dipi.transpose();
+  os << qd.pos.transpose() << " " << qd.freq << " " << qd.damp.first << " "
+     << qd.damp.second << " " << qd.dipr.transpose() << std::endl; // << " " << qd.dipi.transpose();
   return os;
 }
 
 std::istream &operator>>(std::istream &is, QuantumDot &qd)
 {
-  is >> qd.pos[0] >> qd.pos[1] >> qd.pos[2] >> qd.freq >> qd.damping.first >>
-      qd.damping.second >> qd.dipr[0] >> qd.dipr[1] >> qd.dipr[2];
+  is >> qd.pos[0] >> qd.pos[1] >> qd.pos[2] >> qd.freq >> qd.damp.first >>
+      qd.damp.second >> qd.dipr[0] >> qd.dipr[1] >> qd.dipr[2];
         // >> qd.dipi[0] >> qd.dipi[1] >> qd.dipi[2];
   return is;
 }
@@ -61,20 +61,3 @@ void set_dipole_of_dots(std::shared_ptr<DotVector> dots, const Eigen::Vector3d d
     (*dots)[dot].set_dipole(dip);
 }
 
-/*std::vector<BlochFunctionType> rhs_functions(const DotVector &dots,
-                                             const double laser_frequency,
-                                             const double damping_rr,
-                                             const bool rotating)
-{
-  std::vector<BlochFunctionType> funcs(dots.size());
-
-  using std::placeholders::_1;
-  using std::placeholders::_2;
-  using std::placeholders::_3;
-  std::transform(dots.begin(), dots.end(), funcs.begin(),
-                 [laser_frequency,damping_rr,rotating](const QuantumDot &d) {
-                   return std::bind(&QuantumDot::liouville_rhs, d, _1, _2, _3,
-                                    laser_frequency, damping_rr, rotating);
-                 });
-  return funcs;
-}*/

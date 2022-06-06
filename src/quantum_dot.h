@@ -44,12 +44,13 @@ class QuantumDot {
   const Eigen::Vector3d &position() const { return pos; }
   const Eigen::Vector3d &dipole() const { return dipr; }
   const Eigen::Vector3d &dipole_imag() const { return dipi; }
+  const std::pair<double, double> &damping() const { return damp; }
   const double &frequency() const { return freq; }
   void set_dipole(const Eigen::Vector3d dip) { dipr = dip; }
   void set_freq(const double freq_) { freq = freq_; }
   void set_damping(const double damping1, const double damping2) { 
-    damping.first = damping1;
-    damping.second = damping2;
+    damp.first = damping1;
+    damp.second = damping2;
   }
 
   friend Eigen::Vector3d separation(const QuantumDot &, const QuantumDot &);
@@ -65,7 +66,7 @@ class QuantumDot {
   Eigen::Vector3d pos;
   Eigen::Vector3d dipr;
   double freq;
-  std::pair<double, double> damping;
+  std::pair<double, double> damp;
   Eigen::Vector3d dipi;
 };
 

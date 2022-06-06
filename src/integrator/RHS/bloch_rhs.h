@@ -31,7 +31,7 @@ class Integrator::BlochRHS : public Integrator::RHS<matrix_cmplx> {
            const bool);
   ~BlochRHS();
  
-  void build_Hamiltonian();
+  void build_rhsmatrices();
   matrix_cmplx rhsfunc( const matrix_cmplx,
                         const ResultArray,
                         const int );
@@ -47,6 +47,7 @@ private:
   int num_interactions;
   const double hbar, mu0, eps0, omega, dt;
   std::vector<matrix_cmplx> H0, Hint;
+  std::vector<matrix_cmplx> D0, Dp, Dm;
   std::shared_ptr<const Pulse> pulse;
 
   std::vector<std::shared_ptr<InteractionBase>> interactions, efld_interactions, bfld_interactions;
