@@ -92,7 +92,7 @@ void Integrator::BlochRHS::build_rhsmatrices()
     }
   }
 
-  // build interaction Hamiltonian
+  // build interaction Hamiltonian matrices
   for (int pair = 0; pair < num_interactions; ++pair){
     int src, obs;
     std::tie(src, obs) = idx2coord(pair);
