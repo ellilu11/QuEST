@@ -9,6 +9,7 @@
 #include <iostream>
 #include <memory>
 #include "../quantum_dot.h"
+#include "../math_utils.h"
 //#include "RHS/bloch_rhs.h"
 
 namespace Integrator {
@@ -155,13 +156,16 @@ template <class soltype>
 void Integrator::History<soltype>::write_step_to_file(const int timestep)
 {
 
-  Eigen::MatrixXcd out = get_value(timestep, 0);
+ for (int i = 0; i < num_particles; ++i){
+ // outfile << (out(i,i)).real() << " ";
+ // }
+    Eigen::MatrixXcd out = traceOverDims(
+                          get_value(timestep, 0), 
+                          num_particles, i);
 
-  for (int i = 0; i < pow(2,num_particles); ++i){
-
-    outfile << (out(i,i)).real() << " ";
-            // << (out(0,1)).real() << " "
-            // << (out(0,1)).imag() << " ";
+   outfile << (out(0,0)).real() << " "
+            << (out(0,1)).real() << " "
+            << (out(0,1)).imag() << " ";
   }
   outfile << "\n";
   if(timestep > num_timesteps*0.90)
