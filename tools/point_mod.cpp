@@ -29,12 +29,11 @@ int main(int argc, char *argv[])
   const double mu0 = 2.0133545e-4;
   const double Gamma = pow(dip0,2) * pow(omega0,3) / 
                         ( 3.0 * M_PI * c * hbar / mu0 );
-  // 0.120341;
 
-  const double dip_factor = 1.00;
+  const vector<double> dipfactors{ 0.5, 1.0, 1.5, 2.0 }; 
+  const double dip_factor = dipfactors[std::stoi(argv[2])]; //1.00;
   const double dip = dip0 * dip_factor;
-  // const vector<double> dipfactors{ 0.5, 0.7, 1.0, 1.5, 2.0 }; 
-
+ 
   const double T1 = 1 / ( Gamma * pow(dip_factor,2) );
   const double T2 = 2*T1;
  

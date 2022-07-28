@@ -66,7 +66,7 @@ int main(int argc, char *argv[])
   const double c0 = 194.6704; // 299.792458;
   const double omega = 4823.67; // 2278.9013;
   const double lambda = 2 * M_PI * c0 / omega;
-  const double T1 = 20.0, T2 = 40.0;
+  const double T1 = 0.0, T2 = 0.0;
   const double dip = 0.002536; // 5.2917721e-4 * 1.0;
   const double dipx = dip, dipy = 0.0, dipz = 0.0;
   const int num_dots = atoi(argv[1]);
@@ -74,7 +74,7 @@ int main(int argc, char *argv[])
   const unsigned seed =
       std::chrono::system_clock::now().time_since_epoch().count();
     
-  const double dist0 = 2.0e-2; // mean long. distance between dots;
+  const double dist0 = 1.0e-2 * lambda; // 2.0e-2; // mean long. distance between dots;
 	const double sigma = 0.0; // 0.1*dist0; // stdev of long. distance between dots
   const double R = 0.0; // 1.0e-2; // transverse radius
 
@@ -100,7 +100,7 @@ int main(int argc, char *argv[])
     double ypos = r * std::sin(phi); 
 
   	// qd = {{xpos, ypos, zpos, omega,
-  	qd = {{xpos, zpos, ypos, omega,
+  	qd = {{xpos, ypos, zpos, omega,
                     T1, T2, dipx, dipy, dipz}};
     dots.push_back(qd);
 		zpos += dist(generator);
@@ -110,8 +110,8 @@ int main(int argc, char *argv[])
 
   std::string taskstr(argv[2]);
 
-  // std::ofstream fd("./dots/obss_line.cfg");
-  std::ofstream fd("./dots/dots"+taskstr+".cfg");
+  std::ofstream fd("./dots/obssZ.cfg");
+  // std::ofstream fd("./dots/dots"+taskstr+".cfg");
   fd << std::setprecision(12);
 
   for(const auto &d : dots) {
