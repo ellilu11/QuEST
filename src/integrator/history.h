@@ -3,6 +3,7 @@
 
 #include <assert.h>
 #include <Eigen/Dense>
+#include <Eigen/Eigenvalues>
 #include <boost/multi_array.hpp>
 #include <fstream>
 #include <iomanip>
@@ -47,7 +48,7 @@ class Integrator::History {
 
  private:
   soltype_array<soltype> array_;
-  std::ofstream outfile;
+  std::ofstream outfile, outfile2, outfile3;
   int time_idx_in_array(const int) const;
   // friend int time_idx_in_array(const int);
   /*template <class B = soltype>
@@ -79,6 +80,13 @@ Integrator::History<soltype>::History(const int num_particles,
 
   outfile.open("./out/out" + std::to_string(task_idx) + ".dat");
   outfile << std::scientific << std::setprecision(18);
+
+  outfile2.open("./out/eig" + std::to_string(task_idx) + ".dat");
+  outfile2 << std::scientific << std::setprecision(18);
+
+  outfile3.open("./out/pur" + std::to_string(task_idx) + ".dat");
+  outfile3 << std::scientific << std::setprecision(18);
+
 
 }
 
@@ -156,20 +164,53 @@ template <class soltype>
 void Integrator::History<soltype>::write_step_to_file(const int timestep)
 {
 
- for (int i = 0; i < num_particles; ++i){
- // outfile << (out(i,i)).real() << " ";
- // }
-    Eigen::MatrixXcd out = traceOverDims(
+  for (int i = 0; i < num_particles; ++i){
+   Eigen::MatrixXcd out = traceOverDims(
                           get_value(timestep, 0), 
-                          num_particles, i);
+                          num_particles, i ); 
 
    outfile << (out(0,0)).real() << " "
             << (out(0,1)).real() << " "
             << (out(0,1)).imag() << " ";
   }
   outfile << "\n";
+ 
   if(timestep > num_timesteps*0.90)
     outfile.flush();  // QUESTION: why is this needed?
+ 
+
+  // ==== Purity test ==========================
+  Eigen::Matrix4cd rho = get_value(timestep, 0);
+  outfile3 << (rho.trace()).real() << " " 
+           << ((rho*rho).trace()).real() << " ";
+  outfile3 << "\n";
+
+  if(timestep > num_timesteps*0.90)
+    outfile3.flush();  // QUESTION: why is this needed?
+ 
+  // ==== Separability test ======================
+  const int pow_num = pow(2, num_particles);
+  const int pow_half = pow_num / 2;
+ 
+  // partial matrix transposition
+  for (int i = 0; i < 2; ++i)
+    for (int j = 0; j < 2; ++j)
+      (rho.block<2,2>(2*i,2*j)).transposeInPlace();
+  
+  // solve for Eigenvalues
+  Eigen::ComplexEigenSolver<Eigen::Matrix4cd> ces;
+  ces.compute( rho );
+  // std::cout << rho << std::endl << std::endl;
+  // std::cout << ces.eigenvalues() << std::endl << std::endl;
+
+  for (int dim = 0; dim < pow_num; ++dim)
+    outfile2 << (ces.eigenvalues()[dim]).real() << " "
+             << (ces.eigenvalues()[dim]).imag() << " ";
+  outfile2 << "\n";
+ 
+  if(timestep > num_timesteps*0.90)
+    outfile2.flush();  // QUESTION: why is this needed?
+ 
 }
 
 #endif

@@ -133,7 +133,9 @@ matrix_cmplx Integrator::BlochRHS::rhsfunc( const matrix_cmplx rho,
     cmplx rabi_pulse = (*srcs)[i].dipole().dot(
                           (*pulse)((*srcs)[i].position(), step*dt, rotating, 1) ) / hbar; 
     matrix_cmplx Hpulse = H0[i] * rabi_pulse;    
-    rhodt += -iu * ( Hpulse * rho.adjoint() - rho * Hpulse.adjoint() ); 
+    rhodt += -iu * ( Hpulse * rho - rho * Hpulse.adjoint() ); 
+    // rhodt += -iu * ( Hpulse * rho.adjoint() - rho * Hpulse.adjoint() ); 
+
   }
 
   // src-src interactions
@@ -142,8 +144,12 @@ matrix_cmplx Integrator::BlochRHS::rhsfunc( const matrix_cmplx rho,
     std::tie(src, obs) = idx2coord(pair);
     cmplx rabi = (*srcs)[obs].dipole().dot( Efld[pair] ) / hbar;
     matrix_cmplx Hpair = Hint[pair] * rabi;
-    rhodt += -iu * ( Hpair * rho.adjoint() - rho * Hpair.adjoint() ); 
-  }
+    rhodt += -iu * ( Hpair * rho - rho * Hpair.adjoint() ); 
+   
+    // if( step == 0 || step == 100 ) 
+    //  std::cout << Hpair - Hpair.adjoint() << std::endl;
+
+ }
 
   // damping 
   for (int i = 0; i < num_solutions; ++i)
