@@ -47,7 +47,6 @@ private:
   int num_interactions;
   const double hbar, mu0, eps0, omega, dt;
   std::vector<matrix_cmplx> H0, Hint;
-  std::vector<matrix_cmplx> D0, Dp, Dm;
   std::shared_ptr<const Pulse> pulse;
 
   std::vector<std::shared_ptr<InteractionBase>> interactions, efld_interactions, bfld_interactions;

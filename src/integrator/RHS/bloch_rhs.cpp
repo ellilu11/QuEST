@@ -53,71 +53,50 @@ void Integrator::BlochRHS::build_rhsmatrices()
   sigm << 0, 1, 0, 0;
 
   const int power_num = pow(2, num_solutions);
+  const int numsq = pow(num_solutions, 2);
   H0 = std::vector<matrix_cmplx>(num_solutions);
-  D0 = std::vector<matrix_cmplx>(num_solutions);
-  Dp = std::vector<matrix_cmplx>(num_solutions);
-  Dm = std::vector<matrix_cmplx>(num_solutions);
-  Hint = std::vector<matrix_cmplx>(num_interactions);
+  Hint = std::vector<matrix_cmplx>(numsq);
 
-  auto Hintp = std::vector<matrix_cmplx>(num_interactions);
-  auto Hintm = std::vector<matrix_cmplx>(num_interactions);
+  auto Hintp = std::vector<matrix_cmplx>(numsq);
+  auto Hintm = std::vector<matrix_cmplx>(numsq);
 
-  // build pulse Hamiltonian and damping matrices
+  // build pulse Hamiltonian matrices
   for (int i = 0; i < num_solutions; ++i){
     H0[i] = 
       i == 0 ? sigp+sigm : Id;
-    D0[i] = 
-      i == 0 ? sigp*sigm : Id;
-    Dp[i] = 
-      i == 0 ? sigp : Id;
-    Dm[i] = 
-      i == 0 ? sigm : Id;
-    for (int j = 1; j < num_solutions; ++j){
+    for (int j = 1; j < num_solutions; ++j)
       H0[i] = 
         i == j 
           ? kroneckerProduct(H0[i], sigp+sigm).eval()
           : kroneckerProduct(H0[i], Id).eval();
-      D0[i] = 
-        i == j 
-          ? kroneckerProduct(D0[i], sigp*sigm).eval()
-          : kroneckerProduct(D0[i], Id).eval();
-      Dp[i] = 
-        i == j 
-          ? kroneckerProduct(Dp[i], sigp).eval()
-          : kroneckerProduct(Dp[i], Id).eval();
-      Dm[i] = 
-        i == j 
-          ? kroneckerProduct(Dm[i], sigm).eval()
-          : kroneckerProduct(Dm[i], Id).eval();
-    }
   }
 
   // build interaction Hamiltonian matrices
-  for (int pair = 0; pair < num_interactions; ++pair){
-    int src, obs;
-    std::tie(src, obs) = idx2coord(pair);
-    // std::cout << src << " " << obs << std::endl;
-
-    Hintp[pair] = 
-      obs == 0 ? sigp : Id;   
-    Hintm[pair] = 
-      obs == 0 ? sigm : Id;   
- 
-    for (int i = 1; i < num_solutions; ++i){
-      if ( i == obs ){
-        Hintp[pair] = kroneckerProduct(Hintp[pair], sigp).eval();
-        Hintm[pair] = kroneckerProduct(Hintm[pair], sigm).eval();
-      } else if ( i == src ){
-        Hintp[pair] = kroneckerProduct(Hintp[pair], sigm).eval();
-        Hintm[pair] = kroneckerProduct(Hintm[pair], sigp).eval();
-      } else {
-        Hintp[pair] = kroneckerProduct(Hintp[pair], Id).eval();
-        Hintm[pair] = kroneckerProduct(Hintm[pair], Id).eval();
+  //for (int pair = 0; pair < num_interactions; ++pair){
+  //  int src, obs;
+  //  std::tie(src, obs) = idx2coord(pair);
+  for (int obs = 0; obs < num_solutions; ++obs){
+    for (int src = 0; src < num_solutions; ++src){
+      if ( src !=obs ){
+        int pair = coord2idxrect(src, obs, num_solutions);
+        Hintp[pair] = 
+          obs == 0 ? sigp : Id;   
+        Hintm[pair] = 
+          obs == 0 ? sigm : Id;   
+     
+        for (int i = 1; i < num_solutions; ++i){
+          if ( i == obs ){
+            Hintp[pair] = kroneckerProduct(Hintp[pair], sigp).eval();
+            Hintm[pair] = kroneckerProduct(Hintm[pair], sigm).eval();
+          } else {
+            Hintp[pair] = kroneckerProduct(Hintp[pair], Id).eval();
+            Hintm[pair] = kroneckerProduct(Hintm[pair], Id).eval();
+          }
+        }
+        Hint[pair] = Hintp[pair] + Hintm[pair];
       }
     }
-    Hint[pair] = Hintp[pair] + Hintm[pair];
   }
-    
 }
 
 matrix_cmplx Integrator::BlochRHS::rhsfunc( const matrix_cmplx rho,
@@ -134,28 +113,33 @@ matrix_cmplx Integrator::BlochRHS::rhsfunc( const matrix_cmplx rho,
                           (*pulse)((*srcs)[i].position(), step*dt, rotating, 1) ) / hbar; 
     matrix_cmplx Hpulse = H0[i] * rabi_pulse;    
     rhodt += -iu * ( Hpulse * rho - rho * Hpulse.adjoint() ); 
-    // rhodt += -iu * ( Hpulse * rho.adjoint() - rho * Hpulse.adjoint() ); 
-
   }
 
   // src-src interactions
-  for (int pair = 0; pair < num_interactions; ++pair){
-    int src, obs;
-    std::tie(src, obs) = idx2coord(pair);
-    cmplx rabi = (*srcs)[obs].dipole().dot( Efld[pair] ) / hbar;
-    matrix_cmplx Hpair = Hint[pair] * rabi;
-    rhodt += -iu * ( Hpair * rho - rho * Hpair.adjoint() ); 
-   
-    // if( step == 0 || step == 100 ) 
-    //  std::cout << Hpair - Hpair.adjoint() << std::endl;
-
- }
-
-  // damping 
-  for (int i = 0; i < num_solutions; ++i)
-    rhodt -= ( D0[i] * rho + rho * D0[i] - 2 * Dm[i] * rho * Dp[i] )
-           / (*srcs)[i].damping().first; 
-
+  matrix_cmplx Hpair = Eigen::MatrixXcd::Zero(power_num,power_num);
+  // for (int pair = 0; pair < num_interactions; ++pair){
+    // int src, obs;
+    // std::tie(src, obs) = idx2coord(pair);
+  for (int obs = 0; obs < num_solutions; ++obs){
+    for (int src = 0; src < num_solutions; ++src){
+     if ( src !=obs ){
+        int pairint = coord2idx(src, obs);
+        int pair = coord2idxrect(src, obs, num_solutions);
+        cmplx rabi = (*srcs)[obs].dipole().dot( Efld[pairint] ) / hbar;
+        Hpair += Hint[pair] * rabi;
+      }
+        // if( step == 0 || step == 100 ) 
+      //  std::cout << Hpair - Hpair.adjoint() << std::endl;
+    }
+  }
+  rhodt += -iu * ( Hpair * rho - rho * Hpair.adjoint() ); 
+ 
+  // trace-preserving term
+  matrix_cmplx Gamma = iu * ( Hpair - Hpair.adjoint() ) / 2;
+  // cmplx trace = ( Gamma * rho ).trace();
+  // std::cout << "Trace: " << trace << std::endl;
+  rhodt += 2 * ( ( Gamma * rho ).trace() ).real() * rho; // taking the real part for now!!!
+  
   return rhodt;
 }
 

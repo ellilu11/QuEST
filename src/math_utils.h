@@ -21,6 +21,7 @@ int grid_sequence(const size_t);
 Eigen::Vector3i idx_to_coord(size_t, int);
 Eigen::Vector3i idx_to_delta(size_t, int);
 int coord2idx(int, int);
+int coord2idxrect(int, int, int);
 std::pair<int, int> idx2coord(const int);
  
 //size_t coord_to_idx(const Eigen::Vector3i &, int);

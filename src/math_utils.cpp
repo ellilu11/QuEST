@@ -95,6 +95,12 @@ int coord2idx(int row, int col)
   return row * (row - 1) / 2 + col;
 }
 
+int coord2idxrect(int row, int col, int ncols)
+{
+  return row * ncols + col;
+}
+
+
 std::pair<int, int> idx2coord(const int idx)
 {
   const int row = std::floor((std::sqrt(1 + 8 * idx) + 1) / 2.0);
