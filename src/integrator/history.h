@@ -198,7 +198,7 @@ void Integrator::History<soltype>::write_step_to_file(const int timestep)
       (rho.block<2,2>(2*i,2*j)).transposeInPlace();
   
   // solve for Eigenvalues
-  Eigen::ComplexEigenSolver<Eigen::Matrix4cd> ces;
+  Eigen::ComplexEigenSolver<Eigen::MatrixXcd> ces;
   ces.compute( rho );
   // std::cout << rho << std::endl << std::endl;
   // std::cout << ces.eigenvalues() << std::endl << std::endl;
