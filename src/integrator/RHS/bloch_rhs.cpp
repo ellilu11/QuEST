@@ -146,10 +146,9 @@ matrix_cmplx Integrator::BlochRHS::rhsfunc( const matrix_cmplx rho,
     for (int obs = 0; obs < num_solutions; ++obs){
       for (int src = 0; src < num_solutions; ++src){
        if ( src !=obs ){
-          int pairint = coord2idx(src, obs);
+          // int pairint = coord2idx(src, obs);
           int pair = coord2idxrect(src, obs, num_solutions);
-          // std::cout << pairint << std::endl;
-          cmplx rabi = (*srcs)[obs].dipole().dot( Efld[pairint] ) / hbar;
+          cmplx rabi = (*srcs)[obs].dipole().dot( Efld[pair].conjugate() ) / hbar;
           Hpair -= Hint[pair] * rabi;
         }
       }
@@ -157,12 +156,12 @@ matrix_cmplx Integrator::BlochRHS::rhsfunc( const matrix_cmplx rho,
     rhodt += -iu * ( Hpair * rho - rho * Hpair.adjoint() ); 
   }
   
-   // damping 
+  // damping 
   for (int i = 0; i < num_solutions; ++i)
     rhodt -= ( D0[i] * rho + rho * D0[i] - 2 * Dm[i] * rho * Dp[i] )
            / (*srcs)[i].damping().first; 
 
- // trace-preserving term
+  // trace-preserving term
   matrix_cmplx Gamma = iu * ( Hpair - Hpair.adjoint() ) / 2;
   // cmplx trace = ( Gamma * rho ).trace();
   // std::cout << "Trace: " << trace << std::endl;

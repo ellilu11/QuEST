@@ -21,8 +21,8 @@ class InteractionBase {
         num_obs((this->obss) ? (this->obss)->size() : 0),
         num_interactions( num_src * (num_src-1) / 2 ),
         num_srcobs( num_src * num_obs ),
-        results(obss ? obss->size() : (dots ? num_interactions : 0) ),
-        past_terms_of_convolution(dots ? num_interactions : 0), 
+        results(obss ? obss->size() : (dots ? num_src*num_src : 0) ),
+        past_terms_of_convolution(dots ? num_src*num_src : 0), 
         dt(dt){};
   const Eigen::Vector3cd &operator[](const int i) const { return results[i]; }
   virtual const ResultArray &evaluate(const int) = 0;

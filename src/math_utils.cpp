@@ -95,16 +95,24 @@ int coord2idx(int row, int col)
   return row * (row - 1) / 2 + col;
 }
 
-int coord2idxrect(int row, int col, int ncols)
-{
-  return row * ncols + col;
-}
-
 
 std::pair<int, int> idx2coord(const int idx)
 {
   const int row = std::floor((std::sqrt(1 + 8 * idx) + 1) / 2.0);
   const int col = idx - row * (row - 1) / 2;
+
+  return std::pair<int, int>(row, col);
+}
+
+int coord2idxrect(int row, int col, int ncols)
+{
+  return row * ncols + col;
+}
+
+std::pair<int, int> idx2coordrect(const int idx, int ncols)
+{
+  const int row = idx / ncols;
+  const int col = idx % ncols;
 
   return std::pair<int, int>(row, col);
 }

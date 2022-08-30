@@ -180,9 +180,12 @@ void Integrator::History<soltype>::write_step_to_file(const int timestep)
  
 
   // ==== Purity test ==========================
-  Eigen::Matrix4cd rho = get_value(timestep, 0);
-  outfile3 << (rho.trace()).real() << " " 
-           << ((rho*rho).trace()).real() << " ";
+  cmplx trc = get_value(timestep, 0).trace();
+  cmplx pur = (get_value(timestep, 0)*get_value(timestep, 0)).trace();
+  // outfile3 << (rho.trace()).real() << " " 
+  //         << ((rho*rho).trace()).real() << " ";
+  outfile3 << trc.real() << " " 
+           << pur.real() << " ";
   outfile3 << "\n";
 
   if(timestep > num_timesteps*0.90)
@@ -192,6 +195,13 @@ void Integrator::History<soltype>::write_step_to_file(const int timestep)
   const int pow_num = pow(2, num_particles);
   const int pow_half = pow_num / 2;
  
+  Eigen::Matrix4cd rho = 
+    // traceOverDim(
+      traceOverDim(
+        get_value(timestep, 0), 
+        num_particles, 2);          
+      // num_particles-1, 2);
+
   // partial matrix transposition
   for (int i = 0; i < 2; ++i)
     for (int j = 0; j < 2; ++j)
