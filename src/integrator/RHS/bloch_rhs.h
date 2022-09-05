@@ -46,7 +46,7 @@ private:
   int num_timesteps;
   int num_interactions;
   const double hbar, mu0, eps0, omega, dt;
-  std::vector<matrix_cmplx> H0, Hint, D0, Dp, Dm;
+  std::vector<matrix_cmplx> H0, Hint, Hint2, D0, Dp, Dm;
   std::shared_ptr<const Pulse> pulse;
 
   std::vector<std::shared_ptr<InteractionBase>> interactions, efld_interactions, bfld_interactions;

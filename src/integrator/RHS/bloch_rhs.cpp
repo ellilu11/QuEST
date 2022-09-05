@@ -63,7 +63,7 @@ void Integrator::BlochRHS::build_rhsmatrices()
   auto Hintp = std::vector<matrix_cmplx>(numsq);
   auto Hintm = std::vector<matrix_cmplx>(numsq);
 
-  // build pulse Hamiltonian matrices
+  // build pulse Hamiltonian and damping matrices
   for (int i = 0; i < num_solutions; ++i){
     H0[i] = 
       i == 0 ? sigp+sigm : Id;
@@ -92,11 +92,8 @@ void Integrator::BlochRHS::build_rhsmatrices()
           : kroneckerProduct(Dm[i], Id).eval();
     }
   }
- 
+
   // build interaction Hamiltonian matrices
-  //for (int pair = 0; pair < num_interactions; ++pair){
-  //  int src, obs;
-  //  std::tie(src, obs) = idx2coord(pair)
   for (int obs = 0; obs < num_solutions; ++obs){
     for (int src = 0; src < num_solutions; ++src){
       if ( src !=obs ){
@@ -110,15 +107,57 @@ void Integrator::BlochRHS::build_rhsmatrices()
           if ( i == obs ){
             Hintp[pair] = kroneckerProduct(Hintp[pair], sigp).eval();
             Hintm[pair] = kroneckerProduct(Hintm[pair], sigm).eval();
+          } else if ( i == src ){
+            Hintp[pair] = kroneckerProduct(Hintp[pair], sigm).eval();
+            Hintm[pair] = kroneckerProduct(Hintm[pair], sigp).eval();
           } else {
             Hintp[pair] = kroneckerProduct(Hintp[pair], Id).eval();
             Hintm[pair] = kroneckerProduct(Hintm[pair], Id).eval();
           }
+          Hint[pair] = Hintp[pair] + Hintm[pair];
         }
-        Hint[pair] = Hintp[pair] + Hintm[pair];
       }
     }
   }
+  /*for (int pair = 0; pair < num_interactions; ++pair){
+    int src, obs;
+    std::tie(src, obs) = idx2coord(pair);
+    // std::cout << src << " " << obs << std::endl;
+
+    Hintp[pair] = 
+      obs == 0 ? sigp : Id;   
+    Hintm[pair] = 
+      obs == 0 ? sigm : Id;   
+ 
+    for (int i = 1; i < num_solutions; ++i){
+      if ( i == obs ){
+        Hintp[pair] = kroneckerProduct(Hintp[pair], sigp).eval();
+        Hintm[pair] = kroneckerProduct(Hintm[pair], sigm).eval();
+      } else if ( i == src ){
+        Hintp[pair] = kroneckerProduct(Hintp[pair], sigm).eval();
+        Hintm[pair] = kroneckerProduct(Hintm[pair], sigp).eval();
+      } else {
+        Hintp[pair] = kroneckerProduct(Hintp[pair], Id).eval();
+        Hintm[pair] = kroneckerProduct(Hintm[pair], Id).eval();
+      }
+    }
+    Hint[pair] = Hintp[pair] + Hintm[pair];
+ 
+    for (int i = 1; i < num_solutions; ++i){
+      if ( i == src ){
+        Hintp[pair] = kroneckerProduct(Hintp[pair], sigp).eval();
+        Hintm[pair] = kroneckerProduct(Hintm[pair], sigm).eval();
+      } else if ( i == obs ){
+        Hintp[pair] = kroneckerProduct(Hintp[pair], sigm).eval();
+        Hintm[pair] = kroneckerProduct(Hintm[pair], sigp).eval();
+      } else {
+        Hintp[pair] = kroneckerProduct(Hintp[pair], Id).eval();
+        Hintm[pair] = kroneckerProduct(Hintm[pair], Id).eval();
+      }
+    }
+    Hint2[pair] = Hintp[pair] + Hintm[pair];
+ }*/
+    
 }
 
 matrix_cmplx Integrator::BlochRHS::rhsfunc( const matrix_cmplx rho,
@@ -139,14 +178,17 @@ matrix_cmplx Integrator::BlochRHS::rhsfunc( const matrix_cmplx rho,
 
   // src-src interactions
   matrix_cmplx Hpair = Eigen::MatrixXcd::Zero(power_num,power_num);
+ 
   if (num_interactions){
-    // for (int pair = 0; pair < num_interactions; ++pair){
-      // int src, obs;
-      // std::tie(src, obs) = idx2coord(pair);
     for (int obs = 0; obs < num_solutions; ++obs){
       for (int src = 0; src < num_solutions; ++src){
-       if ( src !=obs ){
-          // int pairint = coord2idx(src, obs);
+        if ( src !=obs ){
+  /* for (int pair = 0; pair < num_interactions; ++pair){
+    int src, obs;
+    std::tie(src, obs) = idx2coord(pair);
+        cmplx rabi = (*srcs)[obs].dipole().dot( Efld[pair] ) / hbar;
+        Hpair += Hint[pair] * rabi;
+        Hpair += Hint2[pair] * rabi;*/
           int pair = coord2idxrect(src, obs, num_solutions);
           cmplx rabi = (*srcs)[obs].dipole().dot( Efld[pair].conjugate() ) / hbar;
           Hpair -= Hint[pair] * rabi;
@@ -155,7 +197,7 @@ matrix_cmplx Integrator::BlochRHS::rhsfunc( const matrix_cmplx rho,
     }
     rhodt += -iu * ( Hpair * rho - rho * Hpair.adjoint() ); 
   }
-  
+
   // damping 
   for (int i = 0; i < num_solutions; ++i)
     rhodt -= ( D0[i] * rho + rho * D0[i] - 2 * Dm[i] * rho * Dp[i] )
@@ -166,19 +208,29 @@ matrix_cmplx Integrator::BlochRHS::rhsfunc( const matrix_cmplx rho,
   // cmplx trace = ( Gamma * rho ).trace();
   // std::cout << "Trace: " << trace << std::endl;
   rhodt += 2 * ( ( Gamma * rho ).trace() ).real() * rho; // taking the real part for now!!!
-  
+ 
   return rhodt;
 }
 
 void Integrator::BlochRHS::evaluate(const int step)
 {
+  /*auto eval_and_sum =
+      [step](const InteractionBase::ResultArray &r,
+             const std::shared_ptr<InteractionBase> &interaction) {
+        return r + interaction->evaluate(step);
+      };
+  auto nil = InteractionBase::ResultArray::Zero(num_solutions, 1).eval();
+ */
+
   ResultArray projected_efld;
 
   if (num_interactions)
     projected_efld = interactions[0]->evaluate(step);
   else
     projected_efld.setZero();
-  
+  /*  std::accumulate(
+      interactions.begin(), interactions.end(), nil, eval_and_sum);
+*/
   history->set_value(step, 1) = rhsfunc(
         history->get_value(step, 0),
 	      projected_efld, 
@@ -187,13 +239,22 @@ void Integrator::BlochRHS::evaluate(const int step)
 
 void Integrator::BlochRHS::evaluate_present(const int step)
 {
+  /*auto eval_and_sum =
+      [step](const InteractionBase::ResultArray &r,
+             const std::shared_ptr<InteractionBase> &interaction) {
+        return r + interaction->evaluate_present(step);
+      };
+  auto nil = InteractionBase::ResultArray::Zero(num_solutions, 1).eval();
+*/
   ResultArray projected_efld;
 
   if (num_interactions)
     projected_efld = interactions[0]->evaluate(step);
   else
     projected_efld.setZero();
-  
+  /*  std::accumulate(
+      interactions.begin(), interactions.end(), nil, eval_and_sum);
+  */
   history->set_value(step, 1) = rhsfunc(
         history->get_value(step, 0),
 	      projected_efld,

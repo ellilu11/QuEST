@@ -130,9 +130,9 @@ const InteractionBase::ResultArray &DirectInteraction::evaluate(
         rho_src = rho_matrix(0,1);
 
         if ( !omega )
-          results[pair] = 2.0 * ( rho_src * coeffs[pairint][0] ).real();
+          results[pair] = 2.0 * ( coeffs[pairint][0] ).real();
         else 
-          results[pair] = rho_src * coeffs[pairint][0] ;
+          results[pair] = coeffs[pairint][0] ;
       }
     }
   }
@@ -164,9 +164,9 @@ const InteractionBase::ResultArray &DirectInteraction::evaluate_present(
         rho_src = rho_matrix(0,1);
 
         if ( !omega )
-          results[pair] = 2.0 * ( rho_src * coeffs[pairint][0] ).real();
+          results[pair] = 2.0 * ( coeffs[pairint][0] ).real();
         else 
-          results[pair] = rho_src * coeffs[pairint][0] ;
+          results[pair] = coeffs[pairint][0] ;
       }
     }
   }

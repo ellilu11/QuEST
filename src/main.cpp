@@ -193,8 +193,14 @@ int main(int argc, char *argv[])
 
   matrix_cmplx init_tensor = init;
   for (int i = 1; i < config.num_particles; ++i)
-    init_tensor = kroneckerProduct(init_tensor, init).eval();
-
+    init_tensor = kroneckerProduct(init_tensor, init).eval();  
+  
+  /*Eigen::Matrix4cd init_tensor;
+  init_tensor << 
+    0, 0, 0, 0, 
+    0, 0.5, -0.5, 0, 
+    0, -0.5, 0.5, 0,
+    0, 0, 0, 0;*/
   history->initialize_past(init_tensor);
 
   // test trace functions
@@ -202,7 +208,8 @@ int main(int argc, char *argv[])
   // std::cout << init2 << std::endl;
 
   // === INTERACTIONS =====================================================
- 
+
+
   const double propagation_constant = config.mu0 / (4 * M_PI);
 
   auto pulse = make_shared<Pulse>(read_pulse_config("pulse.cfg"));

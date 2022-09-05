@@ -197,9 +197,9 @@ void Integrator::History<soltype>::write_step_to_file(const int timestep)
  
   Eigen::Matrix4cd rho = 
     // traceOverDim(
-      traceOverDim(
-        get_value(timestep, 0), 
-        num_particles, 2);          
+      // traceOverDim(
+        get_value(timestep, 0);
+        // num_particles, 2);          
       // num_particles-1, 2);
 
   // partial matrix transposition
