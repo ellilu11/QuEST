@@ -99,9 +99,9 @@ void Integrator::BlochRHS::build_rhsmatrices()
       if ( src !=obs ){
         int pair = coord2idxrect(src, obs, num_solutions);
         Hintp[pair] = 
-          obs == 0 ? sigp : Id;   
+          ( obs == 0 || src == 0 ) ? sigp : Id;   
         Hintm[pair] = 
-          obs == 0 ? sigm : Id;   
+          ( obs == 0 || src == 0 ) ? sigm : Id;   
      
         for (int i = 1; i < num_solutions; ++i){
           if ( i == obs ){
@@ -119,44 +119,6 @@ void Integrator::BlochRHS::build_rhsmatrices()
       }
     }
   }
-  /*for (int pair = 0; pair < num_interactions; ++pair){
-    int src, obs;
-    std::tie(src, obs) = idx2coord(pair);
-    // std::cout << src << " " << obs << std::endl;
-
-    Hintp[pair] = 
-      obs == 0 ? sigp : Id;   
-    Hintm[pair] = 
-      obs == 0 ? sigm : Id;   
- 
-    for (int i = 1; i < num_solutions; ++i){
-      if ( i == obs ){
-        Hintp[pair] = kroneckerProduct(Hintp[pair], sigp).eval();
-        Hintm[pair] = kroneckerProduct(Hintm[pair], sigm).eval();
-      } else if ( i == src ){
-        Hintp[pair] = kroneckerProduct(Hintp[pair], sigm).eval();
-        Hintm[pair] = kroneckerProduct(Hintm[pair], sigp).eval();
-      } else {
-        Hintp[pair] = kroneckerProduct(Hintp[pair], Id).eval();
-        Hintm[pair] = kroneckerProduct(Hintm[pair], Id).eval();
-      }
-    }
-    Hint[pair] = Hintp[pair] + Hintm[pair];
- 
-    for (int i = 1; i < num_solutions; ++i){
-      if ( i == src ){
-        Hintp[pair] = kroneckerProduct(Hintp[pair], sigp).eval();
-        Hintm[pair] = kroneckerProduct(Hintm[pair], sigm).eval();
-      } else if ( i == obs ){
-        Hintp[pair] = kroneckerProduct(Hintp[pair], sigm).eval();
-        Hintm[pair] = kroneckerProduct(Hintm[pair], sigp).eval();
-      } else {
-        Hintp[pair] = kroneckerProduct(Hintp[pair], Id).eval();
-        Hintm[pair] = kroneckerProduct(Hintm[pair], Id).eval();
-      }
-    }
-    Hint2[pair] = Hintp[pair] + Hintm[pair];
- }*/
     
 }
 
@@ -183,14 +145,9 @@ matrix_cmplx Integrator::BlochRHS::rhsfunc( const matrix_cmplx rho,
     for (int obs = 0; obs < num_solutions; ++obs){
       for (int src = 0; src < num_solutions; ++src){
         if ( src !=obs ){
-  /* for (int pair = 0; pair < num_interactions; ++pair){
-    int src, obs;
-    std::tie(src, obs) = idx2coord(pair);
-        cmplx rabi = (*srcs)[obs].dipole().dot( Efld[pair] ) / hbar;
-        Hpair += Hint[pair] * rabi;
-        Hpair += Hint2[pair] * rabi;*/
           int pair = coord2idxrect(src, obs, num_solutions);
-          cmplx rabi = (*srcs)[obs].dipole().dot( Efld[pair].conjugate() ) / hbar;
+          cmplx rabi = (*srcs)[obs].dipole().dot( Efld[pair] ) / hbar;
+          // cmplx rabi = (*srcs)[obs].dipole().dot( Efld[pair].conjugate() ) / hbar;
           Hpair -= Hint[pair] * rabi;
         }
       }
