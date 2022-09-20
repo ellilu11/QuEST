@@ -66,7 +66,7 @@ int main(int argc, char *argv[])
   const double c0 = 194.6704; // 299.792458;
   const double omega = 4823.67; // 2278.9013;
   const double lambda = 2 * M_PI * c0 / omega;
-  const double T1 = 20.0, T2 = 40.0;
+  const double T1 = 8.31, T2 = 2*T1;
   const double dip = 0.002536; // 5.2917721e-4 * 1.0;
   const double dipx = dip, dipy = 0.0, dipz = 0.0;
   const int num_dots = atoi(argv[1]);
@@ -74,7 +74,7 @@ int main(int argc, char *argv[])
   const unsigned seed =
       std::chrono::system_clock::now().time_since_epoch().count();
     
-  const double dist0 = 2.0e-2; // mean long. distance between dots;
+  const double dist0 = 0.2 * lambda; // mean long. distance between dots;
 	const double sigma = 0.0; // 0.1*dist0; // stdev of long. distance between dots
   const double R = 0.0; // 1.0e-2; // transverse radius
 

@@ -46,11 +46,13 @@ Integrator::BlochRHS::~BlochRHS()
 
 void Integrator::BlochRHS::build_rhsmatrices()
 {
-  Eigen::Matrix2cd sigp, sigm, Id;
+  Eigen::Matrix2cd Id, sigp, sigm, gd, ex;
 
   Id = Eigen::Matrix2cd::Identity();
   sigp << 0, 0, 1, 0;
   sigm << 0, 1, 0, 0;
+  gd << 1, 0, 0, 0;
+  ex << 0, 0, 0, 1;
 
   const int power_num = pow(2, num_solutions);
   const int numsq = pow(num_solutions, 2);
@@ -58,10 +60,16 @@ void Integrator::BlochRHS::build_rhsmatrices()
   D0 = std::vector<matrix_cmplx>(num_solutions);
   Dp = std::vector<matrix_cmplx>(num_solutions);
   Dm = std::vector<matrix_cmplx>(num_solutions);
+  Ex = std::vector<matrix_cmplx>(num_solutions);
   Hint = std::vector<matrix_cmplx>(numsq);
 
-  auto Hintp = std::vector<matrix_cmplx>(numsq);
-  auto Hintm = std::vector<matrix_cmplx>(numsq);
+  mtrx1 = gd;
+  for (int i = 1; i < num_solutions; ++i)
+    mtrx1 = kroneckerProduct(mtrx1, gd).eval();  
+
+  mtrx2 = ex;
+  for (int i = 1; i < num_solutions; ++i)
+    mtrx2 = kroneckerProduct(mtrx2, ex).eval();  
 
   // build pulse Hamiltonian and damping matrices
   for (int i = 0; i < num_solutions; ++i){
@@ -73,6 +81,9 @@ void Integrator::BlochRHS::build_rhsmatrices()
       i == 0 ? sigp : Id;
     Dm[i] = 
       i == 0 ? sigm : Id;
+    Ex[i] = 
+      i == 0 ? ex : Id;
+ 
     for (int j = 1; j < num_solutions; ++j){
       H0[i] = 
         i == j 
@@ -90,6 +101,10 @@ void Integrator::BlochRHS::build_rhsmatrices()
         i == j 
           ? kroneckerProduct(Dm[i], sigm).eval()
           : kroneckerProduct(Dm[i], Id).eval();
+      Ex[i] = 
+        i == j 
+          ? kroneckerProduct(Ex[i], ex).eval()
+          : kroneckerProduct(Ex[i], Id).eval();
     }
   }
 
@@ -98,33 +113,30 @@ void Integrator::BlochRHS::build_rhsmatrices()
     for (int src = 0; src < num_solutions; ++src){
       if ( src !=obs ){
         int pair = coord2idxrect(src, obs, num_solutions);
-        Hintp[pair] = 
-          ( obs == 0 || src == 0 ) ? sigp : Id;   
-        Hintm[pair] = 
-          ( obs == 0 || src == 0 ) ? sigm : Id;   
-     
+       
+        if ( obs == 0 )
+          Hint[pair] = sigp;
+        else if ( src == 0 )
+          Hint[pair] = sigm;
+        else 
+          Hint[pair] = Id;    
+ 
         for (int i = 1; i < num_solutions; ++i){
-          if ( i == obs ){
-            Hintp[pair] = kroneckerProduct(Hintp[pair], sigp).eval();
-            Hintm[pair] = kroneckerProduct(Hintm[pair], sigm).eval();
-          } else if ( i == src ){
-            Hintp[pair] = kroneckerProduct(Hintp[pair], sigm).eval();
-            Hintm[pair] = kroneckerProduct(Hintm[pair], sigp).eval();
-          } else {
-            Hintp[pair] = kroneckerProduct(Hintp[pair], Id).eval();
-            Hintm[pair] = kroneckerProduct(Hintm[pair], Id).eval();
-          }
-          Hint[pair] = Hintp[pair] + Hintm[pair];
+          if ( i == obs )
+            Hint[pair] = kroneckerProduct(Hint[pair], sigp).eval();
+          else if ( i == src )
+            Hint[pair] = kroneckerProduct(Hint[pair], sigm).eval();
+          else 
+            Hint[pair] = kroneckerProduct(Hint[pair], Id).eval();
         }
-      }
+     }
     }
   }
-    
 }
 
 matrix_cmplx Integrator::BlochRHS::rhsfunc( const matrix_cmplx rho,
                                             const ResultArray Efld,
-                                            const int step )
+                                            const int step)
 {
 
   const int power_num = std::pow(2,num_solutions);
@@ -135,38 +147,69 @@ matrix_cmplx Integrator::BlochRHS::rhsfunc( const matrix_cmplx rho,
     cmplx rabi_pulse = (*srcs)[i].dipole().dot(
                           (*pulse)((*srcs)[i].position(), step*dt, rotating, 1) ) / hbar; 
     matrix_cmplx Hpulse = H0[i] * rabi_pulse;    
-    rhodt += -iu * ( Hpulse * rho - rho * Hpulse.adjoint() ); 
+    rhodt += 0.0 * -iu * ( Hpulse * rho - rho * Hpulse.adjoint() ); 
   }
 
   // src-src interactions
   matrix_cmplx Hpair = Eigen::MatrixXcd::Zero(power_num,power_num);
  
-  if (num_interactions){
-    for (int obs = 0; obs < num_solutions; ++obs){
-      for (int src = 0; src < num_solutions; ++src){
-        if ( src !=obs ){
-          int pair = coord2idxrect(src, obs, num_solutions);
+  for (int obs = 0; obs < num_solutions; ++obs){
+    for (int src = 0; src < num_solutions; ++src){
+      if ( src !=obs ){
+        int pair = coord2idxrect(src, obs, num_solutions);
+        if (num_interactions){
           cmplx rabi = (*srcs)[obs].dipole().dot( Efld[pair] ) / hbar;
-          // cmplx rabi = (*srcs)[obs].dipole().dot( Efld[pair].conjugate() ) / hbar;
           Hpair -= Hint[pair] * rabi;
+
+          // trace-preserving term
+          rhodt += 2.0 * rabi.imag() * Dm[src] * rho * Dp[obs];
+          // if (step == 0)
+          //  std::cout << src << " " << obs << " " << std::endl << Hint[pair] << std::endl << std::endl;
+          //  std::cout << src << " " << obs << " " << std::endl << Dm[src] << std::endl << Dp[obs] << std::endl;
         }
       }
     }
-    rhodt += -iu * ( Hpair * rho - rho * Hpair.adjoint() ); 
   }
+  rhodt += -iu * ( Hpair * rho - rho * Hpair.adjoint() ); 
 
   // damping 
   for (int i = 0; i < num_solutions; ++i)
     rhodt -= ( D0[i] * rho + rho * D0[i] - 2 * Dm[i] * rho * Dp[i] )
-           / (*srcs)[i].damping().first; 
+           / (*srcs)[i].damping().first;
 
-  // trace-preserving term
-  matrix_cmplx Gamma = iu * ( Hpair - Hpair.adjoint() ) / 2;
-  // cmplx trace = ( Gamma * rho ).trace();
-  // std::cout << "Trace: " << trace << std::endl;
-  rhodt += 2 * ( ( Gamma * rho ).trace() ).real() * rho; // taking the real part for now!!!
- 
   return rhodt;
+}
+
+matrix_cmplx Integrator::BlochRHS::gammafunc( const matrix_cmplx rho,
+                                        const ResultArray Efld,
+                                        const int step)
+{
+
+  double gamma1 = 0;
+  double gamma2 = 0;
+
+  /*for (int i = 0; i < num_solutions; ++i){
+    cmplx rabi_pulse = (*srcs)[i].dipole().dot(
+                          (*pulse)((*srcs)[i].position(), step*dt, rotating, 1) ) / hbar; 
+    matrix_cmplx Hpulse = H0[i] * rabi_pulse;    
+  }*/
+
+  for (int obs = 0; obs < num_solutions; ++obs){
+    for (int src = 0; src < num_solutions; ++src){
+      if ( src !=obs ){
+        int pair = coord2idxrect(src, obs, num_solutions);
+        if (num_interactions){
+          cmplx rabi = (*srcs)[obs].dipole().dot( Efld[pair] ) / hbar;
+          gamma1 += ( (rho * Hint[pair]).trace() ).real() * 2.0 * rabi.imag();
+        }
+      }
+    }
+  }
+
+  for (int i = 0; i < num_solutions; ++i)
+    gamma2 += ( (rho * Ex[i]).trace() ).real() / (*srcs)[i].damping().first;
+
+  return gamma1 * mtrx1 + gamma2 * mtrx2;
 }
 
 void Integrator::BlochRHS::evaluate(const int step)
@@ -192,6 +235,11 @@ void Integrator::BlochRHS::evaluate(const int step)
         history->get_value(step, 0),
 	      projected_efld, 
         step);
+  history->set_gamma(step) = gammafunc(
+        history->get_value(step, 0),
+	      projected_efld, 
+        step);
+
 }
 
 void Integrator::BlochRHS::evaluate_present(const int step)
@@ -216,7 +264,12 @@ void Integrator::BlochRHS::evaluate_present(const int step)
         history->get_value(step, 0),
 	      projected_efld,
         step);
+  history->set_gamma(step) = gammafunc(
+        history->get_value(step, 0),
+	      projected_efld, 
+        step);
 }
+
 
 void Integrator::BlochRHS::evaluate_field(const int step)
 {

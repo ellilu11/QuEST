@@ -103,7 +103,6 @@ void Integrator::BlochRHS::build_rhsmatrices()
       obs == 0 ? sigp : Id;   
     Hintm[pair] = 
       obs == 0 ? sigm : Id;   
- 
     for (int i = 1; i < num_solutions; ++i){
       if ( i == obs ){
         Hintp[pair] = kroneckerProduct(Hintp[pair], sigp).eval();
@@ -118,6 +117,10 @@ void Integrator::BlochRHS::build_rhsmatrices()
     }
     Hint[pair] = Hintp[pair] + Hintm[pair];
  
+    Hintp[pair] = 
+      src == 0 ? sigp : Id;   
+    Hintm[pair] = 
+      src == 0 ? sigm : Id;   
     for (int i = 1; i < num_solutions; ++i){
       if ( i == src ){
         Hintp[pair] = kroneckerProduct(Hintp[pair], sigp).eval();
@@ -161,8 +164,6 @@ matrix_cmplx Integrator::BlochRHS::rhsfunc( const matrix_cmplx rho,
     cmplx rabi = (*srcs)[obs].dipole().dot( Efld[pair].conjugate() ) / hbar;
     Hpair -= Hint[pair] * rabi;
     Hpair -= Hint2[pair] * rabi;
-    // if( step == 0 || step == 100 ) 
-    //  std::cout << Hpair - Hpair.adjoint() << std::endl;
   }
   rhodt += -iu * ( Hpair * rho - rho * Hpair.adjoint() ); 
  

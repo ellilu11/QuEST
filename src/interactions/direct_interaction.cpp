@@ -120,9 +120,9 @@ const InteractionBase::ResultArray &DirectInteraction::evaluate(
           rho_src = rho_matrix(0,1);
 
           if ( !omega )
-            past_terms_of_convolution[pair] = 2.0 * (rho_src * coeffs[pairint][i]).real() ;
+            past_terms_of_convolution[pair] = 2.0 * (coeffs[pairint][i]).real() ;
           else
-            past_terms_of_convolution[pair] = rho_src * coeffs[pairint][i] ;
+            past_terms_of_convolution[pair] = coeffs[pairint][i] ;
         }
        
         const int s = std::max(time_idx - floor_delays[pairint], -history->window);

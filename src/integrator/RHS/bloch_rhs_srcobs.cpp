@@ -146,6 +146,7 @@ matrix_cmplx Integrator::BlochRHS::rhsfunc( const matrix_cmplx rho,
       for (int src = 0; src < num_solutions; ++src){
         if ( src !=obs ){
           int pair = coord2idxrect(src, obs, num_solutions);
+          // cmplx rabi = (*srcs)[obs].dipole().dot( Efld[pair] ) / hbar;
           cmplx rabi = (*srcs)[obs].dipole().dot( Efld[pair].conjugate() ) / hbar;
           Hpair -= Hint[pair] * rabi;
         }

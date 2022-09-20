@@ -36,9 +36,10 @@ class Integrator::History {
   void fill(const soltype &);
   void initialize_past(const soltype &);
   // void initialize_past(const soltype &, const soltype &);
-  soltype &set_value(const int, const int);
   soltype get_value(const int, const int) const;
-
+  soltype &set_value(const int, const int);
+  soltype get_gamma(const int) const;
+  soltype &set_gamma(const int);
   void write_step_to_file(const int);
 
   int num_particles;
@@ -48,7 +49,8 @@ class Integrator::History {
 
  private:
   soltype_array<soltype> array_;
-  std::ofstream outfile, outfile2, outfile3;
+  soltype_array<soltype> gamma_;
+  std::ofstream outfile, outfile2, outfile3, outfile4;
   int time_idx_in_array(const int) const;
   // friend int time_idx_in_array(const int);
   /*template <class B = soltype>
@@ -78,6 +80,9 @@ Integrator::History<soltype>::History(const int num_particles,
   array_.resize(
       boost::extents[time_idx_ubound][num_derivatives]);
 
+  gamma_.resize(
+      boost::extents[time_idx_ubound][1]);
+
   outfile.open("./out/out" + std::to_string(task_idx) + ".dat");
   outfile << std::scientific << std::setprecision(18);
 
@@ -86,6 +91,9 @@ Integrator::History<soltype>::History(const int num_particles,
 
   outfile3.open("./out/pur" + std::to_string(task_idx) + ".dat");
   outfile3 << std::scientific << std::setprecision(18);
+
+  outfile4.open("./out/gamma" + std::to_string(task_idx) + ".dat");
+  outfile4 << std::scientific << std::setprecision(18);
 
 
 }
@@ -139,6 +147,21 @@ soltype &Integrator::History<soltype>::set_value(const int time_idx,
   int t = time_idx_in_array(time_idx);
   return array_[t][derivative_idx];
 }
+
+template <class soltype>
+soltype Integrator::History<soltype>::get_gamma(const int time_idx) const
+{
+  int t = time_idx_in_array(time_idx);
+  return gamma_[t][0];
+}
+
+template <class soltype>
+soltype &Integrator::History<soltype>::set_gamma(const int time_idx)
+{
+  int t = time_idx_in_array(time_idx);
+  return gamma_[t][0];
+}
+
 
 /*
 template <class soltype>
@@ -197,9 +220,9 @@ void Integrator::History<soltype>::write_step_to_file(const int timestep)
  
   Eigen::Matrix4cd rho = 
     // traceOverDim(
-      // traceOverDim(
-        get_value(timestep, 0);
-        // num_particles, 2);          
+      traceOverDim(
+        get_value(timestep, 0),
+        num_particles, 2);          
       // num_particles-1, 2);
 
   // partial matrix transposition
@@ -217,6 +240,10 @@ void Integrator::History<soltype>::write_step_to_file(const int timestep)
     outfile2 << (ces.eigenvalues()[dim]).real() << " "
              << (ces.eigenvalues()[dim]).imag() << " ";
   outfile2 << "\n";
+
+  // ==== Photon emission =======================
+  matrix_cmplx gmatrix = get_gamma(timestep);  
+  outfile4 << gmatrix(0,0).real() << " " << gmatrix(7,7).real() << std::endl;
  
   if(timestep > num_timesteps*0.90)
     outfile2.flush();  // QUESTION: why is this needed?

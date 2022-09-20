@@ -189,7 +189,8 @@ int main(int argc, char *argv[])
   history->fill(Eigen::MatrixXcd::Zero(power_num,power_num));
  
   Eigen::Matrix2cd init;
-  init << 1, 0, 0, 0;
+  // init << 1, 0, 0, 0; // ground state  
+  init << 0, 0, 0, 1; // excited state
 
   matrix_cmplx init_tensor = init;
   for (int i = 1; i < config.num_particles; ++i)
