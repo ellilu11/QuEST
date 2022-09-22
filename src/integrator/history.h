@@ -47,7 +47,7 @@ class Integrator::History {
  private:
   soltype_array<soltype> array_;
   soltype_array<soltype> gamma_;
-  std::ofstream outfile;
+  std::ofstream outfile, outfile2;
   int time_idx_in_array(const int) const;
   // friend int time_idx_in_array(const int);
   template <class B = soltype>
@@ -82,12 +82,16 @@ Integrator::History<soltype>::History(const int num_particles,
   outfile.open("./out/out" + std::to_string(task_idx) + ".dat");
   outfile << std::scientific << std::setprecision(18);
 
+  outfile2.open("./out/gamma" + std::to_string(task_idx) + ".dat");
+  outfile2 << std::scientific << std::setprecision(18);
+
 }
 
 template <class soltype>
 Integrator::History<soltype>::~History()
 {
   outfile.close();
+  outfile2.close();
 }
 
 template <class soltype>
@@ -184,22 +188,28 @@ Integrator::History<soltype>::prep_for_output(soltype element)
 template <class soltype>
 void Integrator::History<soltype>::write_step_to_file(const int timestep)
 {
+  double gamma = 0;
   for(int n = 0; n < num_particles; ++n){
     //outfile << prep_for_output(get_value(n, timestep, 0)) << " ";
     double rho01_real = (get_value(n, timestep, 0))[1].real();
     double rho01_imag = (get_value(n, timestep, 0))[1].imag();
-    // double rho01_abs = sqrt( pow(rho01_real,2) + pow(rho01_imag,2) );
 
     outfile // << timestep << " "
             << (get_value(n, timestep, 0))[0].real() << " "
             << rho01_real << " "
             << rho01_imag << " ";
-            // << rho01_abs << " ";
+
+    gamma += (get_gamma(n, timestep))[0].real();
   }
 
   outfile << "\n";
-  if(timestep > num_timesteps*0.90)
+  outfile2 << gamma << "\n";
+
+  if(timestep > num_timesteps*0.90){
     outfile.flush();  // QUESTION: why is this needed?
+    outfile2.flush();  // QUESTION: why is this needed?
+  }
+
 }
 
 #endif

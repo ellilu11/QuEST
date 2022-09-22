@@ -56,7 +56,7 @@ void Integrator::BlochRHS::evaluate(const int step) const
         history->get_value(solution, step, 0),
 	      projected_rabi[solution],
         step);
-    history->set_gamma(solution, step) += gamma_functions[solution](
+    history->set_gamma(solution, step) = gamma_functions[solution](
         history->get_value(solution, step, 0),
 	      projected_rabi[solution],
         step );
@@ -80,7 +80,7 @@ void Integrator::BlochRHS::evaluate_present(const int step) const
         history->get_value(solution, step, 0),
 	      projected_rabi[solution],
         step);
-    history->set_gamma(solution, step) += gamma_functions[solution](
+    history->set_gamma(solution, step) = gamma_functions[solution](
         history->get_value(solution, step, 0),
 	      projected_rabi[solution],
         step );
