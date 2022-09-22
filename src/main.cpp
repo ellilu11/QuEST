@@ -74,6 +74,7 @@ int main(int argc, char *argv[])
     auto qds = make_shared<DotVector>(import_dots("./dots/dots"+idstr+".cfg"));
     qds->resize(config.num_particles);
     auto rhs_funcs = rhs_functions(*qds, config.omega, beta, rotating);
+    auto gamma_funcs = gamma_functions(*qds, rotating);
   
     std::shared_ptr<DotVector> obs;
     // obs = make_shared<DotVector>(import_dots("./dots/dots"+idstr+".cfg"));
@@ -272,7 +273,8 @@ int main(int argc, char *argv[])
             config.dt, config.num_timesteps, 
             history, 
             std::move(interactions), std::move(efld_interactions), std::move(bfld_interactions), 
-            std::move(rhs_funcs), obs, 
+            std::move(rhs_funcs), std::move(gamma_funcs),
+            obs, 
             task_idx, getflux);
 
     Integrator::PredictorCorrector<Eigen::Vector2cd> solver_pc(

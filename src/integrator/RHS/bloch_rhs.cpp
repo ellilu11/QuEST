@@ -12,6 +12,7 @@ Integrator::BlochRHS::BlochRHS(
     std::vector<std::shared_ptr<InteractionBase>> efld_interactions,
     std::vector<std::shared_ptr<InteractionBase>> bfld_interactions,
     std::vector<BlochFunctionType> rhs_functions,
+    std::vector<BlochFunctionType> gamma_functions,
     std::shared_ptr<DotVector> obss,
     const int task_idx,
     const bool getflux)
@@ -23,6 +24,7 @@ Integrator::BlochRHS::BlochRHS(
       efld_interactions(std::move(efld_interactions)),
       bfld_interactions(std::move(bfld_interactions)),
       rhs_functions(std::move(rhs_functions)),
+      gamma_functions(std::move(gamma_functions)),
       obss(std::move(obss)),
       num_obs(obss->size()),
       getflux(getflux)
@@ -54,7 +56,11 @@ void Integrator::BlochRHS::evaluate(const int step) const
         history->get_value(solution, step, 0),
 	      projected_rabi[solution],
         step);
-  }
+    history->set_gamma(solution, step) += gamma_functions[solution](
+        history->get_value(solution, step, 0),
+	      projected_rabi[solution],
+        step );
+ }
 }
 
 void Integrator::BlochRHS::evaluate_present(const int step) const
@@ -74,6 +80,10 @@ void Integrator::BlochRHS::evaluate_present(const int step) const
         history->get_value(solution, step, 0),
 	      projected_rabi[solution],
         step);
+    history->set_gamma(solution, step) += gamma_functions[solution](
+        history->get_value(solution, step, 0),
+	      projected_rabi[solution],
+        step );
   }
 }
 

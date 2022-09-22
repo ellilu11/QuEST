@@ -46,6 +46,11 @@ class QuantumDot {
                                 const double, 
                                 const double,
                                 const bool) const;
+  
+  matrix_elements gamma_rhs(const matrix_elements &,
+                            const cmplx,
+                            const int,
+                            const bool) const;
 
   friend class ObserverDot;
 
@@ -80,5 +85,6 @@ class QuantumDot {
 DotVector import_dots(const std::string &);
 void set_dipole_of_dots(std::shared_ptr<DotVector>, const Eigen::Vector3d dip);
 std::vector<BlochFunctionType> rhs_functions(const DotVector &, const double, const double, const bool);
+std::vector<BlochFunctionType> gamma_functions(const DotVector &, const bool);
 
 #endif

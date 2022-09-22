@@ -35,6 +35,8 @@ class Integrator::History {
   // void initialize_past(const soltype &, const soltype &);
   soltype &set_value(const int, const int, const int);
   soltype get_value(const int, const int, const int) const;
+  soltype &set_gamma(const int, const int);
+  soltype get_gamma(const int, const int) const;
 
   void write_step_to_file(const int);
 
@@ -44,6 +46,7 @@ class Integrator::History {
 
  private:
   soltype_array<soltype> array_;
+  soltype_array<soltype> gamma_;
   std::ofstream outfile;
   int time_idx_in_array(const int) const;
   // friend int time_idx_in_array(const int);
@@ -72,6 +75,9 @@ Integrator::History<soltype>::History(const int num_particles,
 
   array_.resize(
       boost::extents[num_particles][time_idx_ubound][num_derivatives]);
+
+  gamma_.resize(
+      boost::extents[num_particles][time_idx_ubound][1]);
 
   outfile.open("./out/out" + std::to_string(task_idx) + ".dat");
   outfile << std::scientific << std::setprecision(18);
@@ -139,6 +145,23 @@ soltype &Integrator::History<soltype>::set_value(const int particle_idx,
   int t = time_idx_in_array(time_idx);
   return array_[particle_idx][t][derivative_idx];
 }
+
+template <class soltype>
+soltype Integrator::History<soltype>::get_gamma(const int particle_idx,
+                                                const int time_idx) const
+{
+  int t = time_idx_in_array(time_idx);
+  return gamma_[particle_idx][t][0];
+}
+
+template <class soltype>
+soltype &Integrator::History<soltype>::set_gamma(const int particle_idx,
+                                                 const int time_idx)
+{
+  int t = time_idx_in_array(time_idx);
+  return gamma_[particle_idx][t][0];
+}
+
 
 template <class soltype>
 template <class B>

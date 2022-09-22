@@ -32,6 +32,17 @@ matrix_elements QuantumDot::liouville_rhs(const matrix_elements &rho,
   return matrix_elements(m0, m1);
 }
 
+matrix_elements QuantumDot::gamma_rhs(const matrix_elements &rho,
+                                      const cmplx rabi,
+                                      const int time_idx,
+                                      const bool rotating) const
+{
+  cmplx gamma = ( 1.0 - rho[0] ) / damping.first + rho[1] * std::imag(rabi);
+ 
+  return matrix_elements(gamma, 0);
+}
+
+
 Eigen::Vector3d separation(const QuantumDot &d1, const QuantumDot &d2)
 {
   return d2.pos - d1.pos;
@@ -96,6 +107,22 @@ std::vector<BlochFunctionType> rhs_functions(const DotVector &dots,
                  [laser_frequency,damping_rr,rotating](const QuantumDot &d) {
                    return std::bind(&QuantumDot::liouville_rhs, d, _1, _2, _3,
                                     laser_frequency, damping_rr, rotating);
+                 });
+  return funcs;
+}
+
+std::vector<BlochFunctionType> gamma_functions(const DotVector &dots,
+                                               const bool rotating)
+{
+  std::vector<BlochFunctionType> funcs(dots.size());
+
+  using std::placeholders::_1;
+  using std::placeholders::_2;
+  using std::placeholders::_3;
+  std::transform(dots.begin(), dots.end(), funcs.begin(),
+                 [rotating](const QuantumDot &d) {
+                   return std::bind(&QuantumDot::gamma_rhs, d, _1, _2, _3, 
+                                      rotating);
                  });
   return funcs;
 }

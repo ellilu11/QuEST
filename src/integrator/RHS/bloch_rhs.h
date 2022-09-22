@@ -22,6 +22,7 @@ class Integrator::BlochRHS : public Integrator::RHS<Eigen::Vector2cd> {
            std::vector<std::shared_ptr<InteractionBase>>,
            std::vector<std::shared_ptr<InteractionBase>>,
            std::vector<BlochFunctionType>,
+           std::vector<BlochFunctionType>,
            std::shared_ptr<DotVector>,
            const int, 
            const bool);
@@ -30,6 +31,7 @@ class Integrator::BlochRHS : public Integrator::RHS<Eigen::Vector2cd> {
   void evaluate_present(const int) const override;
   void evaluate_field(const int) override;
   std::vector<BlochFunctionType> rhs_functions;
+  std::vector<BlochFunctionType> gamma_functions;
 
 private:
   int num_solutions, num_obs;
