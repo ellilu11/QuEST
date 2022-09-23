@@ -39,7 +39,7 @@ matrix_elements QuantumDot::gamma_rhs(const matrix_elements &rho,
                                       const bool rotating) const
 {
   cmplx gamma0 = ( 1.0 - rho[0] ) / damping.first;
-  cmplx gamma1 = rho[1] * std::imag(rabi) * hbar;
+  cmplx gamma1 = std::conj(rho[1]) * std::imag(rabi) * hbar;
  
   return matrix_elements(gamma0, gamma1);
 }

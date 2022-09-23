@@ -99,7 +99,7 @@ int main(int argc, char *argv[])
     auto history = make_shared<Integrator::History<Eigen::Vector2cd>>(
         config.num_particles, window, config.num_timesteps, min_time_to_keep, 2, task_idx);
     history->fill(Eigen::Vector2cd::Zero());
-    history->initialize_past( Eigen::Vector2cd(0,1) );
+    history->initialize_past( Eigen::Vector2cd(1,0) );
     /*const double TH0 = 0.5*M_PI;
     const double TH1 = 0.6*M_PI;
     const double PH0 = 0.1*M_PI;
@@ -168,7 +168,7 @@ int main(int argc, char *argv[])
     
     } else {
       if (config.ref_frame == Configuration::REFERENCE_FRAME::ROT) {
-          Propagation::RotatingEFIE_nodelay dyadic(config.c0, propagation_constant, config.omega, beta, 0.0);
+          Propagation::RotatingEFIE dyadic(config.c0, propagation_constant, config.omega, beta, 0.0);
           Propagation::SelfRotatingEFIE dyadic_self(config.c0, propagation_constant, config.omega, beta);
 
           selfwise = make_shared<SelfInteraction>(qds, nullptr, history, dyadic_self,

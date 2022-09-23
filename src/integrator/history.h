@@ -203,7 +203,8 @@ void Integrator::History<soltype>::write_step_to_file(const int timestep)
   }
 
   outfile << "\n";
-  outfile2 << gamma[0].real() << " " << gamma[1].real() << "\n";
+  outfile2 << gamma[0].real() << " " << gamma[1].real() << " " 
+           << gamma[0].imag() << " " << gamma[1].imag() << "\n";
 
   if(timestep > num_timesteps*0.90){
     outfile.flush();  // QUESTION: why is this needed?
