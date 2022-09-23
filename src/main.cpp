@@ -74,7 +74,7 @@ int main(int argc, char *argv[])
     auto qds = make_shared<DotVector>(import_dots("./dots/dots"+idstr+".cfg"));
     qds->resize(config.num_particles);
     auto rhs_funcs = rhs_functions(*qds, config.omega, beta, rotating);
-    auto gamma_funcs = gamma_functions(*qds, rotating);
+    auto gamma_funcs = gamma_functions(*qds, config.hbar, rotating);
   
     std::shared_ptr<DotVector> obs;
     // obs = make_shared<DotVector>(import_dots("./dots/dots"+idstr+".cfg"));
@@ -99,8 +99,7 @@ int main(int argc, char *argv[])
     auto history = make_shared<Integrator::History<Eigen::Vector2cd>>(
         config.num_particles, window, config.num_timesteps, min_time_to_keep, 2, task_idx);
     history->fill(Eigen::Vector2cd::Zero());
-    history->initialize_past( Eigen::Vector2cd(1,0) );
-                              // Eigen::Vector2cd(0.15,0) );
+    history->initialize_past( Eigen::Vector2cd(0,1) );
     /*const double TH0 = 0.5*M_PI;
     const double TH1 = 0.6*M_PI;
     const double PH0 = 0.1*M_PI;

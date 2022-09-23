@@ -188,7 +188,7 @@ Integrator::History<soltype>::prep_for_output(soltype element)
 template <class soltype>
 void Integrator::History<soltype>::write_step_to_file(const int timestep)
 {
-  double gamma = 0;
+  Eigen::Vector2cd gamma = Eigen::Vector2cd::Zero();
   for(int n = 0; n < num_particles; ++n){
     //outfile << prep_for_output(get_value(n, timestep, 0)) << " ";
     double rho01_real = (get_value(n, timestep, 0))[1].real();
@@ -199,11 +199,11 @@ void Integrator::History<soltype>::write_step_to_file(const int timestep)
             << rho01_real << " "
             << rho01_imag << " ";
 
-    gamma += (get_gamma(n, timestep))[0].real();
+    gamma += (get_gamma(n, timestep));
   }
 
   outfile << "\n";
-  outfile2 << gamma << "\n";
+  outfile2 << gamma[0].real() << " " << gamma[1].real() << "\n";
 
   if(timestep > num_timesteps*0.90){
     outfile.flush();  // QUESTION: why is this needed?
