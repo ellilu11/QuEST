@@ -168,7 +168,7 @@ int main(int argc, char *argv[])
     
     } else {
       if (config.ref_frame == Configuration::REFERENCE_FRAME::ROT) {
-          Propagation::RotatingEFIE dyadic(config.c0, propagation_constant, config.omega, beta, 0.0);
+          Propagation::RotatingEFIE_nodelay dyadic(config.c0, propagation_constant, config.omega, beta, 0.0);
           Propagation::SelfRotatingEFIE dyadic_self(config.c0, propagation_constant, config.omega, beta);
 
           selfwise = make_shared<SelfInteraction>(qds, nullptr, history, dyadic_self,
