@@ -99,7 +99,7 @@ int main(int argc, char *argv[])
     auto history = make_shared<Integrator::History<Eigen::Vector2cd>>(
         config.num_particles, window, config.num_timesteps, min_time_to_keep, 2, task_idx);
     history->fill(Eigen::Vector2cd::Zero());
-    history->initialize_past( Eigen::Vector2cd(1,0) );
+    history->initialize_past( Eigen::Vector2cd(0,0) );
     /*const double TH0 = 0.5*M_PI;
     const double TH1 = 0.6*M_PI;
     const double PH0 = 0.1*M_PI;
