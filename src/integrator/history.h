@@ -8,6 +8,8 @@
 #include <iomanip>
 #include <iostream>
 #include <memory>
+#include <chrono>
+#include <random>
 #include "../quantum_dot.h"
 
 namespace Integrator {
@@ -31,7 +33,7 @@ class Integrator::History {
   ~History();
 
   void fill(const soltype &);
-  void initialize_past(const soltype &);
+  void initialize_past(const double);
   // void initialize_past(const soltype &, const soltype &);
   soltype &set_value(const int, const int, const int);
   soltype get_value(const int, const int, const int) const;
@@ -101,10 +103,24 @@ void Integrator::History<soltype>::fill(const soltype &val)
 }
 
 template <class soltype>
-void Integrator::History<soltype>::initialize_past(const soltype &val)
+void Integrator::History<soltype>::initialize_past(const double sigma)
 {
+  const unsigned seed =
+      std::chrono::system_clock::now().time_since_epoch().count();
+  std::default_random_engine generator(seed);
+
+  std::normal_distribution<double> rho_01r(0, sigma);
+  std::normal_distribution<double> rho_01i(0, sigma);
+
   for(int n = 0; n < static_cast<int>(array_.shape()[PARTICLES]); ++n) {
-    for(int t = -window; t <= 0; ++t) { set_value(n, t, DERIV_0) = val; }
+    cmplx rho_00(0,0);
+    cmplx rho_01(rho_01r(generator), rho_01i(generator)); 
+    Eigen::Vector2cd val(rho_00, rho_01);
+      
+    // std::cout << n << " " << val << std::endl;
+    
+    for(int t = -window; t <= 0; ++t) 
+      set_value(n, t, DERIV_0) = val; 
   }
 }
 

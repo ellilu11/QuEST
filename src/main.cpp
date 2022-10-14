@@ -24,7 +24,6 @@ int main(int argc, char *argv[])
     auto vm = parse_configs(argc, argv);
 
     string idstr(argv[1]);
-    string dip_idstr(argv[2]);
     const bool rotating = 
       config.ref_frame == Configuration::REFERENCE_FRAME::ROT ? true : false;
     const bool rwa = 
@@ -71,7 +70,7 @@ int main(int argc, char *argv[])
 			cout << "  AIM border: " << config.border << endl;
 		}
 
-    auto qds = make_shared<DotVector>(import_dots("./dots/dots"+idstr+".cfg"));
+    auto qds = make_shared<DotVector>(import_dots("./dots/dots0.cfg"));
     qds->resize(config.num_particles);
     auto rhs_funcs = rhs_functions(*qds, config.omega, beta, rotating);
     auto gamma_funcs = gamma_functions(*qds, config.hbar, rotating);
@@ -99,20 +98,11 @@ int main(int argc, char *argv[])
     auto history = make_shared<Integrator::History<Eigen::Vector2cd>>(
         config.num_particles, window, config.num_timesteps, min_time_to_keep, 2, task_idx);
     history->fill(Eigen::Vector2cd::Zero());
-    history->initialize_past( Eigen::Vector2cd(0,0) );
-    /*const double TH0 = 0.5*M_PI;
-    const double TH1 = 0.6*M_PI;
-    const double PH0 = 0.1*M_PI;
-    const double PH1 = 0;
+    history->initialize_past( 1.0/sqrt(3.0) * 2.0 * M_PI * config.c0 / config.omega );
+    // history->initialize_past( 0 );
 
-    double rho00_0 = ( 1 - cos(TH0) ) / 2;
-    double rho00_1 = ( 1 - cos(TH1) ) / 2;
-    std::complex<double> rho01_0(cos(PH0)*sin(TH0)/2, sin(PH0)*sin(TH0)/2);
-    std::complex<double> rho01_1(cos(PH1)*sin(TH1)/2, sin(PH1)*sin(TH1)/2);
-
-    history->initialize_past( Eigen::Vector2cd(rho00_0, rho01_0),
-                              Eigen::Vector2cd(rho00_1, rho01_1) );
-    */// history->initialize_past( qd_path );
+    for(int n = 0; n < config.num_particles; ++n)
+      std::cout << (history->get_value(n, 0, 0))[1] << std::endl;
 
     // == INTERACTIONS ===============================================
 
