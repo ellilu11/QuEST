@@ -98,8 +98,8 @@ int main(int argc, char *argv[])
     auto history = make_shared<Integrator::History<Eigen::Vector2cd>>(
         config.num_particles, window, config.num_timesteps, min_time_to_keep, 2, task_idx);
     history->fill(Eigen::Vector2cd::Zero());
-    history->initialize_past( 1.0/sqrt(3.0) * 2.0 * M_PI * config.c0 / config.omega );
-    // history->initialize_past( 0 );
+    history->initialize_past( 1.0/sqrt(8.0) );
+    // history->initialize_past( 1.0 );
 
     for(int n = 0; n < config.num_particles; ++n)
       std::cout << (history->get_value(n, 0, 0))[1] << std::endl;
