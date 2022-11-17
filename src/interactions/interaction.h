@@ -18,10 +18,13 @@ class InteractionBase {
         obss(std::move(obss)),
         results(obss ? obss->size() : (dots ? dots->size() : 0) ),
         past_terms_of_convolution(dots ? dots->size() : 0), 
+        past_terms_imag(dots ? dots->size() : 0), 
         dt(dt){};
   const cmplx &operator[](const int i) const { return results[i]; }
   virtual const ResultArray &evaluate(const int) = 0;
   virtual const ResultArray &evaluate_present(const int) = 0;
+  virtual const ResultArray &evaluate_gamma(const int) = 0;
+  // virtual const ResultArray &evaluate_present_gamma(const int) = 0;
   virtual const ResultArray &evaluate_field(const int, const bool=0) = 0;
   virtual ~InteractionBase(){};
 
@@ -33,7 +36,7 @@ class InteractionBase {
 
   std::shared_ptr<const DotVector> dots, obss;
   ResultArray results;
-  ResultArray past_terms_of_convolution;
+  ResultArray past_terms_of_convolution, past_terms_imag;
   double dt;
 };
 

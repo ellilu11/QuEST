@@ -10,6 +10,8 @@
 #include <memory>
 #include <chrono>
 #include <random>
+#include <string>
+#include <limits>
 #include "../quantum_dot.h"
 
 namespace Integrator {
@@ -29,12 +31,13 @@ template <class soltype>
 class Integrator::History {
  public:
   // History(const int, const int, const int, const int = 2);
-  History(const int, const int, const int, const int = -1, const int = 2, const int = 0);
+  History(const int, const int, const int, const int = -1, const int = 2, const int = 1, const int = 0);
   ~History();
 
   void fill(const soltype &);
   void initialize_past(const double);
-  // void initialize_past(const soltype &, const soltype &);
+  Integrator::soltype_array<soltype> read_history(const std::string);
+  Integrator::soltype_array<soltype> mean_over_trials(const soltype_array<soltype>);
   soltype &set_value(const int, const int, const int);
   soltype get_value(const int, const int, const int) const;
   soltype &set_gamma(const int, const int);
@@ -44,12 +47,15 @@ class Integrator::History {
 
   int num_particles;
   int num_timesteps;
+  int num_trials;
   int window;
+  int task_idx;
 
  private:
   soltype_array<soltype> array_;
   soltype_array<soltype> gamma_;
-  std::ofstream outfile, outfile2;
+  std::ofstream outfile, outfile2, ofsdfile;
+  std::ifstream ifsdfile;
   int time_idx_in_array(const int) const;
   // friend int time_idx_in_array(const int);
   template <class B = soltype>
@@ -68,8 +74,10 @@ Integrator::History<soltype>::History(const int num_particles,
                                       const int num_timesteps,
                                       const int min_time_idx_ubound,  // rename!
                                       const int num_derivatives,
+                                      const int num_trials,
                                       const int task_idx)
-    : num_particles(num_particles), num_timesteps(num_timesteps), window(window)
+    : num_particles(num_particles), num_timesteps(num_timesteps), num_trials(num_trials),
+      window(window), task_idx(task_idx)
 {
   // TODO: need to make the minimum: max_transit_steps_between_dots +
   // interpolation_order
@@ -87,6 +95,11 @@ Integrator::History<soltype>::History(const int num_particles,
   outfile2.open("./out/gamma" + std::to_string(task_idx) + ".dat");
   outfile2 << std::scientific << std::setprecision(18);
 
+  // ofsdfile.open("./seeds/seeds" + std::to_string(task_idx) + ".dat");
+  ofsdfile.open("./seeds.out", std::ios_base::app);
+  ifsdfile.open("./seeds.dat");
+  // ifsdfile.open("./seeds/seeds" + std::to_string(task_idx) + ".dat");
+ 
 }
 
 template <class soltype>
@@ -94,6 +107,73 @@ Integrator::History<soltype>::~History()
 {
   outfile.close();
   outfile2.close();
+  ofsdfile.close();
+  ifsdfile.close();
+}
+
+template <class soltype>
+Integrator::soltype_array<soltype> 
+  Integrator::History<soltype>::read_history( const std::string filestr )
+{
+  std::ifstream file;
+  file.open(filestr);
+
+  soltype_array<soltype> new_array_; 
+  new_array_.resize(
+      boost::extents[num_particles][num_timesteps][num_trials]);
+
+  int i = 0;
+  std::string str;
+  Eigen::Vector2cd rho = Eigen::Vector2cd::Zero();
+
+  while( std::getline(file, str, ' ') ){
+
+    int row = i / ( 3*num_particles );
+    int col = i % ( 3*num_particles );
+
+    int ipart = col / 3;
+    int ivar = col % 3;
+
+    int itrial = row / num_timesteps;
+    int istep = row % num_timesteps;
+
+    i++;
+   
+    switch(ivar) {
+      case 0 :
+        rho += Eigen::Vector2cd(std::stod(str),0);
+        break;
+      case 1 :
+        rho += Eigen::Vector2cd(0, std::stod(str));
+        break;
+      case 2 :
+        rho += Eigen::Vector2cd(0, iu*std::stod(str));
+        new_array_[ipart][istep][itrial] = rho;
+        rho = Eigen::Vector2cd::Zero();
+        break;
+    } 
+  }
+
+  return new_array_;
+}
+
+template <class soltype>
+Integrator::soltype_array<soltype> 
+  Integrator::History<soltype>::mean_over_trials( const soltype_array<soltype> history_array_ )
+{
+  soltype_array<soltype> new_array_; 
+  new_array_.resize(
+      boost::extents[num_particles][num_timesteps][1]);
+
+  for (int ipart = 0; ipart < num_particles; ++ipart){
+    for (int istep = 0; istep < num_timesteps; ++istep){
+      for (int itrial = 0; itrial < num_trials; ++itrial)
+        new_array_[ipart][istep][0] += history_array_[ipart][istep][itrial];
+      new_array_[ipart][istep][0] /= (double)num_trials;
+    }
+  }
+
+  return new_array_;
 }
 
 template <class soltype>
@@ -105,8 +185,19 @@ void Integrator::History<soltype>::fill(const soltype &val)
 template <class soltype>
 void Integrator::History<soltype>::initialize_past(const double sigma)
 {
-  const unsigned seed = // set this seed value
-      std::chrono::system_clock::now().time_since_epoch().count();
+  /*const int seed = 
+       std::chrono::system_clock::now().time_since_epoch().count();
+  ofsdfile << seed << std::endl;
+ */
+  ifsdfile.seekg(std::ios::beg);
+  for (int i = 0; i < task_idx; ++i)
+    ifsdfile.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+
+  std::string seedstr;
+  ifsdfile >> seedstr;
+  const int seed = std::stoi(seedstr);  
+  ofsdfile << seed << std::endl;
+
   std::default_random_engine generator(seed);
 
   std::normal_distribution<double> rho_01r(0, sigma);
@@ -114,26 +205,18 @@ void Integrator::History<soltype>::initialize_past(const double sigma)
 
   for(int n = 0; n < static_cast<int>(array_.shape()[PARTICLES]); ++n) {
     cmplx rho_00(0,0);
-    cmplx rho_01(rho_01r(generator), rho_01i(generator)); 
+    cmplx rho_01(std::min(rho_01r(generator), 0.5),
+                 std::min(rho_01i(generator), 0.5)
+                ); 
+    // cmplx rho_01(0,0); 
     Eigen::Vector2cd val(rho_00, rho_01);
       
-    // std::cout << n << " " << val << std::endl;
+    // std::cout << n << " " << rho_01 << std::endl;
     
     for(int t = -window; t <= 0; ++t) 
       set_value(n, t, DERIV_0) = val; 
   }
 }
-
-/*template <class soltype>
-void Integrator::History<soltype>::initialize_past(const soltype &val, const soltype &val2)
-{
-  const int ndots = static_cast<int>(array_.shape()[PARTICLES]);
-  for(int n = 0; n < ndots - 1; ++n) {
-    for(int t = -window; t <= 0; ++t) { set_value(n, t, DERIV_0) = val; }
-  }
-  for(int t = -window; t <= 0; ++t) { set_value(ndots-1, t, DERIV_0) = val2; }
-
-}*/
 
 template <class soltype>
 int Integrator::History<soltype>::time_idx_in_array(const int time_idx) const
@@ -201,10 +284,40 @@ Integrator::History<soltype>::prep_for_output(soltype element)
   return element;
 }
 
+/*template <class soltype>
+void Integrator::History<soltype>::write_step_to_file(const int timestep)
+{
+  Eigen::Vector2cd gamma = Eigen::Vector2cd::Zero();
+  for(int n = 0; n < num_particles; ++n){
+    //outfile << prep_for_output(get_value(n, timestep, 0)) << " ";
+    double rho01_real = (get_value(n, timestep, 0))[1].real();
+    double rho01_imag = (get_value(n, timestep, 0))[1].imag();
+
+    outfile // << timestep << " "
+            << (get_value(n, timestep, 0))[0].real() << " "
+            << rho01_real << " "
+            << rho01_imag << " ";
+
+    gamma += get_gamma(n, timestep);
+
+  }
+
+  outfile << "\n";
+
+  outfile2 << gamma[0].real() << " "
+           << gamma[1].real() << " " 
+           << gamma[1].imag() << "\n";
+ 
+  if(timestep > num_timesteps*0.90){
+    outfile.flush();  // QUESTION: why is this needed?
+    outfile2.flush();  // QUESTION: why is this needed?
+  }
+
+}*/
+
 template <class soltype>
 void Integrator::History<soltype>::write_step_to_file(const int timestep)
 {
-  // Eigen::Vector2cd gamma = Eigen::Vector2cd::Zero();
   for(int n = 0; n < num_particles; ++n){
     //outfile << prep_for_output(get_value(n, timestep, 0)) << " ";
     double rho01_real = (get_value(n, timestep, 0))[1].real();
@@ -216,20 +329,21 @@ void Integrator::History<soltype>::write_step_to_file(const int timestep)
             << rho01_imag << " ";
 
     Eigen::Vector2cd gamma = get_gamma(n, timestep);
- 
     outfile2 << gamma[0].real() << " " 
              << gamma[1].real() << " " 
              << gamma[1].imag() << " ";
+
   }
 
   outfile << "\n";
   outfile2 << "\n";
-  
+
   if(timestep > num_timesteps*0.90){
     outfile.flush();  // QUESTION: why is this needed?
     outfile2.flush();  // QUESTION: why is this needed?
   }
 
 }
+
 
 #endif

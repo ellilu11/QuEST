@@ -11,6 +11,7 @@ class DirectInteraction final : public HistoryInteraction {
       std::shared_ptr<const DotVector>,
       std::shared_ptr<const Integrator::History<Eigen::Vector2cd>>,
       Propagation::Kernel<cmplx> &,
+      Propagation::Kernel<cmplx> &, // optional 2nd kernel for computation of gamma
       const int,
       const double,
       const double,
@@ -18,6 +19,8 @@ class DirectInteraction final : public HistoryInteraction {
 
   const ResultArray &evaluate(const int) final;
   const ResultArray &evaluate_present(const int) final;
+  const ResultArray &evaluate_gamma(const int) final;
+  // const ResultArray &evaluate_present_gamma(const int) final;
   const ResultArray &evaluate_field(const int, const bool=0) final;
 //  boost::multi_array<cmplx, 2> &coefficients() final { return coeffs; }
 
@@ -26,11 +29,12 @@ class DirectInteraction final : public HistoryInteraction {
   int num_obs, num_srcobs;
 
   std::vector<int> floor_delays, floor_delays_srcobs;
-  boost::multi_array<cmplx, 2> coeffs;
+  boost::multi_array<cmplx, 2> coeffs, gammacoeffs;
   boost::multi_array<Eigen::Vector3cd, 2> fldcoeffs, cross_coeffs;
   double omega;
 
-  void build_coeff_table(Propagation::Kernel<cmplx> &);
+  void build_coeff_table(Propagation::Kernel<cmplx> &,
+                         Propagation::Kernel<cmplx> &);
   void build_fldcoeff_table(Propagation::Kernel<cmplx> &);
 
   static int coord2idx(int, int);

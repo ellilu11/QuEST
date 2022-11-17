@@ -31,7 +31,8 @@ namespace Propagation {
   class EFIE;
 
   class RotatingEFIE;
-  class RotatingEFIE_nodelay;
+  class RotatingEFIE_noderiv;
+  class RotatingEFIE_noderiv_imag;
 
   template <class T>
   class MFIE;
@@ -255,9 +256,9 @@ class Propagation::RotatingEFIE : public Propagation::EFIE<cmplx> {
   double omega_;
 };
 
-class Propagation::RotatingEFIE_nodelay : public Propagation::EFIE<cmplx> {
+class Propagation::RotatingEFIE_noderiv : public Propagation::EFIE<cmplx> {
  public:
-  RotatingEFIE_nodelay(const double c, const double k2, const double omega, const double beta, const double dist0)
+  RotatingEFIE_noderiv(const double c, const double k2, const double omega, const double beta, const double dist0)
       : EFIE<cmplx>(c, k2, beta, dist0), omega_(omega){};
 
   const std::vector<Eigen::Matrix3cd> &coefficients(
@@ -272,13 +273,10 @@ class Propagation::RotatingEFIE_nodelay : public Propagation::EFIE<cmplx> {
 
       this->coefs_[i] = 
           -k2_ * std::exp(-iu * omega_ * dr.norm() / c_) *
-            (dyads[0].cast<cmplx>() * interp.evaluations[0][i] +
-             dyads[1].cast<cmplx>() * (0.0 * interp.evaluations[1][i] +
-                                     iu * omega_ * interp.evaluations[0][i]) +
-             dyads[2].cast<cmplx>() *
-               (0.0 * interp.evaluations[2][i] +
-                0.0 * 2.0 * iu * omega_ * interp.evaluations[1][i] -
-                std::pow(omega_, 2) * interp.evaluations[0][i]));
+            (dyads[0].cast<cmplx>() * interp.evaluations[0][i] + 
+             dyads[1].cast<cmplx>() * iu * omega_ * interp.evaluations[0][i] -
+             dyads[2].cast<cmplx>() * 
+                std::pow(omega_, 2) * interp.evaluations[0][i] );
 
     }
 
@@ -288,6 +286,42 @@ class Propagation::RotatingEFIE_nodelay : public Propagation::EFIE<cmplx> {
  private:
   double omega_;
 };
+
+class Propagation::RotatingEFIE_noderiv_imag : public Propagation::EFIE<cmplx> {
+ public:
+  RotatingEFIE_noderiv_imag(const double c, const double k2, const double omega, const double beta, const double dist0)
+      : EFIE<cmplx>(c, k2, beta, dist0), omega_(omega){};
+
+  const std::vector<Eigen::Matrix3cd> &coefficients(
+      const Eigen::Vector3d &dr,
+      const Interpolation::UniformLagrangeSet &interp)
+  {
+    this->coefs_.resize(interp.order() + 1);
+
+    const auto dyads(spatial_dyads(dr));
+
+    const double kR = omega_ * dr.norm() / c_;
+
+    for(int i = 0; i <= interp.order(); ++i) {
+      this->coefs_[i] = Eigen::Matrix3cd::Zero();
+
+      this->coefs_[i] = 
+          -k2_ *
+          // -k2_ * std::exp(-iu * omega_ * dr.norm() / c_) *
+            (dyads[0].cast<cmplx>() * interp.evaluations[0][i] * ( -std::sin(kR) ) +
+             dyads[1].cast<cmplx>() * omega_ * interp.evaluations[0][i] * std::cos(kR) +
+             dyads[2].cast<cmplx>() * 
+                std::pow(omega_, 2) * interp.evaluations[0][i] * std::sin(kR) );
+
+    }
+
+    return this->coefs_;
+  }
+
+ private:
+  double omega_;
+};
+
 
 template <class T>
 class Propagation::MFIE : public Propagation::Kernel<T> {

@@ -20,10 +20,9 @@ Eigen::Vector3cd Pulse::operator()(const Eigen::Vector3d &r,
   const double arg = freq/c0*wavevector.dot(r) - freq * (t - delay);
   const double width_factor = 1.0;
 
-  // std::cout << dipfactor << std::endl;
-
   Eigen::Vector3cd amp_vector = 
       amplitude/width_factor/dipfactor * polarization * gaussian(arg / ( width*width_factor ) );
+
   return amp_vector * (rotating
       ? (rwa ? 0.5 : cos(arg) * exp(iu*freq*t))
       : cos(arg) );

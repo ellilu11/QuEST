@@ -18,6 +18,14 @@ class SelfInteraction final : public HistoryInteraction {
 
   const ResultArray &evaluate(const int) final;
   const ResultArray &evaluate_present(const int) final;
+  const ResultArray &evaluate_gamma(const int time_idx)
+  {
+    return evaluate(time_idx);
+  }
+  /*const ResultArray &evaluate_present_gamma(const int time_idx)
+  {
+    return evaluate(time_idx);
+  }*/
   const ResultArray &evaluate_field(const int, const bool=0) final;
 
  private:

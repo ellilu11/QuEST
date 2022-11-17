@@ -19,6 +19,7 @@ class Integrator::RHS {
       : dt(dt), history(std::move(history)){};
   virtual void evaluate(const int) const = 0;
   virtual void evaluate_present(const int) const = 0;
+  virtual void evaluate_gamma(const int) const = 0;
   virtual void evaluate_field(const int) = 0;
 
 protected:

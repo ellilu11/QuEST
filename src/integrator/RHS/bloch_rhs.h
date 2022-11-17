@@ -29,6 +29,7 @@ class Integrator::BlochRHS : public Integrator::RHS<Eigen::Vector2cd> {
   ~BlochRHS();
   void evaluate(const int) const override;
   void evaluate_present(const int) const override;
+  void evaluate_gamma(const int) const override;
   void evaluate_field(const int) override;
   std::vector<BlochFunctionType> rhs_functions;
   std::vector<BlochFunctionType> gamma_functions;

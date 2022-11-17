@@ -68,7 +68,7 @@ int main(int argc, char *argv[])
   const double c = c0 / n;
   const double omega = 4823.67; // 2278.9013;
   const double lambda = 2 * M_PI * c / omega;
-  const double T1 = 20.0, T2 = 2*T1;
+  const double T1 = 8.31, T2 = 2*T1;
   const double dip = 0.002536; //5.2917721e-4 * 1.0;
   const double dipx = dip, dipy = 0.0, dipz = 0.0;
   const int num_circ = atoi(argv[1]);
@@ -79,21 +79,21 @@ int main(int argc, char *argv[])
   const unsigned seed =
       std::chrono::system_clock::now().time_since_epoch().count();
     
-	const double dr = 0.2 * lambda;
+	const double d = 0.2 * lambda;
   const double dth = 2.0*M_PI/num_pt;
+  const double r = d/2.0 / std::sin(dth/2.0);
 
-  std::cout << "dr: " << dr << " dth: " << dth << std::endl;
+  std::cout << "r: " << r << " dth: " << dth << std::endl;
  
   Qdot qd;
   std::vector<Qdot> dots;
   dots.reserve(num_dots);
 
   for(int circ = 1; circ <= num_circ; ++circ) {
-    double r = dr*circ;
     for(int pt = 0; pt < num_pt; ++ pt) {
       double th = dth*pt;
 
-  	  qd = {{0, r*std::cos(th), r*std::sin(th), omega,
+  	  qd = {{r*std::cos(th), r*std::sin(th), 0, omega,
                     T1, T2, dipx, dipy, dipz}};
       dots.push_back(qd);
     }

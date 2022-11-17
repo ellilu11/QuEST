@@ -72,14 +72,15 @@ void Integrator::PredictorCorrector<soltype>::solve(
                      std::min( 10000, time_idx_ubound );
   int outstep = time_idx_ubound / num_outsteps;
 
-  int num_logsteps = 100;
+  int num_logsteps = 10;
  
   for(int step = 0; step < time_idx_ubound; ++step) {
     solve_step(step);
-    
+  
     if (!(step%outstep)) {
-       history->write_step_to_file(step);
-	     // rhs->evaluate_field(step);
+      rhs->evaluate_gamma(step);
+      history->write_step_to_file(step);
+	    // rhs->evaluate_field(step);
     }
      
     if (step%(time_idx_ubound/num_logsteps) == 0)

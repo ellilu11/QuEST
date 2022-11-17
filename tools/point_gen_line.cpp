@@ -74,7 +74,7 @@ int main(int argc, char *argv[])
   const unsigned seed =
       std::chrono::system_clock::now().time_since_epoch().count();
     
-  const double dist0 = 0.2 * lambda; // mean long. distance between dots;
+  const double dist0 = 0.1 * lambda; // mean long. distance between dots;
 	const double sigma = 0.0; // 0.1*dist0; // stdev of long. distance between dots
   const double R = 0.0; // 1.0e-2; // transverse radius
 
@@ -110,7 +110,7 @@ int main(int argc, char *argv[])
 
   std::string taskstr(argv[2]);
 
-  // std::ofstream fd("./dots/obss_line.cfg");
+  // std::ofstream fd("./dots/obssY.cfg");
   std::ofstream fd("./dots/dots"+taskstr+".cfg");
   fd << std::setprecision(12);
 

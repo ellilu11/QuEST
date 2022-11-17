@@ -50,18 +50,12 @@ void Integrator::BlochRHS::evaluate(const int step) const
 
   auto projected_rabi = std::accumulate(
       interactions.begin(), interactions.end(), nil, eval_and_sum);
-  auto radfld_rabi = interactions[interactions.size()-1]->evaluate(step);
 
   for(int solution = 0; solution < num_solutions; ++solution) {
     history->set_value(solution, step, 1) = rhs_functions[solution](
         history->get_value(solution, step, 0),
 	      projected_rabi[solution],
         step);
-    history->set_gamma(solution, step) = gamma_functions[solution](
-        history->get_value(solution, step, 0),
-	      // projected_rabi[solution],
-        radfld_rabi[solution],
-        step );
  }
 }
 
@@ -76,16 +70,22 @@ void Integrator::BlochRHS::evaluate_present(const int step) const
 
   auto projected_rabi = std::accumulate(
       interactions.begin(), interactions.end(), nil, eval_and_sum);
-  auto radfld_rabi = interactions[interactions.size()-1]->evaluate(step);
 
   for(int solution = 0; solution < num_solutions; ++solution) {
     history->set_value(solution, step, 1) = rhs_functions[solution](
         history->get_value(solution, step, 0),
 	      projected_rabi[solution],
         step);
-    history->set_gamma(solution, step) = gamma_functions[solution](
+  }
+}
+
+void Integrator::BlochRHS::evaluate_gamma(const int step) const
+{
+  auto radfld_rabi = interactions[interactions.size()-1]->evaluate_gamma(step);
+
+  for(int solution = 0; solution < num_solutions; ++solution) {
+      history->set_gamma(solution, step) = gamma_functions[solution](
         history->get_value(solution, step, 0),
-	      // projected_rabi[solution],
 	      radfld_rabi[solution],
         step );
   }

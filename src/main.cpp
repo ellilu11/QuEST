@@ -94,16 +94,22 @@ int main(int argc, char *argv[])
         max_transit_steps_between_dots(qds, config.c0, config.dt) +
         config.interpolation_order;
     std::cout << "  Min time to keep: " << min_time_to_keep << std::endl;
+    int ntrials = 500;
 
     auto history = make_shared<Integrator::History<Eigen::Vector2cd>>(
-        config.num_particles, window, config.num_timesteps, min_time_to_keep, 2, task_idx);
+        config.num_particles, window, config.num_timesteps, min_time_to_keep, 2, ntrials, task_idx);
     history->fill(Eigen::Vector2cd::Zero());
-    history->initialize_past( 1.0/sqrt(8.0) );
-    // history->initialize_past( 1.0 );
-
-    for(int n = 0; n < config.num_particles; ++n)
-      std::cout << (history->get_value(n, 0, 0))[1] << std::endl;
-
+    double width = 1.0/sqrt((double)config.num_particles);
+    cout << "  Width: " << width << endl;
+    history->initialize_past( width );
+   
+    // read rho from dat file
+    Integrator::soltype_array<Eigen::Vector2cd> 
+      past_array = history->read_history("~/QuEST/build/out/mfrand/rho_N3_0.1wl_1.0sig.dat");
+     
+    Integrator::soltype_array<Eigen::Vector2cd>
+      mean_array = history->mean_over_trials( past_array );
+ 
     // == INTERACTIONS ===============================================
 
     const double propagation_constant = config.mu0 / (4 * M_PI * config.hbar);
@@ -158,21 +164,24 @@ int main(int argc, char *argv[])
     
     } else {
       if (config.ref_frame == Configuration::REFERENCE_FRAME::ROT) {
-          Propagation::RotatingEFIE_nodelay dyadic(config.c0, propagation_constant, config.omega, beta, 0.0);
+          Propagation::RotatingEFIE_noderiv dyadic(config.c0, propagation_constant, config.omega, beta, 0.0);
+          Propagation::RotatingEFIE_noderiv_imag dyadic_gamma(config.c0, propagation_constant, config.omega, beta, 0.0);
+
           Propagation::SelfRotatingEFIE dyadic_self(config.c0, propagation_constant, config.omega, beta);
 
           selfwise = make_shared<SelfInteraction>(qds, nullptr, history, dyadic_self,
                                                      config.interpolation_order, config.c0, config.dt, config.omega);
-          pairwise = make_shared<DirectInteraction>(qds, nullptr, history, dyadic,
+          pairwise = make_shared<DirectInteraction>(qds, nullptr, history, dyadic, dyadic_gamma,
                                                      config.interpolation_order, config.c0, config.dt, config.omega);
       
       } else {
           Propagation::EFIE<cmplx> dyadic(config.c0, propagation_constant, beta, 0.0);
+          Propagation::RotatingEFIE_noderiv_imag dyadic_gamma(config.c0, propagation_constant, config.omega, beta, 0.0);
           Propagation::SelfEFIE dyadic_self(config.c0, propagation_constant, beta);
          
           selfwise = make_shared<SelfInteraction>(qds, nullptr, history, dyadic_self,
                                                       config.interpolation_order, config.c0, config.dt);
-          pairwise = make_shared<DirectInteraction>(qds, nullptr, history, dyadic,
+          pairwise = make_shared<DirectInteraction>(qds, nullptr, history, dyadic, dyadic,
                                                         config.interpolation_order, config.c0, config.dt); 
       }
 
@@ -205,7 +214,7 @@ int main(int argc, char *argv[])
 
       selfwise_fld = make_shared<SelfInteraction>(qds, obs, history, dyadic_self,
                                                      config.interpolation_order, config.c0, config.dt, config.omega);
-      pairwise_fld = make_shared<DirectInteraction>(qds, obs, history, dyadic,
+      pairwise_fld = make_shared<DirectInteraction>(qds, obs, history, dyadic, dyadic,
                                                     config.interpolation_order, config.c0, config.dt, config.omega);
     } else {
       Propagation::EFIE<cmplx> dyadic(config.c0, propagation_constant, beta, 0.0);
@@ -213,7 +222,7 @@ int main(int argc, char *argv[])
 
       selfwise_fld = make_shared<SelfInteraction>(qds, obs, history, dyadic_self,
                                                       config.interpolation_order, config.c0, config.dt);
-      pairwise_fld = make_shared<DirectInteraction>(qds, obs, history, dyadic,
+      pairwise_fld = make_shared<DirectInteraction>(qds, obs, history, dyadic, dyadic,
                                                       config.interpolation_order, config.c0, config.dt); 
     }
 
@@ -234,12 +243,12 @@ int main(int argc, char *argv[])
     if (config.ref_frame == Configuration::REFERENCE_FRAME::ROT) {
       Propagation::RotatingMFIE dyadic_mfie(config.c0, propagation_constant, config.omega);
 
-      pairwise_bfld = make_shared<DirectInteraction>(qds, obs, history, dyadic_mfie,
+      pairwise_bfld = make_shared<DirectInteraction>(qds, obs, history, dyadic_mfie, dyadic_mfie,
                                                      config.interpolation_order, config.c0, config.dt, config.omega);
     } else {
       Propagation::MFIE<cmplx> dyadic_mfie(config.c0, propagation_constant);
 
-      pairwise_bfld = make_shared<DirectInteraction>(qds, obs, history, dyadic_mfie,
+      pairwise_bfld = make_shared<DirectInteraction>(qds, obs, history, dyadic_mfie, dyadic_mfie,
                                                      config.interpolation_order, config.c0, config.dt);
     }
 
