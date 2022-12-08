@@ -33,14 +33,16 @@ matrix_elements QuantumDot::liouville_rhs(const matrix_elements &rho,
 }
 
 matrix_elements QuantumDot::gamma_rhs(const matrix_elements &rho,
+                                      const matrix_elements rhomean,
                                       const cmplx rabi,
-                                      const int time_idx,
                                       const double hbar,
                                       const bool rotating) const
 {
   cmplx gamma0 = ( 1.0 - rho[0] ) / damping.first;
+                  // ( 1.0 - rhomean[0] ) / damping.first;
   cmplx gamma1 = // -2.0 * std::conj(rho[1]) * std::imag(rabi) * hbar;
-                 -2.0 * std::conj(rho[1]) * rabi * hbar;
+                 // -2.0 * std::conj(rho[1]) * rabi * hbar;
+                 -2.0 * ( std::conj(rho[1]) - std::conj(rhomean[1]) ) * rabi * hbar;
 
   return matrix_elements(gamma0, gamma1);
 }
@@ -114,11 +116,11 @@ std::vector<BlochFunctionType> rhs_functions(const DotVector &dots,
   return funcs;
 }
 
-std::vector<BlochFunctionType> gamma_functions(const DotVector &dots,
+std::vector<GammaFunctionType> gamma_functions(const DotVector &dots,
                                                const double hbar,
                                                const bool rotating)
 {
-  std::vector<BlochFunctionType> funcs(dots.size());
+  std::vector<GammaFunctionType> funcs(dots.size());
 
   using std::placeholders::_1;
   using std::placeholders::_2;

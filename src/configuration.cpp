@@ -17,6 +17,7 @@ po::variables_map parse_configs(int argc, char *argv[]) {
     ("self,s",    po::bool_switch()->default_value(false), "compute self interactions")
     ("rot,r",     po::bool_switch()->default_value(false), "employ the rotating frame")
     ("rwa,w",     po::bool_switch()->default_value(false), "employ the rotating wave approximation")
+    ("mmean,m",   po::bool_switch()->default_value(false), "subtract mean over trials")
     ("time,t",    po::bool_switch(&config.report_time_data)->default_value(false), "report execution time data");
   ;
 
@@ -53,6 +54,7 @@ po::variables_map parse_configs(int argc, char *argv[]) {
     ("parameters.self_interacting",    po::bool_switch()->default_value(false), "in-file alias of --self")
     ("parameters.rotating",            po::bool_switch()->default_value(false), "in-file alias of --rot")
     ("parameters.rwa",                 po::bool_switch()->default_value(false), "in-file alias of --rwa")
+    ("parameters.mmean",               po::bool_switch()->default_value(false), "in-file alias of --mmean")
     ("parameters.num_corrector_steps", po::value<int>(&config.num_corrector_steps)->required(), "# corrector steps, 0: error threshold based")
   ;
 
@@ -117,6 +119,8 @@ po::variables_map parse_configs(int argc, char *argv[]) {
         vm["rot"].as<bool>() || vm["parameters.rotating"].as<bool>());
     config.rwa = static_cast<Configuration::RWA>(
         vm["rwa"].as<bool>() || vm["parameters.rwa"].as<bool>());
+    config.mmean = static_cast<Configuration::MINUSMEAN>(
+        vm["mmean"].as<bool>() || vm["parameters.mmean"].as<bool>());
   }
 
   return vm;

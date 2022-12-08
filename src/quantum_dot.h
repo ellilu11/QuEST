@@ -25,6 +25,10 @@ typedef std::function<Eigen::Vector2cd(const Eigen::Vector2cd,
                                        const std::complex<double>,
                                        const int)>
     BlochFunctionType;
+typedef std::function<Eigen::Vector2cd(const Eigen::Vector2cd,
+                                       const Eigen::Vector2cd,
+                                       const std::complex<double>)>
+    GammaFunctionType;
 enum MatrixElement { RHO_00, RHO_01 };
 
 class QuantumDot {
@@ -48,8 +52,8 @@ class QuantumDot {
                                 const bool) const;
   
   matrix_elements gamma_rhs(const matrix_elements &,
+                            const matrix_elements,
                             const cmplx,
-                            const int,
                             const double,
                             const bool) const;
 
@@ -86,6 +90,6 @@ class QuantumDot {
 DotVector import_dots(const std::string &);
 void set_dipole_of_dots(std::shared_ptr<DotVector>, const Eigen::Vector3d dip);
 std::vector<BlochFunctionType> rhs_functions(const DotVector &, const double, const double, const bool);
-std::vector<BlochFunctionType> gamma_functions(const DotVector &, const double, const bool);
+std::vector<GammaFunctionType> gamma_functions(const DotVector &, const double, const bool);
 
 #endif

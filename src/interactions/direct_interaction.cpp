@@ -5,6 +5,7 @@ DirectInteraction::DirectInteraction(
     std::shared_ptr<const DotVector> dots,
     std::shared_ptr<const DotVector> obss,
     std::shared_ptr<const Integrator::History<Eigen::Vector2cd>> history,
+    Integrator::soltype_array<Eigen::Vector2cd> mean_array, 
     Propagation::Kernel<cmplx> &kernel,
     Propagation::Kernel<cmplx> &kernelgamma, // optional 2nd kernel for computation of gamma
     const int interp_order,
@@ -23,7 +24,8 @@ DirectInteraction::DirectInteraction(
       gammacoeffs(boost::extents[num_interactions][interp_order + 1]),
       floor_delays_srcobs(num_srcobs),
       fldcoeffs(boost::extents[num_srcobs][interp_order+1]),
-      cross_coeffs(boost::extents[num_srcobs][interp_order+1])
+      cross_coeffs(boost::extents[num_srcobs][interp_order+1]),
+      mean_array(std::move(mean_array))
 {
   build_coeff_table(kernel, kernelgamma);
   build_fldcoeff_table(kernel);
@@ -61,8 +63,8 @@ void DirectInteraction::build_coeff_table(
 
     for(int i = 0; i <= interp_order; ++i){
       coeffs[pair_idx][i] = dip_obs.dot( interp_dyads[i] * dip_src );
-      // gammacoeffs[pair_idx][i] = dip_obs.dot( interp_dyads[i].imag() * dip_src );
-      gammacoeffs[pair_idx][i] = dip_obs.dot( interp_dyads_gamma[i] * dip_src );
+      gammacoeffs[pair_idx][i] = dip_obs.dot( interp_dyads[i].imag() * dip_src );
+      // gammacoeffs[pair_idx][i] = dip_obs.dot( interp_dyads_gamma[i] * dip_src );
     }
   }
 }
@@ -276,6 +278,7 @@ const InteractionBase::ResultArray &DirectInteraction::evaluate_gamma(
   constexpr int RHO_01 = 1;
   const double time0 = time_idx * dt;
   cmplx rho_src, rho_obs;
+  cmplx rho_src_mean, rho_obs_mean;
 
   results.setZero();
   
@@ -287,17 +290,28 @@ const InteractionBase::ResultArray &DirectInteraction::evaluate_gamma(
     for(int i = 0; i <= interp_order; ++i) {
       const int s =
           std::max(time_idx - floor_delays[pair_idx] - i, -history->window);
+      const int s0 = std::max(0, s);
+   
       const double time = (time_idx - i) * dt;
 
       rho_obs = (history->get_value(obs, s, 0))[RHO_01];
       rho_src = (history->get_value(src, s, 0))[RHO_01];
 
+      rho_obs_mean = (mean_array[obs][s0][0])[RHO_01];
+      rho_src_mean = (mean_array[src][s0][0])[RHO_01];
+
       if ( !omega ){
-        results[src] += 2.0 * std::real( rho_obs * gammacoeffs[pair_idx][i] );
-        results[obs] += 2.0 * std::real( rho_src * gammacoeffs[pair_idx][i] );
+        // results[src] += 2.0 * std::real( rho_obs_mean * gammacoeffs[pair_idx][i] );
+        // results[obs] += 2.0 * std::real( rho_src_mean * gammacoeffs[pair_idx][i] );
+
+        results[src] += 2.0 * std::real( ( rho_obs - rho_obs_mean ) * gammacoeffs[pair_idx][i] );
+        results[obs] += 2.0 * std::real( ( rho_src - rho_src_mean ) * gammacoeffs[pair_idx][i] );
       } else {
-        results[src] += rho_obs * gammacoeffs[pair_idx][i] ;
-        results[obs] += rho_src * gammacoeffs[pair_idx][i] ;
+        // results[src] += rho_obs_mean * gammacoeffs[pair_idx][i] ;
+        // results[obs] += rho_src_mean * gammacoeffs[pair_idx][i] ;
+        
+        results[src] += ( rho_obs - rho_obs_mean ) * gammacoeffs[pair_idx][i] ;
+        results[obs] += ( rho_src - rho_src_mean ) * gammacoeffs[pair_idx][i] ;
         
       }    
     }

@@ -97,15 +97,19 @@ int main(int argc, char *argv[])
     int ntrials = 500;
 
     auto history = make_shared<Integrator::History<Eigen::Vector2cd>>(
-        config.num_particles, window, config.num_timesteps, min_time_to_keep, 2, ntrials, task_idx);
+        qds, window, config.num_timesteps, min_time_to_keep, 2, ntrials, task_idx,
+        config.omega, config.c0);
     history->fill(Eigen::Vector2cd::Zero());
     double width = 1.0/sqrt((double)config.num_particles);
     cout << "  Width: " << width << endl;
     history->initialize_past( width );
    
-    // read rho from dat file
+    // read past rho from dat file
     Integrator::soltype_array<Eigen::Vector2cd> 
-      past_array = history->read_history("~/QuEST/build/out/mfrand/rho_N3_0.1wl_1.0sig.dat");
+      past_array = 
+        (config.mmean == Configuration::MINUSMEAN::TRUE) 
+          ? history->read_history("/mnt/home/luelliot/QuEST/build/out/mfrand/rho_N3_1.0sig_gauss2D.dat")
+          : history->zero_array();
      
     Integrator::soltype_array<Eigen::Vector2cd>
       mean_array = history->mean_over_trials( past_array );
@@ -171,7 +175,7 @@ int main(int argc, char *argv[])
 
           selfwise = make_shared<SelfInteraction>(qds, nullptr, history, dyadic_self,
                                                      config.interpolation_order, config.c0, config.dt, config.omega);
-          pairwise = make_shared<DirectInteraction>(qds, nullptr, history, dyadic, dyadic_gamma,
+          pairwise = make_shared<DirectInteraction>(qds, nullptr, history, mean_array, dyadic, dyadic_gamma,
                                                      config.interpolation_order, config.c0, config.dt, config.omega);
       
       } else {
@@ -181,7 +185,7 @@ int main(int argc, char *argv[])
          
           selfwise = make_shared<SelfInteraction>(qds, nullptr, history, dyadic_self,
                                                       config.interpolation_order, config.c0, config.dt);
-          pairwise = make_shared<DirectInteraction>(qds, nullptr, history, dyadic, dyadic,
+          pairwise = make_shared<DirectInteraction>(qds, nullptr, history, mean_array, dyadic, dyadic,
                                                         config.interpolation_order, config.c0, config.dt); 
       }
 
@@ -214,7 +218,7 @@ int main(int argc, char *argv[])
 
       selfwise_fld = make_shared<SelfInteraction>(qds, obs, history, dyadic_self,
                                                      config.interpolation_order, config.c0, config.dt, config.omega);
-      pairwise_fld = make_shared<DirectInteraction>(qds, obs, history, dyadic, dyadic,
+      pairwise_fld = make_shared<DirectInteraction>(qds, obs, history, mean_array, dyadic, dyadic,
                                                     config.interpolation_order, config.c0, config.dt, config.omega);
     } else {
       Propagation::EFIE<cmplx> dyadic(config.c0, propagation_constant, beta, 0.0);
@@ -222,7 +226,7 @@ int main(int argc, char *argv[])
 
       selfwise_fld = make_shared<SelfInteraction>(qds, obs, history, dyadic_self,
                                                       config.interpolation_order, config.c0, config.dt);
-      pairwise_fld = make_shared<DirectInteraction>(qds, obs, history, dyadic, dyadic,
+      pairwise_fld = make_shared<DirectInteraction>(qds, obs, history, mean_array, dyadic, dyadic,
                                                       config.interpolation_order, config.c0, config.dt); 
     }
 
@@ -243,12 +247,12 @@ int main(int argc, char *argv[])
     if (config.ref_frame == Configuration::REFERENCE_FRAME::ROT) {
       Propagation::RotatingMFIE dyadic_mfie(config.c0, propagation_constant, config.omega);
 
-      pairwise_bfld = make_shared<DirectInteraction>(qds, obs, history, dyadic_mfie, dyadic_mfie,
+      pairwise_bfld = make_shared<DirectInteraction>(qds, obs, history, mean_array, dyadic_mfie, dyadic_mfie,
                                                      config.interpolation_order, config.c0, config.dt, config.omega);
     } else {
       Propagation::MFIE<cmplx> dyadic_mfie(config.c0, propagation_constant);
 
-      pairwise_bfld = make_shared<DirectInteraction>(qds, obs, history, dyadic_mfie, dyadic_mfie,
+      pairwise_bfld = make_shared<DirectInteraction>(qds, obs, history, mean_array, dyadic_mfie, dyadic_mfie,
                                                      config.interpolation_order, config.c0, config.dt);
     }
 
@@ -272,7 +276,8 @@ int main(int argc, char *argv[])
             history, 
             std::move(interactions), std::move(efld_interactions), std::move(bfld_interactions), 
             std::move(rhs_funcs), std::move(gamma_funcs),
-            obs, 
+            obs,
+            mean_array, 
             task_idx, getflux);
 
     Integrator::PredictorCorrector<Eigen::Vector2cd> solver_pc(

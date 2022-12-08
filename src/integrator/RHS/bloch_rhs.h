@@ -8,6 +8,7 @@
 #include "../../interactions/interaction.h"
 #include "../../math_utils.h"
 #include "../../quantum_dot.h"
+#include "../history.h"
 #include "rhs.h"
 namespace Integrator {
   class BlochRHS;
@@ -22,8 +23,9 @@ class Integrator::BlochRHS : public Integrator::RHS<Eigen::Vector2cd> {
            std::vector<std::shared_ptr<InteractionBase>>,
            std::vector<std::shared_ptr<InteractionBase>>,
            std::vector<BlochFunctionType>,
-           std::vector<BlochFunctionType>,
+           std::vector<GammaFunctionType>,
            std::shared_ptr<DotVector>,
+           Integrator::soltype_array<Eigen::Vector2cd>,
            const int, 
            const bool);
   ~BlochRHS();
@@ -32,7 +34,7 @@ class Integrator::BlochRHS : public Integrator::RHS<Eigen::Vector2cd> {
   void evaluate_gamma(const int) const override;
   void evaluate_field(const int) override;
   std::vector<BlochFunctionType> rhs_functions;
-  std::vector<BlochFunctionType> gamma_functions;
+  std::vector<GammaFunctionType> gamma_functions;
 
 private:
   int num_solutions, num_obs;
@@ -40,6 +42,8 @@ private:
   const double hbar, mu0, eps0, omega;
   std::vector<std::shared_ptr<InteractionBase>> interactions, efld_interactions, bfld_interactions;
   std::shared_ptr<DotVector> obss;
+  Integrator::soltype_array<Eigen::Vector2cd> mean_array;
+ 
   // std::vector<double> area_elements;
 
   std::ofstream outfile, fluxfile;

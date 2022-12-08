@@ -12,8 +12,9 @@ Integrator::BlochRHS::BlochRHS(
     std::vector<std::shared_ptr<InteractionBase>> efld_interactions,
     std::vector<std::shared_ptr<InteractionBase>> bfld_interactions,
     std::vector<BlochFunctionType> rhs_functions,
-    std::vector<BlochFunctionType> gamma_functions,
+    std::vector<GammaFunctionType> gamma_functions,
     std::shared_ptr<DotVector> obss,
+    Integrator::soltype_array<Eigen::Vector2cd> mean_array,
     const int task_idx,
     const bool getflux)
     : Integrator::RHS<Eigen::Vector2cd>(dt, history),
@@ -26,6 +27,7 @@ Integrator::BlochRHS::BlochRHS(
       rhs_functions(std::move(rhs_functions)),
       gamma_functions(std::move(gamma_functions)),
       obss(std::move(obss)),
+      mean_array(std::move(mean_array)),
       num_obs(obss->size()),
       getflux(getflux)
 {
@@ -86,9 +88,9 @@ void Integrator::BlochRHS::evaluate_gamma(const int step) const
   for(int solution = 0; solution < num_solutions; ++solution) {
       history->set_gamma(solution, step) = gamma_functions[solution](
         history->get_value(solution, step, 0),
-	      radfld_rabi[solution],
-        step );
-  }
+	      mean_array[solution][step][0],
+        radfld_rabi[solution] );
+ }
 }
 
 void Integrator::BlochRHS::evaluate_field(const int step)

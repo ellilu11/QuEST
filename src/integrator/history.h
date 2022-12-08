@@ -7,6 +7,7 @@
 #include <fstream>
 #include <iomanip>
 #include <iostream>
+#include <sstream>
 #include <memory>
 #include <chrono>
 #include <random>
@@ -31,31 +32,40 @@ template <class soltype>
 class Integrator::History {
  public:
   // History(const int, const int, const int, const int = 2);
-  History(const int, const int, const int, const int = -1, const int = 2, const int = 1, const int = 0);
-  ~History();
+  History(
+    std::shared_ptr<const DotVector>,
+    const int, const int, const int = -1, const int = 2, const int = 1, const int = 0,
+    const double = 0, const double = 0);
+ ~History();
 
   void fill(const soltype &);
   void initialize_past(const double);
-  Integrator::soltype_array<soltype> read_history(const std::string);
-  Integrator::soltype_array<soltype> mean_over_trials(const soltype_array<soltype>);
   soltype &set_value(const int, const int, const int);
   soltype get_value(const int, const int, const int) const;
   soltype &set_gamma(const int, const int);
   soltype get_gamma(const int, const int) const;
 
   void write_step_to_file(const int);
-
+ 
+  Integrator::soltype_array<soltype> zero_array();
+  Integrator::soltype_array<soltype> read_history(const std::string);
+  Integrator::soltype_array<soltype> mean_over_trials(const soltype_array<soltype>);
+ 
   int num_particles;
   int num_timesteps;
   int num_trials;
   int window;
   int task_idx;
 
+  double omega_, c_;
+
  private:
+  std::shared_ptr<const DotVector> dots;
   soltype_array<soltype> array_;
   soltype_array<soltype> gamma_;
-  std::ofstream outfile, outfile2, ofsdfile;
-  std::ifstream ifsdfile;
+
+  std::ofstream outfile, outfile2, outfile3, ofsdfile;
+  std::ifstream ifphfile, ifrhfile;
   int time_idx_in_array(const int) const;
   // friend int time_idx_in_array(const int);
   template <class B = soltype>
@@ -69,15 +79,19 @@ class Integrator::History {
 };
 
 template <class soltype>
-Integrator::History<soltype>::History(const int num_particles,
+Integrator::History<soltype>::History(std::shared_ptr<const DotVector> dots,
                                       const int window,
                                       const int num_timesteps,
                                       const int min_time_idx_ubound,  // rename!
                                       const int num_derivatives,
                                       const int num_trials,
-                                      const int task_idx)
-    : num_particles(num_particles), num_timesteps(num_timesteps), num_trials(num_trials),
-      window(window), task_idx(task_idx)
+                                      const int task_idx,
+                                      const double omega, const double c)
+    : dots(std::move(dots)), 
+      num_particles(dots->size()),
+      num_timesteps(num_timesteps), num_trials(num_trials),
+      window(window), task_idx(task_idx),
+      omega_(omega), c_(c)
 {
   // TODO: need to make the minimum: max_transit_steps_between_dots +
   // interpolation_order
@@ -95,11 +109,12 @@ Integrator::History<soltype>::History(const int num_particles,
   outfile2.open("./out/gamma" + std::to_string(task_idx) + ".dat");
   outfile2 << std::scientific << std::setprecision(18);
 
-  // ofsdfile.open("./seeds/seeds" + std::to_string(task_idx) + ".dat");
-  ofsdfile.open("./seeds.out", std::ios_base::app);
-  ifsdfile.open("./seeds.dat");
-  // ifsdfile.open("./seeds/seeds" + std::to_string(task_idx) + ".dat");
- 
+  // outfile3.open("./rhoinit.out", std::ios_base::app);
+  // outfile3 << std::scientific << std::setprecision(18);
+  // ofsdfile.open("./seeds.out", std::ios_base::app);
+  ifphfile.open("./phases.cfg");
+  ifrhfile.open("./rhoinit.cfg");
+
 }
 
 template <class soltype>
@@ -107,73 +122,9 @@ Integrator::History<soltype>::~History()
 {
   outfile.close();
   outfile2.close();
-  ofsdfile.close();
-  ifsdfile.close();
-}
-
-template <class soltype>
-Integrator::soltype_array<soltype> 
-  Integrator::History<soltype>::read_history( const std::string filestr )
-{
-  std::ifstream file;
-  file.open(filestr);
-
-  soltype_array<soltype> new_array_; 
-  new_array_.resize(
-      boost::extents[num_particles][num_timesteps][num_trials]);
-
-  int i = 0;
-  std::string str;
-  Eigen::Vector2cd rho = Eigen::Vector2cd::Zero();
-
-  while( std::getline(file, str, ' ') ){
-
-    int row = i / ( 3*num_particles );
-    int col = i % ( 3*num_particles );
-
-    int ipart = col / 3;
-    int ivar = col % 3;
-
-    int itrial = row / num_timesteps;
-    int istep = row % num_timesteps;
-
-    i++;
-   
-    switch(ivar) {
-      case 0 :
-        rho += Eigen::Vector2cd(std::stod(str),0);
-        break;
-      case 1 :
-        rho += Eigen::Vector2cd(0, std::stod(str));
-        break;
-      case 2 :
-        rho += Eigen::Vector2cd(0, iu*std::stod(str));
-        new_array_[ipart][istep][itrial] = rho;
-        rho = Eigen::Vector2cd::Zero();
-        break;
-    } 
-  }
-
-  return new_array_;
-}
-
-template <class soltype>
-Integrator::soltype_array<soltype> 
-  Integrator::History<soltype>::mean_over_trials( const soltype_array<soltype> history_array_ )
-{
-  soltype_array<soltype> new_array_; 
-  new_array_.resize(
-      boost::extents[num_particles][num_timesteps][1]);
-
-  for (int ipart = 0; ipart < num_particles; ++ipart){
-    for (int istep = 0; istep < num_timesteps; ++istep){
-      for (int itrial = 0; itrial < num_trials; ++itrial)
-        new_array_[ipart][istep][0] += history_array_[ipart][istep][itrial];
-      new_array_[ipart][istep][0] /= (double)num_trials;
-    }
-  }
-
-  return new_array_;
+  outfile3.close();
+  ifphfile.close();
+  ifrhfile.close();
 }
 
 template <class soltype>
@@ -182,13 +133,15 @@ void Integrator::History<soltype>::fill(const soltype &val)
   std::fill(array_.data(), array_.data() + array_.num_elements(), val);
 }
 
-template <class soltype>
+/*template <class soltype>
 void Integrator::History<soltype>::initialize_past(const double sigma)
 {
-  /*const int seed = 
+  const int seed = 
        std::chrono::system_clock::now().time_since_epoch().count();
   ofsdfile << seed << std::endl;
  */
+
+  /*
   ifsdfile.seekg(std::ios::beg);
   for (int i = 0; i < task_idx; ++i)
     ifsdfile.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
@@ -203,19 +156,100 @@ void Integrator::History<soltype>::initialize_past(const double sigma)
   std::normal_distribution<double> rho_01r(0, sigma);
   std::normal_distribution<double> rho_01i(0, sigma);
 
-  for(int n = 0; n < static_cast<int>(array_.shape()[PARTICLES]); ++n) {
-    cmplx rho_00(0,0);
-    cmplx rho_01(std::min(rho_01r(generator), 0.5),
-                 std::min(rho_01i(generator), 0.5)
-                ); 
-    // cmplx rho_01(0,0); 
+   // cmplx rho_01(rho_01r(generator),rho_01i(generator));
+}*/   
+
+/* RANDOM INITIAL RHO, NO ADDED PHASE
+template <class soltype>
+void Integrator::History<soltype>::initialize_past(const double sigma)
+{
+  cmplx rho_00(0,0);
+  // cmplx rho_00(0.5,0);
+
+  ifsdfile.seekg(std::ios::beg);
+  for (int i = 0; i < task_idx*num_particles; ++i)
+    ifsdfile.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+
+  for(int n = 0; n < static_cast<int>(array_.shape()[PARTICLES]); ++n){
+    std::string str, line;
+
+    std::getline( ifsdfile, line );
+    std::stringstream ss(line);    
+
+    int i = 0;
+    Eigen::Vector2d rho_01_vec;
+    while( std::getline(ss, str, ' ') ){
+      rho_01_vec[i] = std::stod(str);
+      i++;
+    }
+
+    cmplx rho_01 = rho_01_vec[0]+iu*rho_01_vec[1];
+
     Eigen::Vector2cd val(rho_00, rho_01);
-      
-    // std::cout << n << " " << rho_01 << std::endl;
-    
+    // Eigen::Vector2cd val(rho_00, 0.5);
+
     for(int t = -window; t <= 0; ++t) 
       set_value(n, t, DERIV_0) = val; 
   }
+}*/
+
+// IDENTICAL INITIAL RHO WITH ADDED PHASE
+template <class soltype>
+void Integrator::History<soltype>::initialize_past(const double sigma)
+{
+  cmplx rho_00(0,0);
+
+  // ===== GET PHASES =====
+  // double phi = 2.0 * M_PI / (double)nsets;
+  ifphfile.seekg(std::ios::beg);
+  for (int i = 0; i < task_idx*num_particles; ++i)
+    ifphfile.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+
+  int nsets = 2;
+  std::vector<double> phis(nsets);
+  for(int n = 0; n < nsets; ++n){
+    std::string phstr;
+    ifphfile >> phstr;
+    double phi = std::stod(phstr);  
+    std::cout << n << " " << phi << std::endl; 
+    phis[n] = phi;
+  }
+
+  // ===== GET INIT RHO =====
+  ifrhfile.seekg(std::ios::beg);
+  for (int i = 0; i < task_idx*num_particles; ++i)
+    ifrhfile.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+
+  std::string str, line;
+
+  std::getline( ifrhfile, line );
+  std::stringstream ss(line);    
+
+  int i = 0;
+  Eigen::Vector2d rho_01_vec;
+  while( std::getline(ss, str, ' ') ){
+    rho_01_vec[i] = std::stod(str);
+    i++;
+  }
+ 
+  cmplx rho_01 = rho_01_vec[0]+iu*rho_01_vec[1];
+
+  // ===== APPLY PHASES TO INIT RHO =====
+  for(int n = 0; n < num_particles; ++n){
+    Eigen::Vector2cd val(rho_00, rho_01);
+ 
+    // double r = ((*dots)[n].position()).norm();
+    // rho_01 *= std::exp( iu * omega_ / c_ * r );
+    
+    // int mod = n % nsets;
+    // val[1] *= std::exp( iu * phi * (double)mod );
+ 
+    val[1] *= std::exp( iu * phis[n%nsets] );   
+
+    for(int t = -window; t <= 0; ++t) 
+      set_value(n, t, DERIV_0) = val; 
+  }
+
 }
 
 template <class soltype>
@@ -284,7 +318,7 @@ Integrator::History<soltype>::prep_for_output(soltype element)
   return element;
 }
 
-/*template <class soltype>
+template <class soltype>
 void Integrator::History<soltype>::write_step_to_file(const int timestep)
 {
   Eigen::Vector2cd gamma = Eigen::Vector2cd::Zero();
@@ -313,8 +347,9 @@ void Integrator::History<soltype>::write_step_to_file(const int timestep)
     outfile2.flush();  // QUESTION: why is this needed?
   }
 
-}*/
+}
 
+/*
 template <class soltype>
 void Integrator::History<soltype>::write_step_to_file(const int timestep)
 {
@@ -343,6 +378,97 @@ void Integrator::History<soltype>::write_step_to_file(const int timestep)
     outfile2.flush();  // QUESTION: why is this needed?
   }
 
+}
+*/
+
+template <class soltype>
+Integrator::soltype_array<soltype> 
+  Integrator::History<soltype>::zero_array()
+{
+  soltype_array<soltype> new_array_; 
+  new_array_.resize(
+      boost::extents[num_particles][num_timesteps][num_trials]);
+  std::fill(new_array_.data(), new_array_.data() + new_array_.num_elements(), 
+            Eigen::Vector2cd::Zero());
+
+  return new_array_;
+}
+
+template <class soltype>
+Integrator::soltype_array<soltype> 
+  Integrator::History<soltype>::read_history( const std::string filestr )
+{
+  std::ifstream file;
+  file.open(filestr);
+
+  soltype_array<soltype> new_array_ = zero_array(); 
+
+  int i = 0;
+  std::string str, line;
+
+  while( file.good() ){
+    std::getline( file, line );
+    std::stringstream ss(line);    
+
+    while( std::getline(ss, str, ' ') ){
+      int row = i / ( 3*num_particles );
+      int col = i % ( 3*num_particles );
+
+      int part = col / 3;
+      int var = col % 3;
+
+      int trial = row / num_timesteps;
+      int step = row % num_timesteps;
+
+      i++;
+
+      double val = std::stod(str);
+    
+      switch(var) {
+        case 0 :
+          new_array_[part][step][trial] += Eigen::Vector2cd(val,0);
+          break;
+        case 1 :
+          new_array_[part][step][trial] += Eigen::Vector2cd(0, val);
+          break;
+        case 2 :
+          new_array_[part][step][trial] += Eigen::Vector2cd(0, iu*val);
+          break;
+      } 
+    }
+  }
+
+  return new_array_;
+}
+
+template <class soltype>
+Integrator::soltype_array<soltype> 
+  Integrator::History<soltype>::mean_over_trials( const soltype_array<soltype> history_array_ )
+{
+  soltype_array<soltype> new_array_; 
+  new_array_.resize(
+      boost::extents[num_particles][num_timesteps][1]);
+
+  for (int step = 0; step < num_timesteps; ++step){
+    for (int part = 0; part < num_particles; ++part){
+      for (int trial = 0; trial < num_trials; ++trial)
+        new_array_[part][step][0] += history_array_[part][step][trial];
+      new_array_[part][step][0] /= (double)num_trials;
+      Eigen::Vector2cd rho_mean = new_array_[part][step][0];
+
+    /*outfile3 << rho_mean[0].real() << " "
+             << rho_mean[1].real() << " "
+             << rho_mean[1].imag() << " ";
+   */
+    }
+    // outfile3 << '\n';
+
+    /*if(step > num_timesteps*0.90)
+      outfile3.flush();  // QUESTION: why is this needed?
+    */
+  }
+
+  return new_array_;
 }
 
 

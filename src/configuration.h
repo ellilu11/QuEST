@@ -18,6 +18,7 @@ struct Configuration {
   enum class SELF_INTERACTING { FALSE, TRUE } self_interacting;
   enum class REFERENCE_FRAME { FIX, ROT } ref_frame;
   enum class RWA { FALSE, TRUE } rwa;
+  enum class MINUSMEAN { FALSE, TRUE } mmean;
   bool report_time_data;
  
   // File paths
