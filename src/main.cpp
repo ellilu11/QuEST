@@ -24,7 +24,6 @@ int main(int argc, char *argv[])
     auto vm = parse_configs(argc, argv);
 
     string idstr(argv[1]);
-    string dip_idstr(argv[2]);
     const bool rotating = 
       config.ref_frame == Configuration::REFERENCE_FRAME::ROT ? true : false;
     const bool rwa = 
@@ -168,7 +167,7 @@ int main(int argc, char *argv[])
     
     } else {
       if (config.ref_frame == Configuration::REFERENCE_FRAME::ROT) {
-          Propagation::RotatingEFIE_nodelay dyadic(config.c0, propagation_constant, config.omega, beta, 0.0);
+          Propagation::RotatingEFIE dyadic(config.c0, propagation_constant, config.omega, beta, 0.0);
           Propagation::SelfRotatingEFIE dyadic_self(config.c0, propagation_constant, config.omega, beta);
 
           selfwise = make_shared<SelfInteraction>(qds, nullptr, history, dyadic_self,

@@ -271,7 +271,8 @@ class Propagation::RotatingEFIE_nodelay : public Propagation::EFIE<cmplx> {
       this->coefs_[i] = Eigen::Matrix3cd::Zero();
 
       this->coefs_[i] = 
-          -k2_ *
+         -k2_ * std::exp(-iu * omega_ * dr.norm() / c_) *
+         // -k2_ *
             (dyads[0].cast<cmplx>() * interp.evaluations[0][i] +
              dyads[1].cast<cmplx>() * (0.0 * interp.evaluations[1][i] +
                                      iu * omega_ * interp.evaluations[0][i]) +
