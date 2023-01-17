@@ -70,7 +70,8 @@ int main(int argc, char *argv[])
 			cout << "  AIM border: " << config.border << endl;
 		}
 
-    auto qds = make_shared<DotVector>(import_dots("./dots/dots0.cfg"));
+    // auto qds = make_shared<DotVector>(import_dots("./dots/dots0.cfg"));
+    auto qds = make_shared<DotVector>(import_dots("./dots/dots"+idstr+".cfg"));
     qds->resize(config.num_particles);
     auto rhs_funcs = rhs_functions(*qds, config.omega, beta, rotating);
     auto gamma_funcs = gamma_functions(*qds, config.hbar, rotating);
@@ -101,19 +102,20 @@ int main(int argc, char *argv[])
         config.omega, config.c0);
     history->fill(Eigen::Vector2cd::Zero());
     double width = 1.0/sqrt((double)config.num_particles);
-    cout << "  Width: " << width << endl;
+    cout << "  Random polarization width: " << width << endl;
     history->initialize_past( width );
    
     // read past rho from dat file
-    Integrator::soltype_array<Eigen::Vector2cd> 
+    /*Integrator::soltype_array<Eigen::Vector2cd> 
       past_array = 
         (config.mmean == Configuration::MINUSMEAN::TRUE) 
           ? history->read_history("/mnt/home/luelliot/QuEST/build/out/mfrand/rho_N3_1.0sig_gauss2D.dat")
           : history->zero_array();
      
     Integrator::soltype_array<Eigen::Vector2cd>
-      mean_array = history->mean_over_trials( past_array );
- 
+      // mean_array = history->zero_array(); 
+      history->mean_over_trials( past_array );
+ */
     // == INTERACTIONS ===============================================
 
     const double propagation_constant = config.mu0 / (4 * M_PI * config.hbar);

@@ -63,6 +63,7 @@ class QuantumDot {
   const Eigen::Vector3d &dipole() const { return dipr; }
   const Eigen::Vector3d &dipole_imag() const { return dipi; }
   const double &frequency() const { return freq; }
+  void set_position(const Eigen::Vector3d pos_) { pos = pos_; }
   void set_dipole(const Eigen::Vector3d dip) { dipr = dip; }
   void set_freq(const double freq_) { freq = freq_; }
   void set_damping(const double damping1, const double damping2) { 

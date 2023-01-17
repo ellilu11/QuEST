@@ -133,6 +133,19 @@ void Integrator::History<soltype>::fill(const soltype &val)
   std::fill(array_.data(), array_.data() + array_.num_elements(), val);
 }
 
+// FIXED INITIAL RHO
+template <class soltype>
+void Integrator::History<soltype>::initialize_past(const double sigma)
+{
+  for(int n = 0; n < num_particles; ++n){
+    Eigen::Vector2cd val(1, 0);
+
+    for(int t = -window; t <= 0; ++t) 
+      set_value(n, t, DERIV_0) = val; 
+  }
+}
+
+// RANDOM INITIAL RHO USING TIME SEED
 /*template <class soltype>
 void Integrator::History<soltype>::initialize_past(const double sigma)
 {
@@ -159,21 +172,21 @@ void Integrator::History<soltype>::initialize_past(const double sigma)
    // cmplx rho_01(rho_01r(generator),rho_01i(generator));
 }*/   
 
-/* RANDOM INITIAL RHO, NO ADDED PHASE
-template <class soltype>
+// RANDOM INITIAL RHO, NO ADDED PHASE
+/*template <class soltype>
 void Integrator::History<soltype>::initialize_past(const double sigma)
 {
   cmplx rho_00(0,0);
   // cmplx rho_00(0.5,0);
 
-  ifsdfile.seekg(std::ios::beg);
+  ifrhfile.seekg(std::ios::beg);
   for (int i = 0; i < task_idx*num_particles; ++i)
-    ifsdfile.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+    ifrhfile.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 
   for(int n = 0; n < static_cast<int>(array_.shape()[PARTICLES]); ++n){
     std::string str, line;
 
-    std::getline( ifsdfile, line );
+    std::getline( ifrhfile, line );
     std::stringstream ss(line);    
 
     int i = 0;
@@ -193,28 +206,10 @@ void Integrator::History<soltype>::initialize_past(const double sigma)
   }
 }*/
 
-// IDENTICAL INITIAL RHO WITH ADDED PHASE
-template <class soltype>
+// IDENTICAL RANDOM INITIAL RHO WITH ADDED PHASE
+/*template <class soltype>
 void Integrator::History<soltype>::initialize_past(const double sigma)
 {
-  cmplx rho_00(0,0);
-
-  // ===== GET PHASES =====
-  // double phi = 2.0 * M_PI / (double)nsets;
-  ifphfile.seekg(std::ios::beg);
-  for (int i = 0; i < task_idx*num_particles; ++i)
-    ifphfile.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-
-  int nsets = 2;
-  std::vector<double> phis(nsets);
-  for(int n = 0; n < nsets; ++n){
-    std::string phstr;
-    ifphfile >> phstr;
-    double phi = std::stod(phstr);  
-    std::cout << n << " " << phi << std::endl; 
-    phis[n] = phi;
-  }
-
   // ===== GET INIT RHO =====
   ifrhfile.seekg(std::ios::beg);
   for (int i = 0; i < task_idx*num_particles; ++i)
@@ -231,8 +226,26 @@ void Integrator::History<soltype>::initialize_past(const double sigma)
     rho_01_vec[i] = std::stod(str);
     i++;
   }
- 
-  cmplx rho_01 = rho_01_vec[0]+iu*rho_01_vec[1];
+  
+  cmplx rho_00(1,0);
+  cmplx rho_01(rho_01_vec[0],rho_01_vec[1]);
+
+  // ===== GET PHASES =====
+  // double phi = 2.0 * M_PI / (double)nsets;
+  ifphfile.seekg(std::ios::beg);
+  for (int i = 0; i < task_idx*num_particles; ++i)
+    ifphfile.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+
+  int nsets = 1;
+  int npset = num_particles / nsets;
+  std::vector<double> phis(nsets);
+  for(int n = 0; n < nsets; ++n){
+    std::string phstr;
+    ifphfile >> phstr;
+    double phi = std::stod(phstr);  
+    std::cout << n << " " << phi << std::endl; 
+    phis[n] = phi;
+  }
 
   // ===== APPLY PHASES TO INIT RHO =====
   for(int n = 0; n < num_particles; ++n){
@@ -244,13 +257,13 @@ void Integrator::History<soltype>::initialize_past(const double sigma)
     // int mod = n % nsets;
     // val[1] *= std::exp( iu * phi * (double)mod );
  
-    val[1] *= std::exp( iu * phis[n%nsets] );   
+    // val[1] *= std::exp( iu * phis[n%nsets] );   
+    val[1] *= std::exp( iu * phis[n/npset] );   
 
     for(int t = -window; t <= 0; ++t) 
       set_value(n, t, DERIV_0) = val; 
   }
-
-}
+}*/
 
 template <class soltype>
 int Integrator::History<soltype>::time_idx_in_array(const int time_idx) const

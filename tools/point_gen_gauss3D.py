@@ -21,7 +21,7 @@ def main() :
   n = 1.54 
   c = c0/n
   waveleng = 2.0*np.pi*c/omega
-  sigma = 0.5*waveleng
+  sigma = 1.0*waveleng
   sigsq = sigma*sigma
   mu = [0,0,0]
   cov = [[sigsq, 0, 0], [0, sigsq, 0], [0, 0, sigsq]]

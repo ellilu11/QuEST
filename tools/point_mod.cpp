@@ -23,7 +23,8 @@ int main(int argc, char *argv[])
   // auto dots = make_shared<DotVector>(import_dots("../build/dots/dots"+taskstr+".cfg"));
 
   const double hbar = 0.65821193;
-  const double omega0 = 4823.67;
+  const double omega00 = 4823.67;
+  const double omega0 = 1; // 4823.67;
   const double dip0 = 0.002536;
   const double c = 194.6704;
   const double mu0 = 2.0133545e-4;
@@ -32,9 +33,9 @@ int main(int argc, char *argv[])
 
   const vector<double> dipfactors{ 0.5, 1.0, 1.5, 2.0 }; 
   const double dip_factor = dipfactors[std::stoi(argv[2])]; //1.00;
-  const double dip = dip0 * dip_factor;
+  const double dip = 1; // dip0 * dip_factor;
  
-  const double T1 = 1 / ( Gamma * pow(dip_factor,2) );
+  const double T1 = 3.0 * M_PI; //  / ( Gamma * pow(dip_factor,2) );
   const double T2 = 2*T1;
  
   const double delta = 0.00 / hbar; // 0.759634; // 1.51927;
@@ -48,6 +49,7 @@ int main(int argc, char *argv[])
   std::normal_distribution<double> omega(omega0, delta);
 
   for(int i = 0; i < dots->size(); ++i){
+    (*dots)[i].set_position( (*dots)[i].position() * omega00 / c );
     (*dots)[i].set_freq( omega(generator) );
     (*dots)[i].set_dipole( Eigen::Vector3d(dip,0,0) );
     (*dots)[i].set_damping( T1, T2 );

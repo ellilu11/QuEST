@@ -69,7 +69,7 @@ void Integrator::PredictorCorrector<soltype>::solve(
 {
   int num_outsteps = // time_idx_ubound; 
                      // std::min( 2500, time_idx_ubound );
-                     std::min( 10000, time_idx_ubound );
+                     std::min( 5000, time_idx_ubound );
   int outstep = time_idx_ubound / num_outsteps;
 
   int num_logsteps = 10;
