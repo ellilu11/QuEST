@@ -80,7 +80,6 @@ void Integrator::PredictorCorrector<soltype>::solve(
     if (!(step%outstep)) {
       rhs->evaluate_gamma(step);
       history->write_step_to_file(step);
-	    // rhs->evaluate_field(step);
     }
      
     if (step%(time_idx_ubound/num_logsteps) == 0)

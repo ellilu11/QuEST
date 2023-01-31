@@ -29,11 +29,9 @@ int main(int argc, char *argv[])
     const bool rwa = 
       config.rwa == Configuration::RWA::TRUE ? true : false;
 
-    const double dip = 0.002536;
-    const double beta = // 1.00e-3;
-                        config.mu0 * pow(dip,2) * pow(config.omega,3) 
-                          / ( 6.0 * M_PI * config.hbar * config.c0 ); // 1.79e-04;
-
+    const double beta = 1; // 1.00e-3;
+                        // config.mu0 * pow(dip,2) * pow(config.omega,3) 
+                        //  / ( 6.0 * M_PI * config.hbar * config.c0 ); // 1.79e-04;
     cout << "Initializing..." << endl;
     cout << "  Omega: " << config.omega << std::endl;
     cout << "  Beta: " << beta << std::endl;
@@ -70,8 +68,8 @@ int main(int argc, char *argv[])
 			cout << "  AIM border: " << config.border << endl;
 		}
 
-    // auto qds = make_shared<DotVector>(import_dots("./dots/dots0.cfg"));
-    auto qds = make_shared<DotVector>(import_dots("./dots/dots"+idstr+".cfg"));
+    auto qds = make_shared<DotVector>(import_dots("./dots/dots0.cfg"));
+    // auto qds = make_shared<DotVector>(import_dots("./dots/dots"+idstr+".cfg"));
     qds->resize(config.num_particles);
     auto rhs_funcs = rhs_functions(*qds, config.omega, beta, rotating);
     auto gamma_funcs = gamma_functions(*qds, config.hbar, rotating);
@@ -102,7 +100,7 @@ int main(int argc, char *argv[])
         config.omega, config.c0);
     history->fill(Eigen::Vector2cd::Zero());
     double width = 1.0/sqrt((double)config.num_particles);
-    cout << "  Random polarization width: " << width << endl;
+    cout << "  rho_01 width: " << width << endl;
     history->initialize_past( width );
    
     // read past rho from dat file
@@ -111,11 +109,11 @@ int main(int argc, char *argv[])
         (config.mmean == Configuration::MINUSMEAN::TRUE) 
           ? history->read_history("/mnt/home/luelliot/QuEST/build/out/mfrand/rho_N3_1.0sig_gauss2D.dat")
           : history->zero_array();
-     
+     */
     Integrator::soltype_array<Eigen::Vector2cd>
-      // mean_array = history->zero_array(); 
-      history->mean_over_trials( past_array );
- */
+      mean_array = history->zero_array(); 
+      // history->mean_over_trials( past_array );
+
     // == INTERACTIONS ===============================================
 
     const double propagation_constant = config.mu0 / (4 * M_PI * config.hbar);
@@ -182,7 +180,7 @@ int main(int argc, char *argv[])
       
       } else {
           Propagation::EFIE<cmplx> dyadic(config.c0, propagation_constant, beta, 0.0);
-          Propagation::RotatingEFIE_noderiv_imag dyadic_gamma(config.c0, propagation_constant, config.omega, beta, 0.0);
+          Propagation::RotatingEFIE_noderiv_imag dyadic_gamma(config.c0, propagation_constant, config.omega, beta, 0.0); //ignore
           Propagation::SelfEFIE dyadic_self(config.c0, propagation_constant, beta);
          
           selfwise = make_shared<SelfInteraction>(qds, nullptr, history, dyadic_self,
@@ -210,63 +208,10 @@ int main(int argc, char *argv[])
 
     // == SRC-OBS INTERACTIONS ===============================================
 
-    cout << "Setting up efld interactions..." << endl;
-   	std::shared_ptr<InteractionBase> selfwise_fld;
-    std::shared_ptr<InteractionBase> pairwise_fld;
+    std::vector<std::shared_ptr<InteractionBase>> efld_interactions{};
 
-    if (config.ref_frame == Configuration::REFERENCE_FRAME::ROT) {
-      Propagation::RotatingEFIE dyadic(config.c0, propagation_constant, config.omega, beta, 0.0);
-      Propagation::SelfRotatingEFIE dyadic_self(config.c0, propagation_constant, config.omega, beta);
-
-      selfwise_fld = make_shared<SelfInteraction>(qds, obs, history, dyadic_self,
-                                                     config.interpolation_order, config.c0, config.dt, config.omega);
-      pairwise_fld = make_shared<DirectInteraction>(qds, obs, history, mean_array, dyadic, dyadic,
-                                                    config.interpolation_order, config.c0, config.dt, config.omega);
-    } else {
-      Propagation::EFIE<cmplx> dyadic(config.c0, propagation_constant, beta, 0.0);
-      Propagation::SelfEFIE dyadic_self(config.c0, propagation_constant, beta);
-
-      selfwise_fld = make_shared<SelfInteraction>(qds, obs, history, dyadic_self,
-                                                      config.interpolation_order, config.c0, config.dt);
-      pairwise_fld = make_shared<DirectInteraction>(qds, obs, history, mean_array, dyadic, dyadic,
-                                                      config.interpolation_order, config.c0, config.dt); 
-    }
-
-    std::vector<std::shared_ptr<InteractionBase>> efld_interactions{ 
-      make_shared<PulseInteraction>(qds, obs, pulse1, 
-                                    config.interpolation_order, config.dt, config.hbar, config.omega, 
-                                    rotating, rwa) };
-
-    if (config.self_interacting == Configuration::SELF_INTERACTING::TRUE)
-      efld_interactions.push_back( selfwise_fld );
-
-    if (config.interacting == Configuration::INTERACTING::TRUE)
-      efld_interactions.push_back( pairwise_fld );
-
-    cout << "Setting up bfld interactions..." << endl;
-    std::shared_ptr<InteractionBase> pairwise_bfld;
-
-    if (config.ref_frame == Configuration::REFERENCE_FRAME::ROT) {
-      Propagation::RotatingMFIE dyadic_mfie(config.c0, propagation_constant, config.omega);
-
-      pairwise_bfld = make_shared<DirectInteraction>(qds, obs, history, mean_array, dyadic_mfie, dyadic_mfie,
-                                                     config.interpolation_order, config.c0, config.dt, config.omega);
-    } else {
-      Propagation::MFIE<cmplx> dyadic_mfie(config.c0, propagation_constant);
-
-      pairwise_bfld = make_shared<DirectInteraction>(qds, obs, history, mean_array, dyadic_mfie, dyadic_mfie,
-                                                     config.interpolation_order, config.c0, config.dt);
-    }
-
-    std::vector<std::shared_ptr<InteractionBase>> bfld_interactions{ 
-      make_shared<PulseInteraction>(qds, obs, pulse1, 
-                                    config.interpolation_order, config.dt, config.hbar, config.omega, 
-                                    rotating, rwa) };
-
-    // no self B-fld
-    if (config.interacting == Configuration::INTERACTING::TRUE)
-      bfld_interactions.push_back( pairwise_bfld );
-
+    std::vector<std::shared_ptr<InteractionBase>> bfld_interactions{};
+ 
     // == INTEGRATOR =================================================
 
     cout << "Setting up integrator..." << endl;

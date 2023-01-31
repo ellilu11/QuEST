@@ -64,17 +64,22 @@ bool lt_min(const Qdot &qd, const std::vector<Qdot> &dots, const double mindist)
 int main(int argc, char *argv[])
 {
   const double c0 = 194.6704; // 299.792458;
-  const double omega = 4823.67; // 2278.9013;
+  const double hbar = 0.65821193;
+  const double mu0 = 2.0133545e-4;
+  const double omega = 2278.9013; // 4823.67; // 2278.9013;
   const double lambda = 2 * M_PI * c0 / omega;
-  const double T1 = 8.31, T2 = 2*T1;
   const double dip = 0.002536; // 5.2917721e-4 * 1.0;
   const double dipx = dip, dipy = 0.0, dipz = 0.0;
+ 
+  const double Gamma = pow(dip,2) * pow(omega,3) / 
+                        ( 3.0 * M_PI * c0 * hbar / mu0 );
+  const double T1 = 1.0/Gamma, T2 = 2.0*T1;
   const int num_dots = atoi(argv[1]);
 
   const unsigned seed =
       std::chrono::system_clock::now().time_since_epoch().count();
     
-  const double dist0 = 0.1 * lambda; // mean long. distance between dots;
+  const double dist0 = 1.0 * lambda; // mean long. distance between dots;
 	const double sigma = 0.0; // 0.1*dist0; // stdev of long. distance between dots
   const double R = 0.0; // 1.0e-2; // transverse radius
 

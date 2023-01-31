@@ -134,16 +134,17 @@ void Integrator::History<soltype>::fill(const soltype &val)
 }
 
 // FIXED INITIAL RHO
-template <class soltype>
+/*template <class soltype>
 void Integrator::History<soltype>::initialize_past(const double sigma)
 {
+  Eigen::Vector2cd val(1,0);
   for(int n = 0; n < num_particles; ++n){
-    Eigen::Vector2cd val(1, 0);
+    if ( n < 50 ) val[0] = 0;
 
     for(int t = -window; t <= 0; ++t) 
       set_value(n, t, DERIV_0) = val; 
   }
-}
+}*/
 
 // RANDOM INITIAL RHO USING TIME SEED
 /*template <class soltype>
@@ -207,9 +208,10 @@ void Integrator::History<soltype>::initialize_past(const double sigma)
 }*/
 
 // IDENTICAL RANDOM INITIAL RHO WITH ADDED PHASE
-/*template <class soltype>
+template <class soltype>
 void Integrator::History<soltype>::initialize_past(const double sigma)
 {
+
   // ===== GET INIT RHO =====
   ifrhfile.seekg(std::ios::beg);
   for (int i = 0; i < task_idx*num_particles; ++i)
@@ -227,7 +229,7 @@ void Integrator::History<soltype>::initialize_past(const double sigma)
     i++;
   }
   
-  cmplx rho_00(1,0);
+  cmplx rho_00(0,0);
   cmplx rho_01(rho_01_vec[0],rho_01_vec[1]);
 
   // ===== GET PHASES =====
@@ -250,20 +252,21 @@ void Integrator::History<soltype>::initialize_past(const double sigma)
   // ===== APPLY PHASES TO INIT RHO =====
   for(int n = 0; n < num_particles; ++n){
     Eigen::Vector2cd val(rho_00, rho_01);
- 
-    // double r = ((*dots)[n].position()).norm();
-    // rho_01 *= std::exp( iu * omega_ / c_ * r );
-    
     // int mod = n % nsets;
     // val[1] *= std::exp( iu * phi * (double)mod );
  
     // val[1] *= std::exp( iu * phis[n%nsets] );   
     val[1] *= std::exp( iu * phis[n/npset] );   
-
-    for(int t = -window; t <= 0; ++t) 
-      set_value(n, t, DERIV_0) = val; 
+    
+    for(int t = -window; t <= 0; ++t){ 
+      if (n < 50)
+        set_value(n, t, DERIV_0) = val; 
+      else
+        set_value(n, t, DERIV_0) = Eigen::Vector2cd(1,0);
+    }
   }
-}*/
+}
+
 
 template <class soltype>
 int Integrator::History<soltype>::time_idx_in_array(const int time_idx) const
@@ -400,9 +403,9 @@ Integrator::soltype_array<soltype>
 {
   soltype_array<soltype> new_array_; 
   new_array_.resize(
-      boost::extents[num_particles][num_timesteps][num_trials]);
-  std::fill(new_array_.data(), new_array_.data() + new_array_.num_elements(), 
-            Eigen::Vector2cd::Zero());
+      boost::extents[0][0][0]);
+  // std::fill(new_array_.data(), new_array_.data() + new_array_.num_elements(), 
+  //          Eigen::Vector2cd::Zero());
 
   return new_array_;
 }
