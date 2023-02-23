@@ -88,7 +88,6 @@ void Integrator::BlochRHS::evaluate_gamma(const int step) const
   for(int solution = 0; solution < num_solutions; ++solution) {
       history->set_gamma(solution, step) = gamma_functions[solution](
         history->get_value(solution, step, 0),
-	      mean_array[solution][step][0],
         radfld_rabi[solution] );
  }
 }

@@ -26,7 +26,6 @@ typedef std::function<Eigen::Vector2cd(const Eigen::Vector2cd,
                                        const int)>
     BlochFunctionType;
 typedef std::function<Eigen::Vector2cd(const Eigen::Vector2cd,
-                                       const Eigen::Vector2cd,
                                        const std::complex<double>)>
     GammaFunctionType;
 enum MatrixElement { RHO_00, RHO_01 };
@@ -52,7 +51,6 @@ class QuantumDot {
                                 const bool) const;
   
   matrix_elements gamma_rhs(const matrix_elements &,
-                            const matrix_elements,
                             const cmplx,
                             const double,
                             const bool) const;

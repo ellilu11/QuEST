@@ -34,7 +34,8 @@ class Integrator::History {
   // History(const int, const int, const int, const int = 2);
   History(
     std::shared_ptr<const DotVector>,
-    const int, const int, const int = -1, const int = 2, const int = 1, const int = 0,
+    const int, const int, const int, 
+    const int = -1, const int = 2, const int = 1, const int = 0,
     const double = 0, const double = 0);
  ~History();
 
@@ -55,6 +56,7 @@ class Integrator::History {
   int num_timesteps;
   int num_trials;
   int window;
+  int interp_order;
   int task_idx;
 
   double omega_, c_;
@@ -81,6 +83,7 @@ class Integrator::History {
 template <class soltype>
 Integrator::History<soltype>::History(std::shared_ptr<const DotVector> dots,
                                       const int window,
+                                      const int interp_order,
                                       const int num_timesteps,
                                       const int min_time_idx_ubound,  // rename!
                                       const int num_derivatives,
@@ -90,7 +93,7 @@ Integrator::History<soltype>::History(std::shared_ptr<const DotVector> dots,
     : dots(std::move(dots)), 
       num_particles(dots->size()),
       num_timesteps(num_timesteps), num_trials(num_trials),
-      window(window), task_idx(task_idx),
+      window(window), interp_order(interp_order), task_idx(task_idx),
       omega_(omega), c_(c)
 {
   // TODO: need to make the minimum: max_transit_steps_between_dots +
@@ -134,17 +137,18 @@ void Integrator::History<soltype>::fill(const soltype &val)
 }
 
 // FIXED INITIAL RHO
-/*template <class soltype>
+template <class soltype>
 void Integrator::History<soltype>::initialize_past(const double sigma)
 {
-  Eigen::Vector2cd val(1,0);
   for(int n = 0; n < num_particles; ++n){
-    if ( n < 50 ) val[0] = 0;
-
-    for(int t = -window; t <= 0; ++t) 
-      set_value(n, t, DERIV_0) = val; 
+    for(int t = -window; t <= 0; ++t) {
+      // if (n < 50)
+        set_value(n, t, DERIV_0) = Eigen::Vector2cd(1,0); 
+      // else
+      //  set_value(n, t, DERIV_0) = Eigen::Vector2cd(1,0); 
+    }
   }
-}*/
+}
 
 // RANDOM INITIAL RHO USING TIME SEED
 /*template <class soltype>
@@ -208,7 +212,7 @@ void Integrator::History<soltype>::initialize_past(const double sigma)
 }*/
 
 // IDENTICAL RANDOM INITIAL RHO WITH ADDED PHASE
-template <class soltype>
+/*template <class soltype>
 void Integrator::History<soltype>::initialize_past(const double sigma)
 {
 
@@ -229,8 +233,8 @@ void Integrator::History<soltype>::initialize_past(const double sigma)
     i++;
   }
   
-  cmplx rho_00(0,0);
-  cmplx rho_01(rho_01_vec[0],rho_01_vec[1]);
+  const cmplx rho_00(0,0);
+  const cmplx rho_01(rho_01_vec[0],rho_01_vec[1]);
 
   // ===== GET PHASES =====
   // double phi = 2.0 * M_PI / (double)nsets;
@@ -238,8 +242,8 @@ void Integrator::History<soltype>::initialize_past(const double sigma)
   for (int i = 0; i < task_idx*num_particles; ++i)
     ifphfile.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 
-  int nsets = 1;
-  int npset = num_particles / nsets;
+  const int nsets = 1;
+  const int npset = num_particles / nsets;
   std::vector<double> phis(nsets);
   for(int n = 0; n < nsets; ++n){
     std::string phstr;
@@ -251,22 +255,21 @@ void Integrator::History<soltype>::initialize_past(const double sigma)
 
   // ===== APPLY PHASES TO INIT RHO =====
   for(int n = 0; n < num_particles; ++n){
-    Eigen::Vector2cd val(rho_00, rho_01);
+    // Eigen::Vector2cd val(rho_00, rho_01);
     // int mod = n % nsets;
     // val[1] *= std::exp( iu * phi * (double)mod );
  
-    // val[1] *= std::exp( iu * phis[n%nsets] );   
-    val[1] *= std::exp( iu * phis[n/npset] );   
+    cmplx rho_01ph = rho_01 * std::exp( iu * phis[n/npset] );   
     
     for(int t = -window; t <= 0; ++t){ 
-      if (n < 50)
-        set_value(n, t, DERIV_0) = val; 
+      // if (n < 50 && t >= -interp_order )
+      if (t >= -interp_order )
+        set_value(n, t, DERIV_0) = Eigen::Vector2cd(rho_00, rho_01ph); 
       else
-        set_value(n, t, DERIV_0) = Eigen::Vector2cd(1,0);
+        set_value(n, t, DERIV_0) = Eigen::Vector2cd(rho_00, 0);
     }
   }
-}
-
+}*/
 
 template <class soltype>
 int Integrator::History<soltype>::time_idx_in_array(const int time_idx) const

@@ -96,7 +96,8 @@ int main(int argc, char *argv[])
     int ntrials = 500;
 
     auto history = make_shared<Integrator::History<Eigen::Vector2cd>>(
-        qds, window, config.num_timesteps, min_time_to_keep, 2, ntrials, task_idx,
+        qds, window, config.interpolation_order, config.num_timesteps, 
+        min_time_to_keep, 2, ntrials, task_idx,
         config.omega, config.c0);
     history->fill(Eigen::Vector2cd::Zero());
     double width = 1.0/sqrt((double)config.num_particles);

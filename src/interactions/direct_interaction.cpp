@@ -45,8 +45,8 @@ void DirectInteraction::build_coeff_table(
 
     double dist = dr.norm();
 
-    std::pair<int, double> delay(split_double(0.0));
-    // std::pair<int, double> delay(split_double(dist / (c0 * dt)));
+    // std::pair<int, double> delay(split_double(0.0));
+    std::pair<int, double> delay(split_double(dist / (c0 * dt))); 
 
     floor_delays[pair_idx] = delay.first;
     
@@ -123,7 +123,7 @@ const InteractionBase::ResultArray &DirectInteraction::evaluate(
     std::tie(src, obs) = idx2coord(pair_idx);
 
     for(int i = 1; i <= interp_order; ++i) {
-     const int s =
+      const int s =
           std::max(time_idx - floor_delays[pair_idx] - i, -history->window);
       const double time = (time_idx - i) * dt;
 
@@ -299,26 +299,14 @@ const InteractionBase::ResultArray &DirectInteraction::evaluate_gamma(
       rho_obs = (history->get_value(obs, s, 0))[RHO_01];
       rho_src = (history->get_value(src, s, 0))[RHO_01];
 
-      // rho_obs_mean = (mean_array[obs][s0][0])[RHO_01];
-      // rho_src_mean = (mean_array[src][s0][0])[RHO_01];
-
       if ( !omega ){
         results[src] += 2.0 * std::real( rho_obs_mean * gammacoeffs[pair_idx][i] );
         results[obs] += 2.0 * std::real( rho_src_mean * gammacoeffs[pair_idx][i] );
-
-        // results[src] += 2.0 * std::real( ( rho_obs - rho_obs_mean ) * gammacoeffs[pair_idx][i] );
-        // results[obs] += 2.0 * std::real( ( rho_src - rho_src_mean ) * gammacoeffs[pair_idx][i] );
       } else {
         results[src] += rho_obs * gammacoeffs[pair_idx][i] ;
         results[obs] += rho_src * gammacoeffs[pair_idx][i] ;
-        
-        // results[src] += ( rho_obs - rho_obs_mean ) * gammacoeffs[pair_idx][i] ;
-        // results[obs] += ( rho_src - rho_src_mean ) * gammacoeffs[pair_idx][i] ;
-        
       }    
     }
-    // if (time_idx == 500)
-    //   std::cout << pair_idx << " " << results[pair_idx] << std::endl;
   }
 
   return results;
