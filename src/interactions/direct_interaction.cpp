@@ -294,8 +294,6 @@ const InteractionBase::ResultArray &DirectInteraction::evaluate_gamma(
           std::max(time_idx - floor_delays[pair_idx] - i, -history->window);
       const int s0 = std::max(0, s);
    
-      const double time = (time_idx - i) * dt;
-
       rho_obs = (history->get_value(obs, s, 0))[RHO_01];
       rho_src = (history->get_value(src, s, 0))[RHO_01];
 

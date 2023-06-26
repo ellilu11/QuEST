@@ -66,7 +66,7 @@ int main(int argc, char *argv[])
   const double c0 = 194.6704; // 299.792458;
   const double hbar = 0.65821193;
   const double mu0 = 2.0133545e-4;
-  const double omega = 2278.9013; // 4823.67; // 2278.9013;
+  const double omega = 4823.67; // 2278.9013;
   const double lambda = 2 * M_PI * c0 / omega;
   const double dip = 0.002536; // 5.2917721e-4 * 1.0;
   const double dipx = dip, dipy = 0.0, dipz = 0.0;

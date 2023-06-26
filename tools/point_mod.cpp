@@ -24,7 +24,8 @@ int main(int argc, char *argv[])
 
   const double hbar = 0.65821193;
   const double omega00 = 4823.67;
-  const double omega0 = 2278.9013; // 4823.67;
+  const double omega0 = 4823.67; 
+                        // 2278.9013;
   const double dip0 = 0.002536;
   const double c = 194.6704;
   const double mu0 = 2.0133545e-4;
@@ -32,7 +33,7 @@ int main(int argc, char *argv[])
                         ( 3.0 * M_PI * c * hbar / mu0 );
 
   const vector<double> dipfactors{ 0.5, 1.0, 1.5, 2.0 }; 
-  const double dip_factor = dipfactors[std::stoi(argv[2])]; //1.00;
+  const double dip_factor = 1.00; // dipfactors[std::stoi(argv[2])];
   const double dip = dip0 * dip_factor;
  
   const double T1 = 1.0 / Gamma; // 3.0 * M_PI; //  / ( Gamma * pow(dip_factor,2) );

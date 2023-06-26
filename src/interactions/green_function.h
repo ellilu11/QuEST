@@ -306,7 +306,7 @@ class Propagation::RotatingEFIE_noderiv_imag : public Propagation::EFIE<cmplx> {
       this->coefs_[i] = Eigen::Matrix3cd::Zero();
 
       this->coefs_[i] = 
-          -k2_ *
+          -iu * k2_ *
           // -k2_ * std::exp(-iu * omega_ * dr.norm() / c_) *
             (dyads[0].cast<cmplx>() * interp.evaluations[0][i] * ( -std::sin(kR) ) +
              dyads[1].cast<cmplx>() * omega_ * interp.evaluations[0][i] * std::cos(kR) +

@@ -140,14 +140,9 @@ void Integrator::History<soltype>::fill(const soltype &val)
 template <class soltype>
 void Integrator::History<soltype>::initialize_past(const double sigma)
 {
-  for(int n = 0; n < num_particles; ++n){
-    for(int t = -window; t <= 0; ++t) {
-      // if (n < 50)
-        set_value(n, t, DERIV_0) = Eigen::Vector2cd(1,0); 
-      // else
-      //  set_value(n, t, DERIV_0) = Eigen::Vector2cd(1,0); 
-    }
-  }
+  for(int n = 0; n < num_particles; ++n)
+    for(int t = -window; t <= 0; ++t)
+      set_value(n, t, DERIV_0) = Eigen::Vector2cd(1,0); 
 }
 
 // RANDOM INITIAL RHO USING TIME SEED
@@ -262,11 +257,12 @@ void Integrator::History<soltype>::initialize_past(const double sigma)
     cmplx rho_01ph = rho_01 * std::exp( iu * phis[n/npset] );   
     
     for(int t = -window; t <= 0; ++t){ 
-      // if (n < 50 && t >= -interp_order )
-      if (t >= -interp_order )
+      set_value(n, t, DERIV_0) = Eigen::Vector2cd(rho_00, rho_01ph); 
+      if (n < 1 && t >= -interp_order )
         set_value(n, t, DERIV_0) = Eigen::Vector2cd(rho_00, rho_01ph); 
       else
-        set_value(n, t, DERIV_0) = Eigen::Vector2cd(rho_00, 0);
+        set_value(n, t, DERIV_0) = Eigen::Vector2cd(1, 0);
+      
     }
   }
 }*/
@@ -368,37 +364,36 @@ void Integrator::History<soltype>::write_step_to_file(const int timestep)
 
 }
 
-/*
-template <class soltype>
+/*template <class soltype>
 void Integrator::History<soltype>::write_step_to_file(const int timestep)
 {
+  Eigen::Vector2cd rho = Eigen::Vector2cd::Zero();
+  Eigen::Vector2cd gamma = Eigen::Vector2cd::Zero();
   for(int n = 0; n < num_particles; ++n){
-    //outfile << prep_for_output(get_value(n, timestep, 0)) << " ";
-    double rho01_real = (get_value(n, timestep, 0))[1].real();
-    double rho01_imag = (get_value(n, timestep, 0))[1].imag();
+    cmplx rho00 = (get_value(n, timestep, 0))[0];
+    cmplx rho01 = (get_value(n, timestep, 0))[1];
 
-    outfile // << timestep << " "
-            << (get_value(n, timestep, 0))[0].real() << " "
-            << rho01_real << " "
-            << rho01_imag << " ";
-
-    Eigen::Vector2cd gamma = get_gamma(n, timestep);
-    outfile2 << gamma[0].real() << " " 
-             << gamma[1].real() << " " 
-             << gamma[1].imag() << " ";
+    rho += Eigen::Vector2cd(rho00, rho01); 
+    gamma += get_gamma(n, timestep);
 
   }
+  rho /= num_particles;
 
-  outfile << "\n";
-  outfile2 << "\n";
-
+  outfile << rho[0].real() << " "
+          << rho[1].real() << " " 
+          << rho[1].imag() << "\n";
+ 
+  outfile2 << gamma[0].real() << " "
+           << gamma[1].real() << " " 
+           << gamma[1].imag() << "\n";
+ 
   if(timestep > num_timesteps*0.90){
     outfile.flush();  // QUESTION: why is this needed?
     outfile2.flush();  // QUESTION: why is this needed?
   }
 
-}
-*/
+}*/
+
 
 template <class soltype>
 Integrator::soltype_array<soltype> 

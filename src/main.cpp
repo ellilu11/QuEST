@@ -68,8 +68,8 @@ int main(int argc, char *argv[])
 			cout << "  AIM border: " << config.border << endl;
 		}
 
-    auto qds = make_shared<DotVector>(import_dots("./dots/dots0.cfg"));
-    // auto qds = make_shared<DotVector>(import_dots("./dots/dots"+idstr+".cfg"));
+    // auto qds = make_shared<DotVector>(import_dots("./dots/dots0.cfg"));
+    auto qds = make_shared<DotVector>(import_dots("./dots/dots"+idstr+".cfg"));
     qds->resize(config.num_particles);
     auto rhs_funcs = rhs_functions(*qds, config.omega, beta, rotating);
     auto gamma_funcs = gamma_functions(*qds, config.hbar, rotating);
@@ -169,7 +169,7 @@ int main(int argc, char *argv[])
     
     } else {
       if (config.ref_frame == Configuration::REFERENCE_FRAME::ROT) {
-          Propagation::RotatingEFIE_noderiv dyadic(config.c0, propagation_constant, config.omega, beta, 0.0);
+          Propagation::RotatingEFIE_noderiv_imag dyadic(config.c0, propagation_constant, config.omega, beta, 0.0);
           Propagation::RotatingEFIE_noderiv_imag dyadic_gamma(config.c0, propagation_constant, config.omega, beta, 0.0);
 
           Propagation::SelfRotatingEFIE dyadic_self(config.c0, propagation_constant, config.omega, beta);
