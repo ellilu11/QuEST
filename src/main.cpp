@@ -68,11 +68,11 @@ int main(int argc, char *argv[])
 			cout << "  AIM border: " << config.border << endl;
 		}
 
-    // auto qds = make_shared<DotVector>(import_dots("./dots/dots0.cfg"));
-    auto qds = make_shared<DotVector>(import_dots("./dots/dots"+idstr+".cfg"));
-    qds->resize(config.num_particles);
-    auto rhs_funcs = rhs_functions(*qds, config.omega, beta, rotating);
-    auto gamma_funcs = gamma_functions(*qds, config.hbar, rotating);
+    // auto dots = make_shared<DotVector>(import_dots("./dots/dots0.cfg"));
+    auto dots = make_shared<DotVector>(import_dots("./dots/dots"+idstr+".cfg"));
+    dots->resize(config.num_particles);
+    auto rhs_funcs = rhs_functions(*dots, config.omega, beta, rotating);
+    auto gamma_funcs = gamma_functions(*dots, config.hbar, rotating);
   
     std::shared_ptr<DotVector> obs;
     // obs = make_shared<DotVector>(import_dots("./dots/dots"+idstr+".cfg"));
@@ -90,13 +90,13 @@ int main(int argc, char *argv[])
     int window = 22;
     int min_time_to_keep =
         // config.num_timesteps + window;
-        max_transit_steps_between_dots(qds, config.c0, config.dt) +
+        max_transit_steps_between_dots(dots, config.c0, config.dt) +
         config.interpolation_order;
     std::cout << "  Min time to keep: " << min_time_to_keep << std::endl;
     int ntrials = 500;
 
     auto history = make_shared<Integrator::History<Eigen::Vector2cd>>(
-        qds, window, config.interpolation_order, config.num_timesteps, 
+        dots, window, config.interpolation_order, config.num_timesteps, 
         min_time_to_keep, 2, ntrials, task_idx,
         config.omega, config.c0);
     history->fill(Eigen::Vector2cd::Zero());
@@ -119,90 +119,40 @@ int main(int argc, char *argv[])
 
     const double propagation_constant = config.mu0 / (4 * M_PI * config.hbar);
 
-    auto pulse1 = make_shared<Pulse>(read_pulse_config("pulse.cfg"));
+    auto pulse = make_shared<Pulse>(read_pulse_config("pulse.cfg"));
  
     cout << "Setting up interactions..." << endl;
  
     std::clock_t start_time;
     start_time = std::clock();
 
-   	std::shared_ptr<InteractionBase> selfwise;
-    std::shared_ptr<InteractionBase> pairwise;
+    std::shared_ptr<InteractionBase> pulsed
+      = make_shared<PulseInteraction>(dots, nullptr, pulse, 
+                                      config.interpolation_order, config.dt, config.hbar, config.omega, 
+                                      rotating, rwa) };
 
-    if (config.sim_type == Configuration::SIMULATION_TYPE::FAST) {
-      /*AIM::Grid grid(config.grid_spacing, config.expansion_order, h, *qds); 
-      const int transit_steps = grid.max_transit_steps(config.c0, config.dt) + 
-                                  config.interpolation_order;
+  	std::shared_ptr<InteractionBase> selfwise
+      = make_shared<SelfInteraction>(dots, nullptr, history, dyadic_self,
+                                     config.interpolation_order, config.c0, config.dt);
 
-      if (config.ref_frame == Configuration::REFERENCE_FRAME::ROT) {
-        Propagation::RotatingEFIE dyadic(config.c0, propagation_constant, config.omega, beta, 0.0);
-        Propagation::SelfRotatingEFIE dyadic_self(config.c0, propagation_constant, config.omega, beta);
-
-        selfwise = make_shared<SelfInteraction>(qds, history, dyadic_self,
-                                                    config.interpolation_order, config.c0, config.dt, config.omega);
-        pairwise = make_shared<AIM::Interaction>(
-            qds, history, dyadic, config.grid_spacing, 
-            config.interpolation_order, config.expansion_order, config.border,
-            config.c0, config.dt, 0, 
-						AIM::Expansions::RotatingEFIE(transit_steps, config.c0, config.dt, config.omega),
-						AIM::Expansions::Zero(transit_steps),
-            AIM::Normalization::Helmholtz(config.omega/config.c0, propagation_constant),
-            config.omega);
+    std::shared_ptr<InteractionBase> pairwise
+      = make_shared<DirectInteraction>(dots, nullptr, history, mean_array, dyadic, dyadic,
+                                       config.interpolation_order, config.c0, config.dt); 
  
-     } else {
-        Propagation::EFIE<cmplx> dyadic(config.c0, propagation_constant, beta, 0.0);
-        Propagation::SelfEFIE dyadic_self(config.c0, propagation_constant, beta);
-       
-        selfwise = make_shared<SelfInteraction>(qds, history, dyadic_self,
-                                                    config.interpolation_order, config.c0, config.dt);
-        pairwise = make_shared<AIM::Interaction>(
-            qds, history, dyadic, grid_spacing, 
-            config.interpolation_order, config.expansion_order, config.border,
-            config.c0, config.dt, 0, 
-						AIM::Expansions::EFIE(transit_steps, config.c0, config.dt),
-						AIM::Expansions::Zero(transit_steps),
-            // AIM::Expansions::EFIE_TimeDeriv2(transit_steps, config.c0, config.dt), // "analytic" expansion function
-            // AIM::Expansions::EFIE_Retardation(transit_steps, config.c0), // fdtd expansion function
-            AIM::Normalization::Laplace(propagation_constant)
-           );
-      }*/
-    
-    } else {
-      if (config.ref_frame == Configuration::REFERENCE_FRAME::ROT) {
-          Propagation::RotatingEFIE_noderiv_imag dyadic(config.c0, propagation_constant, config.omega, beta, 0.0);
-          Propagation::RotatingEFIE_noderiv_imag dyadic_gamma(config.c0, propagation_constant, config.omega, beta, 0.0);
 
-          Propagation::SelfRotatingEFIE dyadic_self(config.c0, propagation_constant, config.omega, beta);
+    std::vector<std::shared_ptr<InteractionBase>> 
+      interactions{ 
+        pulsed,
+        pairwise,
+        selfwise
+      } 
 
-          selfwise = make_shared<SelfInteraction>(qds, nullptr, history, dyadic_self,
-                                                     config.interpolation_order, config.c0, config.dt, config.omega);
-          pairwise = make_shared<DirectInteraction>(qds, nullptr, history, mean_array, dyadic, dyadic_gamma,
-                                                     config.interpolation_order, config.c0, config.dt, config.omega);
-      
-      } else {
-          Propagation::EFIE<cmplx> dyadic(config.c0, propagation_constant, beta, 0.0);
-          Propagation::RotatingEFIE_noderiv_imag dyadic_gamma(config.c0, propagation_constant, config.omega, beta, 0.0); //ignore
-          Propagation::SelfEFIE dyadic_self(config.c0, propagation_constant, beta);
-         
-          selfwise = make_shared<SelfInteraction>(qds, nullptr, history, dyadic_self,
-                                                      config.interpolation_order, config.c0, config.dt);
-          pairwise = make_shared<DirectInteraction>(qds, nullptr, history, mean_array, dyadic, dyadic,
-                                                        config.interpolation_order, config.c0, config.dt); 
-      }
-
-    }
-
-    std::vector<std::shared_ptr<InteractionBase>> interactions{ 
-      make_shared<PulseInteraction>(qds, nullptr, pulse1, 
-                                    config.interpolation_order, config.dt, config.hbar, config.omega, 
-                                    rotating, rwa) };
-
-    if (config.self_interacting == Configuration::SELF_INTERACTING::TRUE)
+    /*if (config.self_interacting == Configuration::SELF_INTERACTING::TRUE)
       interactions.push_back( selfwise );
 
     if (config.interacting == Configuration::INTERACTING::TRUE)
       interactions.push_back( pairwise );
-
+*/
     double elapsed_time = ( std::clock() - start_time ) / (double) CLOCKS_PER_SEC;
 
     cout << "  Elapsed time: " << elapsed_time << "s" << std::endl;
