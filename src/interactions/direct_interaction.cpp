@@ -5,9 +5,7 @@ DirectInteraction::DirectInteraction(
     std::shared_ptr<const DotVector> dots,
     std::shared_ptr<const DotVector> obss,
     std::shared_ptr<const Integrator::History<Eigen::Vector2cd>> history,
-    Integrator::soltype_array<Eigen::Vector2cd> mean_array, 
     Propagation::Kernel<cmplx> &kernel,
-    Propagation::Kernel<cmplx> &kernelgamma, // optional 2nd kernel for computation of gamma
     const int interp_order,
     const double c0,
     const double dt,
@@ -24,10 +22,9 @@ DirectInteraction::DirectInteraction(
       gammacoeffs(boost::extents[num_interactions][interp_order + 1]),
       floor_delays_srcobs(num_srcobs),
       fldcoeffs(boost::extents[num_srcobs][interp_order+1]),
-      cross_coeffs(boost::extents[num_srcobs][interp_order+1]),
-      mean_array(std::move(mean_array))
+      cross_coeffs(boost::extents[num_srcobs][interp_order+1])
 {
-  build_coeff_table(kernel, kernelgamma);
+  build_coeff_table(kernel, kernel);
   build_fldcoeff_table(kernel);
 }
 

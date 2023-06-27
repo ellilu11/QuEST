@@ -10,9 +10,7 @@ class DirectInteraction final : public HistoryInteraction {
       std::shared_ptr<const DotVector>,
       std::shared_ptr<const DotVector>,
       std::shared_ptr<const Integrator::History<Eigen::Vector2cd>>,
-      Integrator::soltype_array<Eigen::Vector2cd>, 
       Propagation::Kernel<cmplx> &,
-      Propagation::Kernel<cmplx> &, // optional 2nd kernel for computation of gamma
       const int,
       const double,
       const double,
@@ -34,8 +32,6 @@ class DirectInteraction final : public HistoryInteraction {
   boost::multi_array<Eigen::Vector3cd, 2> fldcoeffs, cross_coeffs;
   double omega;
 
-  Integrator::soltype_array<Eigen::Vector2cd> mean_array;
-   
   void build_coeff_table(Propagation::Kernel<cmplx> &,
                          Propagation::Kernel<cmplx> &);
   void build_fldcoeff_table(Propagation::Kernel<cmplx> &);
