@@ -22,11 +22,11 @@ class InteractionBase {
         dt(dt){};
   const cmplx &operator[](const int i) const { return results[i]; }
   virtual const ResultArray &evaluate(const int) = 0;
+  virtual const ResultArray &evaluate_field(const int, const bool=0) = 0;
   virtual const ResultArray &evaluate_present(const int) = 0;
   virtual const ResultArray &evaluate_gamma(const int) = 0;
   // virtual const ResultArray &evaluate_present_gamma(const int) = 0;
-  virtual const ResultArray &evaluate_field(const int, const bool=0) = 0;
-  virtual ~InteractionBase(){};
+ virtual ~InteractionBase(){};
 
  protected:
   static int coord2idxsq(int row, int col, int rowlen)

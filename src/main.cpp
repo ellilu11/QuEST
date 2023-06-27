@@ -127,25 +127,26 @@ int main(int argc, char *argv[])
     start_time = std::clock();
 
     std::shared_ptr<InteractionBase> pulsed
-      = make_shared<PulseInteraction>(dots, nullptr, pulse, 
+      = make_shared<PulseInteraction>(dots, obss, pulse, 
                                       config.interpolation_order, config.dt, config.hbar, config.omega, 
-                                      rotating, rwa) };
+                                      rotating, rwa);
 
-  	std::shared_ptr<InteractionBase> selfwise
-      = make_shared<SelfInteraction>(dots, nullptr, history, dyadic_self,
-                                     config.interpolation_order, config.c0, config.dt);
-
+    Propagation::EFIE<cmplx> dyadic(config.c0, propagation_constant, beta, 0.0);
     std::shared_ptr<InteractionBase> pairwise
-      = make_shared<DirectInteraction>(dots, nullptr, history, mean_array, dyadic, dyadic,
+      = make_shared<DirectInteraction>(dots, obss, history, mean_array, dyadic, dyadic,
                                        config.interpolation_order, config.c0, config.dt); 
  
+    Propagation::SelfEFIE dyadic_self(config.c0, propagation_constant, beta);
+  	std::shared_ptr<InteractionBase> selfwise
+      = make_shared<SelfInteraction>(dots, obss, history, dyadic_self,
+                                     config.interpolation_order, config.c0, config.dt);
 
     std::vector<std::shared_ptr<InteractionBase>> 
       interactions{ 
         pulsed,
         pairwise,
         selfwise
-      } 
+      } ;
 
     /*if (config.self_interacting == Configuration::SELF_INTERACTING::TRUE)
       interactions.push_back( selfwise );
