@@ -95,49 +95,26 @@ void Integrator::BlochRHS::evaluate_gamma(const int step) const
 void Integrator::BlochRHS::evaluate_field(const int step)
 {
   auto nil = InteractionBase::ResultArray::Zero(num_obs, 1).eval();
-
   auto eval_and_sum =
       [step](const InteractionBase::ResultArray &r,
              const std::shared_ptr<InteractionBase> &interaction) {
         return r + interaction->evaluate_field(step);
       };
-  auto eval_and_sum_bfld =
-      [step](const InteractionBase::ResultArray &r,
-             const std::shared_ptr<InteractionBase> &interaction) {
-        return r + interaction->evaluate_field(step, 1);
-      };
-
-  // int idx = 0; // efld_interactions.size() - 1;
 
   set_dipole_of_dots( obss, Eigen::Vector3d(hbar, 0, 0) );
   auto efldx = 
-    // efld_interactions[idx]->evaluate_field(step); 
     std::accumulate(
       efld_interactions.begin(), efld_interactions.end(), nil, eval_and_sum);
-  auto bfldx = 
-    // bfld_interactions[idx]->evaluate_field(step, 1);
-    std::accumulate(
-      bfld_interactions.begin(), bfld_interactions.end(), nil, eval_and_sum_bfld);
  
   set_dipole_of_dots( obss, Eigen::Vector3d(0, hbar, 0) );
   auto efldy = 
-    // efld_interactions[idx]->evaluate_field(step); 
     std::accumulate(
       efld_interactions.begin(), efld_interactions.end(), nil, eval_and_sum);
-  auto bfldy = 
-    // bfld_interactions[idx]->evaluate_field(step, 1);
-    std::accumulate(
-      bfld_interactions.begin(), bfld_interactions.end(), nil, eval_and_sum_bfld);
   
   set_dipole_of_dots( obss, Eigen::Vector3d(0, 0, hbar) );
   auto efldz = 
-    // efld_interactions[idx]->evaluate_field(step); 
     std::accumulate(
       efld_interactions.begin(), efld_interactions.end(), nil, eval_and_sum);
-  auto bfldz = 
-    // bfld_interactions[idx]->evaluate_field(step, 1);
-    std::accumulate(
-      bfld_interactions.begin(), bfld_interactions.end(), nil, eval_and_sum_bfld);
 
   for(int obs = 0; obs < num_obs; ++obs) {
     Eigen::Vector3cd efld(efldx[obs], efldy[obs], efldz[obs]);
